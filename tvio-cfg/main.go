@@ -18,12 +18,14 @@ func main() {
 	c := cli.NewCLI("app", "1.0.0")
 	c.Args = os.Args[1:]
 	ui := &cli.BasicUi{
-		Writer: os.Stdout,
+		Writer:      os.Stdout,
 		ErrorWriter: os.Stderr,
 	}
 	c.Commands = map[string]cli.CommandFactory{
-		"show": cmds.ShowCommandFactory,
-		"init": func() (cli.Command, error){
+		"show": func() (cli.Command, error) {
+			return &cmds.ShowCommand{ui}, nil
+		},
+		"init": func() (cli.Command, error) {
 			return &cmds.InitCmd{ui}, nil
 		},
 	}
@@ -34,17 +36,6 @@ func main() {
 	}
 
 	os.Exit(exitStatus)
-}
-func mdain() {
-	flag.Parse()
-	switch flag.Arg(0) {
-	case "show":
-		show()
-	case "init":
-		initcfg()
-	default:
-		logger.Println("Unknown command, usage: tviocfg [show]")
-	}
 }
 
 func show() {

@@ -1,19 +1,16 @@
 package cmds
 
 import (
+	"fmt"
 	"io/ioutil"
-	"log"
-	"os"
 
 	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/mitchellh/cli"
 )
 
-func ShowCommandFactory() (cli.Command, error) {
-	return &ShowCommand{}, nil
+type ShowCommand struct {
+	Ui cli.Ui
 }
-
-type ShowCommand struct{}
 
 func (*ShowCommand) Help() string {
 	return `Shows the current configuration of the thingiverse.io network on this machine`
@@ -22,79 +19,79 @@ func (*ShowCommand) Synopsis() string {
 	return `Shows the current configuration of the thingiverse.io network on this machine`
 }
 
-func (*ShowCommand) Run(args []string) int {
+func (sc *ShowCommand) Run(args []string) int {
 
-	var logger = log.New(os.Stdout, "", 0)
 	checklogger := ioutil.Discard
 
 	cfg := config.New(checklogger)
 
 	config.CheckEnviroment(cfg)
 
-	logger.Printf(`
+	sc.Ui.Info(fmt.Sprintf(`
 Enviroment Configuration
 ========================
 
 %s
-`, cfg)
+`, cfg))
 
 	//Global Dir
 
 	cfg = config.New(checklogger)
-	logger.Printf(`
+	sc.Ui.Info(fmt.Sprintf(`
 Global Configuration
 ========================
 file: %s
 
-`, config.CfgFileGlobal())
+`, config.CfgFileGlobal()))
 
 	if config.CfgFileGlobalPresent() {
 		config.CheckCfgFile(cfg, config.CfgFileGlobal())
-		logger.Println(cfg)
+		sc.Ui.Info(cfg.String())
 	} else {
-		logger.Println("Not Present")
+		sc.Ui.Info("Not Present")
 	}
 
 	//User Dir
 
 	cfg = config.New(checklogger)
-	logger.Printf(`
+
+	sc.Ui.Info(fmt.Sprintf(`
 User Configuration
 ========================
 file: %s
 
-`, config.CfgFileUser())
+`, config.CfgFileUser()))
 
 	if config.CfgFileUserPresent() {
 		config.CheckCfgFile(cfg, config.CfgFileUser())
-		logger.Println(cfg)
+		sc.Ui.Info(cfg.String())
 	} else {
-		logger.Println("Not Present")
+		sc.Ui.Info("Not Present")
 	}
 
 	//WD
 
 	cfg = config.New(checklogger)
-	logger.Printf(`
+	sc.Ui.Info(fmt.Sprintf(`
 Working Dir Configuration
 ========================
 file: %s
 
-`, config.CfgFileCwd())
+`, config.CfgFileCwd()))
 
 	if config.CfgFileCwdPresent() {
 		config.CheckCfgFile(cfg, config.CfgFileCwd())
-		logger.Println(cfg)
+		sc.Ui.Info(cfg.String())
 	} else {
-		logger.Println("Not Present")
+		sc.Ui.Info("Not Present")
 	}
 
-	logger.Printf(`
+	sc.Ui.Info(fmt.Sprintf(`
 Configuration Used
 ==================
 
 %s
-`, config.Configuration)
+`, config.Configuration))
 
 	return 0
 }

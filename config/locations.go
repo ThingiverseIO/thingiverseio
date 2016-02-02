@@ -10,7 +10,9 @@ import (
 const (
 	CFG_FILE_NAME         = "thingiverseio.conf"
 	CFG_GLOBAL_PATH_LINUX = "/etc/thingiverse.io/"
+	CFG_GLOBAL_PATH_WINDOWS = "c:/"
 	CFG_USER_PATH_LINUX   = ".thingiverse.io/"
+	CFG_USER_PATH_WINDOWS   = "thingiverse.io/"
 )
 
 func CfgFileCwd() (dir string) {
@@ -28,6 +30,8 @@ func CfgFileGlobal() (dir string) {
 	switch runtime.GOOS {
 	case "linux":
 		dir = CFG_GLOBAL_PATH_LINUX
+	case "windows":
+		dir = CFG_GLOBAL_PATH_WINDOWS
 	}
 	dir = filepath.Join(dir, CFG_FILE_NAME)
 	return
@@ -43,6 +47,8 @@ func CfgFileUser() (dir string) {
 	switch runtime.GOOS {
 	case "linux":
 		dir = filepath.Join(usr.HomeDir, CFG_USER_PATH_LINUX)
+	case "windows":
+		dir = filepath.Join(usr.HomeDir, CFG_USER_PATH_WINDOWS)
 	}
 	dir = filepath.Join(dir, CFG_FILE_NAME)
 	return

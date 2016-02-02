@@ -23,11 +23,11 @@ func (*InitCmd) Synopsis() string {
 }
 
 func (ic *InitCmd) Run(args []string) int {
-	initcfgfile(config.CfgFileCwd(),ic.Ui)
+	initcfgfile(config.CfgFileCwd(), ic.Ui)
 	return 0
 }
 
-func initcfgfile(path string,ui cli.Ui) {
+func initcfgfile(path string, ui cli.Ui) {
 	cfgfile := `
 [network]
 interface=127.0.0.1
