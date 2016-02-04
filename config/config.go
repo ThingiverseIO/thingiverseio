@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"github.com/nu7hatch/gouuid"
 )
 
 type Config struct {
@@ -14,6 +15,8 @@ type Config struct {
 	interfaces []string //the network interfaces to use
 
 	userTags map[string]string
+
+	uuid string
 }
 
 func New(logger io.Writer) (cfg *Config) {
@@ -23,6 +26,19 @@ func New(logger io.Writer) (cfg *Config) {
 		userTags:   map[string]string{},
 	}
 	return
+}
+
+func (cfg *Config) UUID() string {
+	if cfg.uuid == "" {
+		id, _ := uuid.NewV4()
+		cfg.uuid = id.String()
+	}
+	return cfg.uuid
+}
+
+
+func (cfg *Config) Logger() io.Writer {
+	return cfg.logger
 }
 
 func (cfg *Config) String() string {
@@ -37,10 +53,6 @@ func (cfg *Config) String() string {
 	var lstring string
 
 	switch cfg.logger.(type) {
-	//case os.Stdout:
-	//lstring = "stdout"
-	//case os.Stderr:
-	//lstring = "stderr"
 	case *os.File:
 		lstring = cfg.logger.(*os.File).Name()
 	default:
