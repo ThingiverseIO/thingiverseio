@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+
 	"github.com/nu7hatch/gouuid"
 )
 
@@ -12,16 +13,20 @@ type Config struct {
 
 	logger io.Writer
 
+	exporting bool
+
 	interfaces []string //the network interfaces to use
 
-	userTags map[string]string
+	functionTags map[string]string
+	userTags     map[string]string
 
 	uuid string
 }
 
-func New(logger io.Writer) (cfg *Config) {
+func New(logger io.Writer, exporting bool) (cfg *Config) {
 	cfg = &Config{
 		logger:     logger,
+		exporting:  exporting,
 		interfaces: []string{"127.0.0.1"},
 		userTags:   map[string]string{},
 	}
@@ -36,6 +41,28 @@ func (cfg *Config) UUID() string {
 	return cfg.uuid
 }
 
+func (cfg *Config) Tags() (tags map[string]string) {
+	tags = map[string]string{}
+
+	for k, v := range cfg.userTags {
+		tags[k] = v
+	}
+
+	for k, v := range cfg.functionTags {
+		tags[k] = v
+	}
+
+	return
+}
+
+func (cfg *Config) AddUserTag(k, v string) {
+	cfg.userTags[k] = v
+	return
+}
+
+func (cfg *Config) Exporting() bool {
+	return cfg.exporting
+}
 
 func (cfg *Config) Logger() io.Writer {
 	return cfg.logger

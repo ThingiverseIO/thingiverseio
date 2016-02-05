@@ -68,6 +68,7 @@ func (t *Tracker) setupMemberlist() (err error) {
 	conf.BindAddr = t.iface
 	conf.BindPort = t.port
 
+	conf.Delegate = newDelegate(t.cfg)
 	conf.Events = t.evtHandler
 
 	t.memberlist, err = memberlist.Create(conf)

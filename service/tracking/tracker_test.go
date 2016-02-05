@@ -13,8 +13,10 @@ import (
 
 func TestJoinAndLeave(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout)
-	cfg2 := config.New(os.Stdout)
+	cfg1 := config.New(os.Stdout, true)
+	cfg1.AddUserTag("tag", "1")
+	cfg2 := config.New(os.Stdout, false)
+	cfg2.AddUserTag("tag", "2")
 
 	t1, err := Create("127.0.0.1", cfg1)
 
@@ -37,8 +39,14 @@ func TestJoinAndLeave(t *testing.T) {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Couldnt find tracker 2")
 	case data := <-c1:
-		if !strings.Contains(data.(*memberlist.Node).Name, cfg2.UUID()) {
+		n := data.(*memberlist.Node)
+
+		if !strings.Contains(n.Name, cfg2.UUID()) {
 			t.Error("Found wrong UUID")
+		}
+
+		if n.Meta[0] != 0xA5 || n.Meta[1] != 0 || string(n.Meta[2:]) != "tag2" {
+			t.Error("Wrong Meta", n.Meta)
 		}
 	}
 
@@ -46,8 +54,13 @@ func TestJoinAndLeave(t *testing.T) {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Couldnt find tracker 1")
 	case data := <-c2:
-		if !strings.Contains(data.(*memberlist.Node).Name, cfg1.UUID()) {
+		n := data.(*memberlist.Node)
+		if !strings.Contains(n.Name, cfg1.UUID()) {
 			t.Error("Found wrong UUID")
+		}
+
+		if n.Meta[0] != 0xA5 || n.Meta[1] != 1 || string(n.Meta[2:]) != "tag1" {
+			t.Error("Wrong Meta", n.Meta)
 		}
 	}
 }
