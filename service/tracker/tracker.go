@@ -47,6 +47,15 @@ func Create(iface string, cfg *config.Config) (t *Tracker, err error) {
 	return
 }
 
+func (t *Tracker) Stop() (err error){
+	t.logger.Println("Stopping")
+	t.StopAutoJoin()
+	t.memberlist.Leave(1*time.Second)
+	err = t.memberlist.Shutdown()
+	t.logger.Println("Stopped")
+	return
+}
+
 func (t *Tracker) StartAutoJoin() (err error) {
 	if t.beacon != nil {
 		t.logger.Println("Autodiscovery already running")
@@ -73,6 +82,14 @@ func (t *Tracker) StartAutoJoin() (err error) {
 	t.beacon.Ping()
 
 	return
+}
+
+func (t *Tracker) StopAutoJoin() {
+	if t.beacon == nil {
+		return
+	}
+	t.beacon.Stop()
+	t.beacon = nil
 }
 
 func (t *Tracker) silenceOnFirstSignal(d eventual2go.Data) eventual2go.Data {
