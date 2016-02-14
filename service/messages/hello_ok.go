@@ -1,11 +1,5 @@
 package messages
 
-import (
-	"bytes"
-	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
-)
-
 type HelloOk struct {
 }
 
