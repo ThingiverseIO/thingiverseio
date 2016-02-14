@@ -2,10 +2,10 @@ package messages
 
 import (
 	"bytes"
+	"strings"
+
 	uuid "github.com/nu7hatch/gouuid"
 	"github.com/ugorji/go/codec"
-	"gopkg.in/vmihailenco/msgpack.v2"
-	"strings"
 )
 
 type Request struct {
@@ -43,7 +43,7 @@ func NewEncodedRequestWithId(uuid, importer, function string, call_type CallType
 func (*Request) GetType() MessageType { return REQUEST }
 
 func (r *Request) Unflatten(d []string) {
-	dec := msgpack.NewDecoder(strings.NewReader(d[0]))
+	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
 	dec.Decode(r)
 	r.params = []byte(d[1])
 }
@@ -60,6 +60,9 @@ func (r *Request) Parameter() []byte {
 }
 
 func (r *Request) Decode(t interface{}) {
-	msgpack.Unmarshal(r.params, t)
+	buf := bytes.NewBuffer(r.params)
+	dec := codec.NewDecoder(buf, &mh)
+	dec.Decode(t)
+
 	return
 }

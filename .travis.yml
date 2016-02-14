@@ -21,7 +21,12 @@ install:
   - sudo ldconfig
   - cd ..
   - sudo ifconfig
-
+  - go get github.com/nu7hatch/gouuid
+  - go get gopkg.in/gcfg.v1
+  - go get github.com/joernweissenborn/eventual2go
+  - go get github.com/pebbe/zmq4
+  - go get github.com/hashicorp/memberlist
+  - go get github.com/ugorji/go/codec
 
 script:
- - go test -v . ./...
+ - go test -v . ./service/peer ./service/tracker
