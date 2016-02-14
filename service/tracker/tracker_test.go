@@ -1,6 +1,7 @@
 package tracker
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"strings"
@@ -19,13 +20,16 @@ func TestJoin(t *testing.T) {
 	cfg2 := config.New(os.Stdout, false)
 	cfg2.AddUserTag("tag", "2")
 
-	t1, err := Create("127.0.0.1", cfg1)
+	p1 := 666
+	p2 := 667
+
+	t1, err := Create("127.0.0.1", p1, cfg1)
 
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t2, err := Create("127.0.0.1", cfg2)
+	t2, err := Create("127.0.0.1", p2, cfg2)
 
 	if err != nil {
 		t.Fatal(err)
@@ -46,8 +50,8 @@ func TestJoin(t *testing.T) {
 			t.Error("Found wrong UUID")
 		}
 
-		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || n.Meta[1] != 0 || string(n.Meta[2:]) != "tag2" {
-			t.Error("Wrong Meta", n.Meta)
+		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Meta[1:3], port2byte(p2)) || n.Meta[3] != 0 || string(n.Meta[4:]) != "tag2" {
+			t.Error("Wrong Meta")
 		}
 	}
 
@@ -60,7 +64,7 @@ func TestJoin(t *testing.T) {
 			t.Error("Found wrong UUID")
 		}
 
-		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || n.Meta[1] != 1 || string(n.Meta[2:]) != "tag1" {
+		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Meta[1:3], port2byte(p1)) || n.Meta[3] != 1 || string(n.Meta[4:]) != "tag1" {
 			t.Error("Wrong Meta", n.Meta)
 		}
 	}
@@ -73,12 +77,12 @@ func TestAutoJoin(t *testing.T) {
 	cfg2 := config.New(os.Stdout, false)
 	cfg2.AddUserTag("tag", "2")
 
-	t1, err := Create("127.0.0.1", cfg1)
+	t1, err := Create("127.0.0.1", 0, cfg1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t2, err := Create("127.0.0.1", cfg2)
+	t2, err := Create("127.0.0.1", 0, cfg2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,30 +103,13 @@ func TestAutoJoin(t *testing.T) {
 	select {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Couldnt find tracker 2")
-	case data := <-c1:
-		n := data.(*memberlist.Node)
-
-		if !strings.Contains(n.Name, cfg2.UUID()) {
-			t.Error("Found wrong UUID")
-		}
-
-		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || n.Meta[1] != 0 || string(n.Meta[2:]) != "tag2" {
-			t.Error("Wrong Meta", n.Meta)
-		}
+	case <-c1:
 	}
 
 	select {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Couldnt find tracker 1")
-	case data := <-c2:
-		n := data.(*memberlist.Node)
-		if !strings.Contains(n.Name, cfg1.UUID()) {
-			t.Error("Found wrong UUID")
-		}
-
-		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || n.Meta[1] != 1 || string(n.Meta[2:]) != "tag1" {
-			t.Error("Wrong Meta", n.Meta)
-		}
+	case <-c2:
 	}
 }
 func TestLeaveAndReconnect(t *testing.T) {
@@ -132,12 +119,12 @@ func TestLeaveAndReconnect(t *testing.T) {
 	cfg2 := config.New(os.Stdout, false)
 	cfg2.AddUserTag("tag", "2")
 
-	t1, err := Create("127.0.0.1", cfg1)
+	t1, err := Create("127.0.0.1", 0, cfg1)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	t2, err := Create("127.0.0.1", cfg2)
+	t2, err := Create("127.0.0.1", 0, cfg2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +163,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 	cfg3 := config.New(os.Stdout, false)
 	cfg3.AddUserTag("tag", "2")
 
-	t3, err := Create("127.0.0.1", cfg3)
+	t3, err := Create("127.0.0.1", 0, cfg3)
 	if err != nil {
 		t.Fatal(err)
 	}

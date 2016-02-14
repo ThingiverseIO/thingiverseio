@@ -6,16 +6,21 @@ import (
 )
 
 type memberlistDelegate struct {
-	cfg *config.Config
+	adport int
+	cfg    *config.Config
 }
 
-func newDelegate(cfg *config.Config) (d *memberlistDelegate) {
-	return &memberlistDelegate{cfg}
+func newDelegate(adport int, cfg *config.Config) (d *memberlistDelegate) {
+	return &memberlistDelegate{adport, cfg}
 }
 
 func (md *memberlistDelegate) NodeMeta(limit int) (meta []byte) {
 
 	meta = []byte{service.PROTOCOLL_SIGNATURE}
+
+	bp := port2byte(md.adport)
+	meta = append(meta, bp[0])
+	meta = append(meta, bp[1])
 
 	var b byte = 0
 	if md.cfg.Exporting() {
@@ -26,7 +31,7 @@ func (md *memberlistDelegate) NodeMeta(limit int) (meta []byte) {
 	var t string
 	for k, v := range md.cfg.Tags() {
 		t = k + v
-		if len(t)+2 <= limit {
+		if len(t)+4 <= limit {
 			break
 		} else {
 			t = ""

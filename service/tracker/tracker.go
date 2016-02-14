@@ -22,17 +22,19 @@ type Tracker struct {
 
 	cfg *config.Config
 
-	iface string
-	port  int
+	iface  string
+	port   int //memberlist bind port
+	adport int //port to advertise
 
 	evtHandler eventHandler
 }
 
-func Create(iface string, cfg *config.Config) (t *Tracker, err error) {
+func Create(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
 	t = &Tracker{
 		logger:     log.New(cfg.Logger(), "TRACKER ", log.Ltime),
 		cfg:        cfg,
 		iface:      iface,
+		adport:     adport,
 		evtHandler: newEventHandler(),
 	}
 
@@ -47,10 +49,10 @@ func Create(iface string, cfg *config.Config) (t *Tracker, err error) {
 	return
 }
 
-func (t *Tracker) Stop() (err error){
+func (t *Tracker) Stop() (err error) {
 	t.logger.Println("Stopping")
 	t.StopAutoJoin()
-	t.memberlist.Leave(1*time.Second)
+	t.memberlist.Leave(1 * time.Second)
 	err = t.memberlist.Shutdown()
 	t.logger.Println("Stopped")
 	return
@@ -130,7 +132,7 @@ func (t *Tracker) setupMemberlist() (err error) {
 	conf.BindAddr = t.iface
 	conf.BindPort = t.port
 
-	conf.Delegate = newDelegate(t.cfg)
+	conf.Delegate = newDelegate(t.adport,t.cfg)
 	conf.Events = t.evtHandler
 
 	t.memberlist, err = memberlist.Create(conf)
@@ -147,9 +149,14 @@ func getRandomPort(iface string) (int, error) {
 	return int(l.Addr().(*net.TCPAddr).Port), nil
 }
 
-func newSignalPayload(port int) (payload []byte) {
-	b := make([]byte, 2)
+func port2byte(port int) (b []byte) {
+	b = make([]byte, 2)
 	binary.LittleEndian.PutUint16(b, uint16(port))
+	return
+}
+
+func newSignalPayload(port int) (payload []byte) {
+	b := port2byte(port)
 	payload = []byte{service.PROTOCOLL_SIGNATURE, b[0], b[1]}
 	return
 }
