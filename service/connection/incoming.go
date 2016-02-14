@@ -23,6 +23,7 @@ func NewIncoming(addr string) (i *Incoming, err error) {
 	i = &Incoming{
 		addr: addr,
 		in:   eventual2go.NewStreamController(),
+		stop: eventual2go.NewCompleter(),
 	}
 	err = i.setupSocket()
 	if err == nil {
@@ -35,9 +36,14 @@ func (i *Incoming) In() *eventual2go.Stream {
 	return i.in.Stream
 }
 
+func (i *Incoming) Addr() (addr string) {
+	return i.addr
+}
+
 func (i *Incoming) Port() (port int) {
 	return i.port
 }
+
 func (i *Incoming) setupSocket() (err error) {
 	i.port = getRandomPort()
 	i.skt, err = zmq4.NewSocket(zmq4.ROUTER)
@@ -73,7 +79,7 @@ func (i *Incoming) listen() {
 		for range sockets {
 			msg, err := i.skt.RecvMessage(0)
 			if err == nil {
-				i.in.Add(Message{i.addr, msg})
+				i.in.Add(Message{i.addr, msg[0], msg[1:]})
 			}
 		}
 	}

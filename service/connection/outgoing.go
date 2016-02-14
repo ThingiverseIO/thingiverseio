@@ -42,7 +42,7 @@ func NewOutgoing(uuid string, targetAddress string, targetPort int) (out *Outgoi
 	return
 }
 
-func (o *Outgoing) Sent(data [][]byte) {
+func (o *Outgoing) Send(data [][]byte) {
 	o.out.Add(data)
 }
 
