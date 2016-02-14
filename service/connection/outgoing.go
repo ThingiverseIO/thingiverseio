@@ -44,7 +44,9 @@ func NewOutgoing(uuid string, targetAddress string, targetPort int) (out *Outgoi
 
 func (o *Outgoing) Send(data [][]byte) (sent *eventual2go.Future){
 	c := eventual2go.NewCompleter()
+	sent = c.Future()
 	o.out.Add(outgoingMessage{c,data})
+	return
 }
 
 func (o *Outgoing) Close() {
@@ -61,7 +63,7 @@ func (o *Outgoing) send(d eventual2go.Data) {
 		o.close(nil)
 		return
 	}
-	m.sent.Complete()
+	m.sent.Complete(nil)
 	return
 }
 func (o *Outgoing) close(eventual2go.Data) eventual2go.Data {
