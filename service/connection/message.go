@@ -14,3 +14,8 @@ func IsMsgFromSender(sender string) eventual2go.Filter {
 		return sender == m.Sender
 	}
 }
+
+type outgoingMessage struct {
+	sent *eventual2go.Completer
+	payload [][]byte
+}

@@ -42,8 +42,9 @@ func NewOutgoing(uuid string, targetAddress string, targetPort int) (out *Outgoi
 	return
 }
 
-func (o *Outgoing) Send(data [][]byte) {
-	o.out.Add(data)
+func (o *Outgoing) Send(data [][]byte) (sent *eventual2go.Future){
+	c := eventual2go.NewCompleter()
+	o.out.Add(outgoingMessage{c,data})
 }
 
 func (o *Outgoing) Close() {
@@ -51,14 +52,16 @@ func (o *Outgoing) Close() {
 }
 
 func (o *Outgoing) send(d eventual2go.Data) {
-
-	_, err := o.skt.SendMessage(d)
+	m := d.(outgoingMessage)
+	_, err := o.skt.SendMessage(m.payload)
 
 	if err != nil {
 		o.closed.CompleteError(err)
+		m.sent.CompleteError(err)
 		o.close(nil)
+		return
 	}
-
+	m.sent.Complete()
 	return
 }
 func (o *Outgoing) close(eventual2go.Data) eventual2go.Data {
