@@ -41,7 +41,7 @@ func TestJoin(t *testing.T) {
 	t2.JoinCluster([]string{fmt.Sprintf("%s:%d", "127.0.0.1", t1.Port())})
 
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("Couldnt find tracker 2")
 	case data := <-c1:
 		n := data.(*memberlist.Node)
@@ -56,7 +56,7 @@ func TestJoin(t *testing.T) {
 	}
 
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("Couldnt find tracker 1")
 	case data := <-c2:
 		n := data.(*memberlist.Node)
@@ -101,13 +101,13 @@ func TestAutoJoin(t *testing.T) {
 	}
 
 	select {
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("Couldnt find tracker 2")
 	case <-c1:
 	}
 
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("Couldnt find tracker 1")
 	case <-c2:
 	}
@@ -143,7 +143,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 	}
 
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("Service didnt join")
 	case <-c1:
 	}
@@ -173,7 +173,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("Service didnt join")
 	case <-c1:
 	}
