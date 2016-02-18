@@ -23,7 +23,7 @@ func (sc *ShowCommand) Run(args []string) int {
 
 	checklogger := ioutil.Discard
 
-	cfg := config.New(checklogger)
+	cfg := config.New(checklogger, false)
 
 	config.CheckEnviroment(cfg)
 
@@ -36,7 +36,7 @@ Enviroment Configuration
 
 	//Global Dir
 
-	cfg = config.New(checklogger)
+	cfg = config.New(checklogger, false)
 	sc.Ui.Info(fmt.Sprintf(`
 Global Configuration
 ========================
@@ -53,7 +53,7 @@ file: %s
 
 	//User Dir
 
-	cfg = config.New(checklogger)
+	cfg = config.New(checklogger, false)
 
 	sc.Ui.Info(fmt.Sprintf(`
 User Configuration
@@ -71,7 +71,7 @@ file: %s
 
 	//WD
 
-	cfg = config.New(checklogger)
+	cfg = config.New(checklogger, false)
 	sc.Ui.Info(fmt.Sprintf(`
 Working Dir Configuration
 ========================
@@ -91,7 +91,7 @@ Configuration Used
 ==================
 
 %s
-`, config.Configuration))
+`, config.Configure(ioutil.Discard, false)))
 
 	return 0
 }
