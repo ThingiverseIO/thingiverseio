@@ -8,8 +8,9 @@ import (
 )
 
 type Discoverer struct {
-	cfg   *config.Config
-	msgIn *eventual2go.Stream
+	cfg *config.Config
+
+	in *connection.Incoming
 }
 
 func New(peers *eventual2go.Stream, cfg *config.Config) (d *Discoverer) {
@@ -19,6 +20,5 @@ func New(peers *eventual2go.Stream, cfg *config.Config) (d *Discoverer) {
 }
 
 func (d *Discoverer) newPeer(node memberlist.Node) {
-	peerIn := d.msgIn.Where(connection.IsMsgFromSender(node.Name))
-
+	
 }

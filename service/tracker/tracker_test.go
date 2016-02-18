@@ -50,7 +50,7 @@ func TestJoin(t *testing.T) {
 			t.Error("Found wrong UUID")
 		}
 
-		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Meta[1:3], port2byte(p2)) || n.Meta[3] != 0 || string(n.Meta[4:]) != "tag2" {
+		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Meta[1:3], port2byte(p2)) || n.Meta[3] != 0 || string(n.Meta[4:]) != "tag:2" {
 			t.Error("Wrong Meta")
 		}
 	}
@@ -64,7 +64,7 @@ func TestJoin(t *testing.T) {
 			t.Error("Found wrong UUID")
 		}
 
-		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Meta[1:3], port2byte(p1)) || n.Meta[3] != 1 || string(n.Meta[4:]) != "tag1" {
+		if n.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Meta[1:3], port2byte(p1)) || n.Meta[3] != 1 || string(n.Meta[4:]) != "tag:1" {
 			t.Error("Wrong Meta", n.Meta)
 		}
 	}
