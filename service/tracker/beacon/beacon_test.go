@@ -38,7 +38,7 @@ func TestBeacon(t *testing.T) {
 	b2.Ping()
 	select {
 	case data := <-c1:
-		if string(data.(Signal).Data) != "HALLO" {
+		if string(data.Data) != "HALLO" {
 			t.Error("Wrong data, needed 'HALLO', got", data)
 		}
 	case <-time.After(1000 * time.Millisecond):
@@ -47,7 +47,7 @@ func TestBeacon(t *testing.T) {
 
 	select {
 	case data := <-c2:
-		if string(data.(Signal).Data) != "1234" {
+		if string(data.Data) != "1234" {
 			t.Error("Wrong data, needed '1234', got", data)
 		}
 	case <-time.After(1000 * time.Millisecond):

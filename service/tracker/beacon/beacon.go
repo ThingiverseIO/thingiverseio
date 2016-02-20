@@ -18,7 +18,7 @@ type Beacon struct {
 	incoming *net.UDPConn
 	outgoing *net.UDPConn
 
-	signals *eventual2go.StreamController
+	signals *SignalStreamController
 
 	silence *eventual2go.Completer
 
@@ -31,7 +31,7 @@ func New(conf *Config) (b *Beacon, err error) {
 	b = &Beacon{
 		m:       &sync.Mutex{},
 		conf:    conf,
-		signals: eventual2go.NewStreamController(),
+		signals: NewSignalStreamController(),
 		silence: eventual2go.NewCompleter(),
 		stop:    eventual2go.NewCompleter(),
 	}
@@ -171,8 +171,8 @@ func (b *Beacon) getSignal(c chan struct{}) {
 	c <- struct{}{}
 }
 
-func (b *Beacon) Signals() *eventual2go.Stream {
-	return b.signals.Where(b.noEcho)
+func (b *Beacon) Signals() *SignalStream {
+	return b.signals.Stream().Where(b.noEcho)
 }
 func (b *Beacon) Silence() {
 	b.m.Lock()
@@ -215,6 +215,6 @@ func (b *Beacon) ping() {
 
 }
 
-func (b *Beacon) noEcho(d eventual2go.Data) bool {
-	return !bytes.Equal(d.(Signal).Data, b.conf.Payload)
+func (b *Beacon) noEcho(d Signal) bool {
+	return !bytes.Equal(d.Data, b.conf.Payload)
 }

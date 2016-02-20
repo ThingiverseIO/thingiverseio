@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/memberlist"
-	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/joernweissenborn/thingiverse.io/service"
 	"github.com/joernweissenborn/thingiverse.io/service/tracker/beacon"
@@ -94,14 +93,13 @@ func (t *Tracker) StopAutoJoin() {
 	t.beacon = nil
 }
 
-func (t *Tracker) silenceOnFirstSignal(d eventual2go.Data) eventual2go.Data {
+func (t *Tracker) silenceOnFirstSignal(b beacon.Signal) beacon.Signal {
 	t.beacon.Silence()
-	return nil
+	return b
 }
-func (t *Tracker) joinOnSignal(d eventual2go.Data) {
-	s := d.(beacon.Signal)
+func (t *Tracker) joinOnSignal(s beacon.Signal) {
 	addr := net.IP(s.SenderIp)
-	port := binary.LittleEndian.Uint16(d.(beacon.Signal).Data[1:])
+	port := binary.LittleEndian.Uint16(s.Data[1:])
 	t.logger.Printf("Found service %s:%d", addr, port)
 	t.JoinCluster([]string{fmt.Sprintf("%s:%d", addr, port)})
 }
@@ -110,11 +108,11 @@ func (t *Tracker) Port() int {
 	return t.port
 }
 
-func (t *Tracker) Join() *eventual2go.Stream {
+func (t *Tracker) Join() *NodeStream {
 	return t.evtHandler.Join()
 }
 
-func (t *Tracker) Leave() *eventual2go.Stream {
+func (t *Tracker) Leave() *NodeStream {
 	return t.evtHandler.Leave()
 }
 
@@ -132,7 +130,7 @@ func (t *Tracker) setupMemberlist() (err error) {
 	conf.BindAddr = t.iface
 	conf.BindPort = t.port
 
-	conf.Delegate = newDelegate(t.adport,t.cfg)
+	conf.Delegate = newDelegate(t.adport, t.cfg)
 	conf.Events = t.evtHandler
 
 	t.memberlist, err = memberlist.Create(conf)
@@ -161,12 +159,6 @@ func newSignalPayload(port int) (payload []byte) {
 	return
 }
 
-func validSignal(d eventual2go.Data) bool {
-	s, ok := d.(beacon.Signal)
-
-	if !ok {
-		return false
-	}
-
+func validSignal(s beacon.Signal) bool {
 	return len(s.Data) == 3 && s.Data[0] == service.PROTOCOLL_SIGNATURE
 }

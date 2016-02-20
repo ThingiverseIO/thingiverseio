@@ -1,35 +1,32 @@
 package tracker
 
-import (
-	"github.com/hashicorp/memberlist"
-	"github.com/joernweissenborn/eventual2go"
-)
+import "github.com/hashicorp/memberlist"
 
 func newEventHandler() (eh eventHandler) {
-	eh.join = eventual2go.NewStreamController()
-	eh.leave = eventual2go.NewStreamController()
+	eh.join = NewNodeStreamController()
+	eh.leave = NewNodeStreamController()
 	return
 }
 
 type eventHandler struct {
-	join  *eventual2go.StreamController
-	leave *eventual2go.StreamController
+	join  *NodeStreamController
+	leave *NodeStreamController
 }
 
-func (eh eventHandler) Join() *eventual2go.Stream {
-	return eh.join.Stream
+func (eh eventHandler) Join() *NodeStream {
+	return eh.join.Stream()
 }
 
 func (eh eventHandler) NotifyJoin(n *memberlist.Node) {
-	eh.join.Add(n)
+	eh.join.Add(Node{n})
 }
 
-func (eh eventHandler) Leave() *eventual2go.Stream {
-	return eh.leave.Stream
+func (eh eventHandler) Leave() *NodeStream {
+	return eh.leave.Stream()
 }
 
 func (eh eventHandler) NotifyLeave(n *memberlist.Node) {
-	eh.leave.Add(n)
+	eh.leave.Add(Node{n})
 }
 
 func (eh eventHandler) NotifyUpdate(n *memberlist.Node) {

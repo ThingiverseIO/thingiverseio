@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hashicorp/memberlist"
 	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/joernweissenborn/thingiverse.io/service"
 )
@@ -43,8 +42,7 @@ func TestJoin(t *testing.T) {
 	select {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Couldnt find tracker 2")
-	case data := <-c1:
-		n := data.(*memberlist.Node)
+	case n := <-c1:
 
 		if !strings.Contains(n.Name, cfg2.UUID()) {
 			t.Error("Found wrong UUID")
@@ -58,8 +56,7 @@ func TestJoin(t *testing.T) {
 	select {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Couldnt find tracker 1")
-	case data := <-c2:
-		n := data.(*memberlist.Node)
+	case n := <-c2:
 		if !strings.Contains(n.Name, cfg1.UUID()) {
 			t.Error("Found wrong UUID")
 		}
@@ -153,8 +150,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 	select {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Service didnt join")
-	case data := <-c2:
-		n := data.(*memberlist.Node)
+	case n := <-c2:
 		if !strings.Contains(n.Name, cfg2.UUID()) {
 			t.Error("Found wrong UUID", n.Name)
 		}
