@@ -60,6 +60,14 @@ func (cfg *Config) AddOrSetUserTag(k, v string) {
 	return
 }
 
+func (cfg *Config) Interfaces() []string {
+	return cfg.interfaces
+}
+
+func (cfg *Config) OverrideInterfaces(interfaces []string) {
+	cfg.interfaces = interfaces
+}
+
 func (cfg *Config) Exporting() bool {
 	return cfg.exporting
 }

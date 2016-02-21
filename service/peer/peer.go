@@ -26,8 +26,7 @@ type Peer struct {
 	msgIn  *messages.MessageStream
 	msgOut *connection.Outgoing
 
-	removed *eventual2go.Completer
-
+	removed *PeerCompleter
 	logger *log.Logger
 }
 
@@ -39,7 +38,7 @@ func New(uuid, address string, port int, incoming *connection.Incoming, cfg *con
 		incoming:  incoming,
 		msgIn:     incoming.MessagesFromSender(uuid),
 		connected: NewPeerCompleter(),
-		removed:   eventual2go.NewCompleter(),
+		removed:   NewPeerCompleter(),
 		logger:    log.New(cfg.Logger(), fmt.Sprintf("PEER %s@%s ", uuid[:5], cfg.UUID()[:5]), 0),
 	}
 
@@ -49,20 +48,21 @@ func New(uuid, address string, port int, incoming *connection.Incoming, cfg *con
 	}
 
 	p.msgIn.Where(messages.Is(messages.HELLOOK)).Listen(p.onHelloOk)
+	p.msgIn.Where(messages.Is(messages.END)).Listen(p.onEnd)
 
 	if cfg.Exporting() {
 		p.msgIn.Where(messages.Is(messages.DOHAVE)).Listen(p.onDoHave)
 		p.msgIn.Where(messages.Is(messages.CONNECT)).Listen(p.onConnected)
 	}
 
-	p.msgIn.CloseOnFuture(p.removed.Future())
+	p.msgIn.CloseOnFuture(p.removed.Future().Future)
 	p.removed.Future().Then(p.closeOutgoing)
 	return
 }
 
 // NewFromHello creates a new Peer from a HELLO message.
-func NewFromHello(uuid string, m *messages.Hello, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
-	p, err = New(uuid, m.Address, m.Port, incoming, cfg)
+func NewFromHello(m *messages.Hello, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
+	p, err = New(m.UUID, m.Address, m.Port, incoming, cfg)
 
 	p.logger.Println("Received HELLO")
 	if err != nil {
@@ -77,7 +77,7 @@ func NewFromHello(uuid string, m *messages.Hello, incoming *connection.Incoming,
 
 func (p *Peer) setupInitCompleter() {
 	p.initialized = eventual2go.NewTimeoutCompleter(5 * time.Second)
-	p.initialized.Future().Err(p.onTimeout)
+	p.initialized.Future().Err(p.onError)
 }
 
 // InitConnection initializes the connection.
@@ -89,10 +89,14 @@ func (p *Peer) InitConnection() {
 
 	p.setupInitCompleter()
 
-	hello := &messages.Hello{p.incoming.Addr(), p.incoming.Port()}
+	hello := &messages.Hello{p.cfg.UUID(),p.incoming.Addr(), p.incoming.Port()}
 
 	p.Send(hello)
 
+}
+
+func (p *Peer) UUID() string {
+	return p.uuid
 }
 
 // Messages returns the peers message stream.
@@ -107,14 +111,28 @@ func (p *Peer) Connected() *PeerFuture {
 
 // Remove closes the peer.
 func (p *Peer) Remove() {
-	p.removed.Complete(nil)
+	p.logger.Println("Removing")
+	if !p.removed.Completed() {
+		f := p.Send(&messages.End{})
+		f.Then(p.removeAfterFuture)
+		f.Err(p.onError)
+	}
 }
 
-func (p *Peer) onTimeout(error) (eventual2go.Data, error) {
-	p.removed.Complete(nil)
+func (p *Peer) removeAfterFuture(eventual2go.Data) eventual2go.Data {
+	p.removed.Complete(p)
+	return nil
+}
+
+func (p *Peer) onError(error) (eventual2go.Data, error) {
+	p.removed.Complete(p)
 	return nil, nil
 }
 
+func (p *Peer) onEnd(messages.Message) {
+	p.logger.Println("Received END")
+	p.Remove()
+}
 func (p *Peer) onHelloOk(messages.Message) {
 	p.logger.Println("Received HELLO_OK")
 	if !p.initialized.Completed() {
@@ -146,16 +164,16 @@ func (p *Peer) onConnected(m messages.Message) {
 }
 
 // Removed returns a future which is completed when the connection gets closed.
-func (p *Peer) Removed() *eventual2go.Future {
+func (p *Peer) Removed() *PeerFuture {
 	return p.removed.Future()
 }
 
 // Send send a message to the peer.
-func (p *Peer) Send(m messages.Message) {
-	p.msgOut.Send(messages.Flatten(m))
+func (p *Peer) Send(m messages.Message) *eventual2go.Future {
+	return p.msgOut.Send(messages.Flatten(m))
 }
 
-func (p *Peer) closeOutgoing(eventual2go.Data) eventual2go.Data {
+func (p *Peer) closeOutgoing(*Peer) *Peer {
 	p.msgOut.Close()
 	return nil
 }
@@ -195,7 +213,7 @@ func (p *Peer) check(eventual2go.Data) eventual2go.Data {
 		}
 	}
 	p.Send(&messages.Connect{})
-	p.logger.Println("connected successfully")
+	p.logger.Println("Connected successfully")
 	p.connected.Complete(p)
 	return nil
 }

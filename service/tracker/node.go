@@ -11,3 +11,7 @@ type Node struct {
 func (n Node) Meta() (*Meta, error) {
 	return DecodeMeta(n.Node.Meta)
 }
+
+func (n Node) UUID() string {
+	return n.Name
+}

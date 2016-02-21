@@ -50,7 +50,7 @@ func (b *Beacon) Run() {
 
 func (b *Beacon) init() {
 	b.conf.init()
-	b.logger = log.New(b.conf.Logger, "beacon ", log.Ltime)
+	b.logger = log.New(b.conf.Logger, "BEACON ", 0)
 }
 
 func (b *Beacon) setup() (err error) {

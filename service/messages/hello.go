@@ -8,6 +8,7 @@ import (
 )
 
 type Hello struct {
+	UUID    string
 	Address string
 	Port    int
 }

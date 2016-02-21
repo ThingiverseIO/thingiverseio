@@ -3,6 +3,7 @@ package tracker
 import (
 	"encoding/binary"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net"
 	"time"
@@ -28,9 +29,9 @@ type Tracker struct {
 	evtHandler eventHandler
 }
 
-func Create(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
+func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
 	t = &Tracker{
-		logger:     log.New(cfg.Logger(), "TRACKER ", log.Ltime),
+		logger:     log.New(cfg.Logger(), "TRACKER ", 0),
 		cfg:        cfg,
 		iface:      iface,
 		adport:     adport,
@@ -124,6 +125,7 @@ func (t *Tracker) JoinCluster(addr []string) (err error) {
 func (t *Tracker) setupMemberlist() (err error) {
 
 	conf := memberlist.DefaultLANConfig()
+	conf.LogOutput = ioutil.Discard
 
 	conf.Name = fmt.Sprintf("%s:%s", t.cfg.UUID(), t.iface)
 
