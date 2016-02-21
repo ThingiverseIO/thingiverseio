@@ -2,17 +2,21 @@ package messages
 
 //go:generate stringer -type=MessageType
 
+// MessageType represents a message constant.
 type MessageType int
 
+// Message type constants
 const (
 	HELLO MessageType = iota
-	HELLO_OK
-	DO_HAVE
+	HELLOOK
+	DOHAVE
 	HAVE
+	CONNECT
 	REQUEST
 	RESULT
 	LISTEN
-	STOP_LISTEN
+	STOPLISTEN
+	END
 )
 
 func Get(messagetype MessageType) (msg Message) {
@@ -20,16 +24,24 @@ func Get(messagetype MessageType) (msg Message) {
 	switch messagetype {
 	case HELLO:
 		msg = new(Hello)
-	case HELLO_OK:
+	case HELLOOK:
 		msg = new(HelloOk)
+	case DOHAVE:
+		msg = new(DoHave)
+	case HAVE:
+		msg = new(Have)
+	case CONNECT:
+		msg = new(Connect)
 	case REQUEST:
 		msg = new(Request)
 	case RESULT:
 		msg = new(Result)
 	case LISTEN:
 		msg = new(Listen)
-	case STOP_LISTEN:
+	case STOPLISTEN:
 		msg = new(StopListen)
+	case END:
+		msg = new(End)
 	}
 	return
 }

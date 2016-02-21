@@ -9,7 +9,8 @@ import (
 
 type Have struct {
 	Have bool
-	Tag  string
+	TagKey string
+	TagValue string
 }
 
 func (*Have) GetType() MessageType { return HAVE }

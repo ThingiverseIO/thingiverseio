@@ -11,7 +11,7 @@ type StopListen struct {
 	Function string
 }
 
-func (*StopListen) GetType() MessageType { return STOP_LISTEN }
+func (*StopListen) GetType() MessageType { return STOPLISTEN }
 
 func (l *StopListen) Unflatten(d []string) {
 	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)

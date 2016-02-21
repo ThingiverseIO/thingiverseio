@@ -8,10 +8,11 @@ import (
 )
 
 type DoHave struct {
-	Tag string
+	TagKey string
+	TagValue string
 }
 
-func (*DoHave) GetType() MessageType { return DO_HAVE }
+func (*DoHave) GetType() MessageType { return DOHAVE }
 
 func (h *DoHave) Unflatten(d []string) {
 	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)

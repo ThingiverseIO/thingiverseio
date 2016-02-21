@@ -25,10 +25,11 @@ type Config struct {
 
 func New(logger io.Writer, exporting bool) (cfg *Config) {
 	cfg = &Config{
-		logger:     logger,
-		exporting:  exporting,
-		interfaces: []string{"127.0.0.1"},
-		userTags:   map[string]string{},
+		logger:       logger,
+		exporting:    exporting,
+		interfaces:   []string{"127.0.0.1"},
+		functionTags: map[string]string{},
+		userTags:     map[string]string{},
 	}
 	return
 }
@@ -43,7 +44,6 @@ func (cfg *Config) UUID() string {
 
 func (cfg *Config) Tags() (tags map[string]string) {
 	tags = map[string]string{}
-
 	for k, v := range cfg.userTags {
 		tags[k] = v
 	}
@@ -55,7 +55,7 @@ func (cfg *Config) Tags() (tags map[string]string) {
 	return
 }
 
-func (cfg *Config) AddUserTag(k, v string) {
+func (cfg *Config) AddOrSetUserTag(k, v string) {
 	cfg.userTags[k] = v
 	return
 }

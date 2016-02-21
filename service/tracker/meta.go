@@ -72,12 +72,14 @@ func (m *Meta) ToBytes() (b []byte) {
 	return
 }
 
-func (m *Meta) TagKeyValue() (k, v string) {
+func (m *Meta) TagKeyValue() (k, v string, err error) {
 	s := strings.Split(m.Tag, ":")
 
 	if len(s) == 2 {
 		k = s[0]
 		v = s[1]
+	} else {
+		err = errors.New("invalid tag")
 	}
 
 	return

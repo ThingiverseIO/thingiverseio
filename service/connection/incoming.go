@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/thingiverse.io/service/messages"
 )
 
 type Incoming struct {
@@ -34,6 +35,14 @@ func NewIncoming(addr string) (i *Incoming, err error) {
 
 func (i *Incoming) In() *MessageStream {
 	return i.in.Stream()
+}
+
+func (i *Incoming) Messages() *messages.MessageStream {
+	return &messages.MessageStream{i.In().Where(validMsg).Transform(transformToMessage)}
+}
+
+func (i *Incoming) MessagesFromSender(sender string) *messages.MessageStream {
+	return &messages.MessageStream{i.In().Where(validMsg).Where(isMsgFromSender(sender)).Transform(transformToMessage)}
 }
 
 func (i *Incoming) Addr() (addr string) {

@@ -1,7 +1,10 @@
 package connection
 
-import "github.com/joernweissenborn/eventual2go"
-
+import (
+	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/thingiverse.io/service"
+	"github.com/joernweissenborn/thingiverse.io/service/messages"
+)
 
 //go:generate event_generator -t Message
 
@@ -11,13 +14,30 @@ type Message struct {
 	Payload []string
 }
 
-func IsMsgFromSender(sender string) MessageFilter {
+func isMsgFromSender(sender string) MessageFilter {
 	return func(m Message) bool {
 		return sender == m.Sender
 	}
 }
 
+func validMsg(m Message) bool {
+	if len(m.Payload) < 2 {
+		return false
+	}
+	p := []byte(m.Payload[0])[0]
+
+	if p != service.PROTOCOLL_SIGNATURE {
+		return false
+	}
+	return true
+}
+
+func transformToMessage(d eventual2go.Data) eventual2go.Data {
+	m := d.(Message)
+	return messages.Unflatten(m.Payload)
+}
+
 type outgoingMessage struct {
-	sent *eventual2go.Completer
+	sent    *eventual2go.Completer
 	payload [][]byte
 }
