@@ -35,7 +35,7 @@ func TestInitConnection(t *testing.T) {
 
 	var p2 *Peer
 	select {
-	case <-time.After(1 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Fatal("Did not received Hello")
 	case d := <-c:
 		m := d.(*messages.Hello)
@@ -48,7 +48,7 @@ func TestInitConnection(t *testing.T) {
 		}
 	}
 
-	time.Sleep(1 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	if !p1.initialized.Completed() {
 		t.Error("Connection 1 did not initialize")

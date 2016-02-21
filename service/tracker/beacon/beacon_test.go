@@ -9,7 +9,7 @@ import (
 func testconf(payload []byte) *Config {
 	return &Config{
 		Addr:         "127.0.0.1",
-		Port:         666,
+		Port:         6660,
 		PingInterval: 1 * time.Millisecond,
 		Payload:      payload,
 		Logger:       os.Stderr,

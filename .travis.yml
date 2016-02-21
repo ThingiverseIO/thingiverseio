@@ -29,4 +29,4 @@ install:
   - go get github.com/ugorji/go/codec
 
 script:
- - go test -v ./service/peer ./service/tracker
+  - go test -v ./service/peer ./service/tracker ./service/tracker/beacon
