@@ -1,7 +1,5 @@
 package messages
 
-import "github.com/joernweissenborn/eventual2go"
-
 //go:generate stringer -type=MessageType
 
 type MessageType int
@@ -36,8 +34,8 @@ func Get(messagetype MessageType) (msg Message) {
 	return
 }
 
-func Is(t MessageType) eventual2go.Filter {
-	return func(d eventual2go.Data) bool {
-		return d.(Message).GetType() == t
+func Is(t MessageType) MessageFilter {
+	return func(d Message) bool {
+		return d.GetType() == t
 	}
 }

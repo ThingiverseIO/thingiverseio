@@ -1,6 +1,8 @@
 package peer
 
 import (
+	"fmt"
+	"log"
 	"time"
 
 	"github.com/joernweissenborn/eventual2go"
@@ -18,19 +20,24 @@ type Peer struct {
 
 	initialized *eventual2go.Completer
 
-	msgIn  *eventual2go.Stream
+	msgIn  *messages.MessageStream
 	msgOut *connection.Outgoing
 
 	removed *eventual2go.Completer
+
+	logger *log.Logger
 }
 
 func New(uuid, address string, port int, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
 	p = &Peer{
-		uuid: uuid,
+		uuid:     uuid,
 		incoming: incoming,
+		msgIn:    &messages.MessageStream{incoming.In().Where(connection.IsMsgFromSender(uuid)).Where(validMsg).Transform(transformToMessage)},
 		removed:  eventual2go.NewCompleter(),
+		logger:   log.New(cfg.Logger(), fmt.Sprintf("PEER %s@%s ", uuid[:5], cfg.UUID()[:5]), 0),
 	}
 
+	p.msgIn.Where(messages.Is(messages.HELLO_OK)).Listen(p.onHelloOk)
 	p.msgOut, err = connection.NewOutgoing(cfg.UUID(), address, port)
 	if err != nil {
 		return
@@ -41,12 +48,11 @@ func New(uuid, address string, port int, incoming *connection.Incoming, cfg *con
 
 func NewFromHello(uuid string, m *messages.Hello, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
 	p, err = New(uuid, m.Address, m.Port, incoming, cfg)
+
+	p.logger.Println("Received HELLO")
 	if err != nil {
 		return
 	}
-
-	p.msgIn = p.incoming.In().Where(connection.IsMsgFromSender(p.uuid)).Where(validMsg).Transform(transformToMessage)
-	p.msgIn.Where(messages.Is(messages.HELLO_OK)).Listen(p.onHelloOk)
 
 	p.Send(&messages.HelloOk{})
 
@@ -62,9 +68,6 @@ func (p *Peer) InitConnection() {
 		return
 	}
 
-	p.msgIn = p.incoming.In().Where(connection.IsMsgFromSender(p.uuid)).Where(validMsg).Transform(transformToMessage)
-	p.msgIn.Where(messages.Is(messages.HELLO_OK)).Listen(p.onHelloOk)
-
 	hello := &messages.Hello{p.incoming.Addr(), p.incoming.Port()}
 
 	p.Send(hello)
@@ -74,12 +77,17 @@ func (p *Peer) InitConnection() {
 
 }
 
+func (p *Peer) Messages() *messages.MessageStream {
+	return p.msgIn
+}
+
 func (p *Peer) onTimeout(error) (eventual2go.Data, error) {
 	p.removed.Complete(nil)
 	return nil, nil
 }
 
-func (p *Peer) onHelloOk(d eventual2go.Data) {
+func (p *Peer) onHelloOk(messages.Message) {
+	p.logger.Println("Received HELLO_OK")
 	if !p.initialized.Completed() {
 		p.initialized.Complete(nil)
 		p.Send(&messages.HelloOk{})
@@ -99,12 +107,11 @@ func (p *Peer) closeOutgoing(eventual2go.Data) eventual2go.Data {
 	return nil
 }
 
-func validMsg(d eventual2go.Data) bool {
-	m := d.(connection.Message).Payload
-	if len(m) < 3 {
+func validMsg(m connection.Message) bool {
+	if len(m.Payload) < 2 {
 		return false
 	}
-	p := []byte(m[0])[0]
+	p := []byte(m.Payload[0])[0]
 
 	if p != service.PROTOCOLL_SIGNATURE {
 		return false

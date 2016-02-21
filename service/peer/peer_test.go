@@ -25,7 +25,7 @@ func TestInitConnection(t *testing.T) {
 	cfg1 := config.New(os.Stdout, true)
 	cfg2 := config.New(os.Stdout, false)
 
-	c := i2.In().Where(connection.IsMsgFromSender(cfg1.UUID())).Where(validMsg).Transform(transformToMessage).Where(messages.Is(messages.HELLO)).AsChan()
+	c := (&messages.MessageStream{i2.In().Where(connection.IsMsgFromSender(cfg1.UUID())).Where(validMsg).Transform(transformToMessage)}).Where(messages.Is(messages.HELLO)).AsChan()
 
 	p1, err := New(cfg2.UUID(), "127.0.0.1", i2.Port(), i1, cfg1)
 	if err != nil {
@@ -50,8 +50,11 @@ func TestInitConnection(t *testing.T) {
 
 	time.Sleep(1 * time.Second)
 
-	if !p1.initialized.Completed() || !p2.initialized.Completed() {
-		t.Error("Connection did not initialize")
+	if !p1.initialized.Completed() {
+		t.Error("Connection 1 did not initialize")
+	}
+	if !p2.initialized.Completed() {
+		t.Error("Connection 2 did not initialize")
 	}
 
 }

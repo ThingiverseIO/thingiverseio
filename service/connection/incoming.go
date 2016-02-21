@@ -15,14 +15,14 @@ type Incoming struct {
 	addr string
 	port int
 	skt  *zmq4.Socket
-	in   *eventual2go.StreamController
+	in   *MessageStreamController
 	stop *eventual2go.Completer
 }
 
 func NewIncoming(addr string) (i *Incoming, err error) {
 	i = &Incoming{
 		addr: addr,
-		in:   eventual2go.NewStreamController(),
+		in:   NewMessageStreamController(),
 		stop: eventual2go.NewCompleter(),
 	}
 	err = i.setupSocket()
@@ -32,8 +32,8 @@ func NewIncoming(addr string) (i *Incoming, err error) {
 	return
 }
 
-func (i *Incoming) In() *eventual2go.Stream {
-	return i.in.Stream
+func (i *Incoming) In() *MessageStream {
+	return i.in.Stream()
 }
 
 func (i *Incoming) Addr() (addr string) {

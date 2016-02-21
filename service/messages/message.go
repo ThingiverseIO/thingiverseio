@@ -15,6 +15,8 @@ func init() {
 	mh.EncodeOptions = codec.EncodeOptions{Canonical: true}
 }
 
+//go:generate event_generator -t Message
+
 type Message interface {
 	GetType() MessageType
 	Flatten() [][]byte

@@ -36,7 +36,7 @@ func NewOutgoing(uuid string, targetAddress string, targetPort int) (out *Outgoi
 		closed: eventual2go.NewCompleter(),
 	}
 
-	out.out.Stream.Listen(out.send)
+	out.out.Stream().Listen(out.send)
 	out.closed.Future().Then(out.close)
 
 	return
