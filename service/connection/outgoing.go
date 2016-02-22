@@ -2,12 +2,14 @@ package connection
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/pebbe/zmq4"
 )
 
 type Outgoing struct {
+	m      *sync.Mutex
 	skt    *zmq4.Socket
 	out    *eventual2go.StreamController
 	closed *eventual2go.Completer
@@ -36,8 +38,7 @@ func NewOutgoing(uuid string, targetAddress string, targetPort int) (out *Outgoi
 		closed: eventual2go.NewCompleter(),
 	}
 
-	out.out.Stream().Listen(out.send)
-	out.closed.Future().Then(out.close)
+	out.out.Stream().Listen(out.send).Closed().Then(out.close)
 
 	return
 }
@@ -50,7 +51,7 @@ func (o *Outgoing) Send(data [][]byte) (sent *eventual2go.Future) {
 }
 
 func (o *Outgoing) Close() {
-	o.closed.Complete(nil)
+	o.out.Close()
 }
 
 func (o *Outgoing) send(d eventual2go.Data) {
@@ -69,7 +70,6 @@ func (o *Outgoing) send(d eventual2go.Data) {
 	return
 }
 func (o *Outgoing) close(eventual2go.Data) eventual2go.Data {
-	o.out.Close()
 	return o.skt.Close()
 
 }

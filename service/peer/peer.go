@@ -15,19 +15,15 @@ import (
 
 // Peer is node with an rpc connection.
 type Peer struct {
-	uuid string
-	cfg  *config.Config
-
-	incoming *connection.Incoming
-
+	uuid        string
+	cfg         *config.Config
+	incoming    *connection.Incoming
 	initialized *eventual2go.Completer
 	connected   *PeerCompleter
-
-	msgIn  *messages.MessageStream
-	msgOut *connection.Outgoing
-
-	removed *PeerCompleter
-	logger *log.Logger
+	msgIn       *messages.MessageStream
+	msgOut      *connection.Outgoing
+	removed     *PeerCompleter
+	logger      *log.Logger
 }
 
 // New creates a new Peer.
@@ -57,20 +53,20 @@ func New(uuid, address string, port int, incoming *connection.Incoming, cfg *con
 
 	p.msgIn.CloseOnFuture(p.removed.Future().Future)
 	p.removed.Future().Then(p.closeOutgoing)
+
+	p.setupInitCompleter()
 	return
 }
 
 // NewFromHello creates a new Peer from a HELLO message.
 func NewFromHello(m *messages.Hello, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
 	p, err = New(m.UUID, m.Address, m.Port, incoming, cfg)
-
-	p.logger.Println("Received HELLO")
 	if err != nil {
 		return
 	}
+	p.logger.Println("Received HELLO")
 
 	p.Send(&messages.HelloOk{})
-	p.setupInitCompleter()
 
 	return
 }
@@ -83,13 +79,7 @@ func (p *Peer) setupInitCompleter() {
 // InitConnection initializes the connection.
 func (p *Peer) InitConnection() {
 
-	if p.initialized != nil {
-		return
-	}
-
-	p.setupInitCompleter()
-
-	hello := &messages.Hello{p.cfg.UUID(),p.incoming.Addr(), p.incoming.Port()}
+	hello := &messages.Hello{p.cfg.UUID(), p.incoming.Addr(), p.incoming.Port()}
 
 	p.Send(hello)
 
@@ -113,9 +103,10 @@ func (p *Peer) Connected() *PeerFuture {
 func (p *Peer) Remove() {
 	p.logger.Println("Removing")
 	if !p.removed.Completed() {
-		f := p.Send(&messages.End{})
-		f.Then(p.removeAfterFuture)
-		f.Err(p.onError)
+		p.Send(&messages.End{})
+		p.removed.Complete(p)
+		//f.Then(p.removeAfterFuture)
+		//f.Err(p.onError)
 	}
 }
 
@@ -124,8 +115,9 @@ func (p *Peer) removeAfterFuture(eventual2go.Data) eventual2go.Data {
 	return nil
 }
 
-func (p *Peer) onError(error) (eventual2go.Data, error) {
-	p.removed.Complete(p)
+func (p *Peer) onError(err error) (eventual2go.Data, error) {
+	p.logger.Println("ERROR", err)
+	p.Remove()
 	return nil, nil
 }
 
