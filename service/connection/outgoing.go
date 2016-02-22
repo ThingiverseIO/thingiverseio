@@ -5,6 +5,7 @@ import (
 	"sync"
 
 	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/pebbe/zmq4"
 )
 
@@ -15,14 +16,14 @@ type Outgoing struct {
 	closed *eventual2go.Completer
 }
 
-func NewOutgoing(uuid string, targetAddress string, targetPort int) (out *Outgoing, err error) {
+func NewOutgoing(uuid config.UUID, targetAddress string, targetPort int) (out *Outgoing, err error) {
 
 	skt, err := zmq4.NewSocket(zmq4.DEALER)
 	if err != nil {
 		return
 	}
 
-	err = skt.SetIdentity(uuid)
+	err = skt.SetIdentity(string(uuid))
 	if err != nil {
 		return
 	}

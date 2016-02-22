@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/joernweissenborn/thingiverse.io/service/messages"
 )
 
@@ -41,7 +42,7 @@ func (i *Incoming) Messages() *messages.MessageStream {
 	return &messages.MessageStream{i.In().Where(validMsg).Transform(transformToMessage)}
 }
 
-func (i *Incoming) MessagesFromSender(sender string) *messages.MessageStream {
+func (i *Incoming) MessagesFromSender(sender config.UUID) *messages.MessageStream {
 	return &messages.MessageStream{i.In().Where(validMsg).Where(isMsgFromSender(sender)).Transform(transformToMessage)}
 }
 
@@ -88,7 +89,7 @@ func (i *Incoming) listen() {
 		for range sockets {
 			msg, err := i.skt.RecvMessage(0)
 			if err == nil {
-				i.in.Add(Message{i.addr, msg[0], msg[1:]})
+				i.in.Add(Message{i.addr, config.UUID(msg[0]), msg[1:]})
 			}
 		}
 	}

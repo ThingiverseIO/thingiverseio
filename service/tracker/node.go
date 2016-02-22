@@ -1,6 +1,11 @@
 package tracker
 
-import "github.com/hashicorp/memberlist"
+import (
+	"strings"
+
+	"github.com/hashicorp/memberlist"
+	"github.com/joernweissenborn/thingiverse.io/config"
+)
 
 //go:generate event_generator -t Node
 
@@ -12,6 +17,6 @@ func (n Node) Meta() (*Meta, error) {
 	return DecodeMeta(n.Node.Meta)
 }
 
-func (n Node) UUID() string {
-	return n.Name
+func (n Node) UUID() config.UUID {
+	return config.UUID(strings.Split(n.Name, ":")[0])
 }

@@ -2,6 +2,7 @@ package connection
 
 import (
 	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/joernweissenborn/thingiverse.io/service"
 	"github.com/joernweissenborn/thingiverse.io/service/messages"
 )
@@ -10,11 +11,11 @@ import (
 
 type Message struct {
 	Iface   string
-	Sender  string
+	Sender  config.UUID
 	Payload []string
 }
 
-func isMsgFromSender(sender string) MessageFilter {
+func isMsgFromSender(sender config.UUID) MessageFilter {
 	return func(m Message) bool {
 		return sender == m.Sender
 	}

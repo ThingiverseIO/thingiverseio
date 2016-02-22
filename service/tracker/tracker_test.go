@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -44,7 +43,7 @@ func TestJoin(t *testing.T) {
 		t.Fatal("Couldnt find tracker 2")
 	case n := <-c1:
 
-		if !strings.Contains(n.Name, cfg2.UUID()) {
+		if n.UUID() == cfg2.UUID() {
 			t.Error("Found wrong UUID")
 		}
 
@@ -57,7 +56,7 @@ func TestJoin(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("Couldnt find tracker 1")
 	case n := <-c2:
-		if !strings.Contains(n.Name, cfg1.UUID()) {
+		if n.UUID() == cfg1.UUID() {
 			t.Error("Found wrong UUID")
 		}
 
@@ -150,10 +149,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 	select {
 	case <-time.After(1 * time.Second):
 		t.Fatal("Service didnt join")
-	case n := <-c2:
-		if !strings.Contains(n.Name, cfg2.UUID()) {
-			t.Error("Found wrong UUID", n.Name)
-		}
+	case <-c2:
 	}
 
 	cfg3 := config.New(os.Stdout, false)

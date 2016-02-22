@@ -31,7 +31,7 @@ type Tracker struct {
 
 func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
 	t = &Tracker{
-		logger:     log.New(cfg.Logger(), "TRACKER ", 0),
+		logger:     log.New(cfg.Logger(), fmt.Sprintf("%s TRACKER ", cfg.UUID()), 0),
 		cfg:        cfg,
 		iface:      iface,
 		adport:     adport,
@@ -69,7 +69,7 @@ func (t *Tracker) StartAutoJoin() (err error) {
 		Port:         5557,
 		PingInterval: 1 * time.Second,
 		Payload:      newSignalPayload(t.port),
-		Logger:       t.cfg.Logger(),
+		Logger:       ioutil.Discard,
 	}
 
 	t.beacon, err = beacon.New(conf)
@@ -127,7 +127,7 @@ func (t *Tracker) setupMemberlist() (err error) {
 	conf := memberlist.DefaultLANConfig()
 	conf.LogOutput = ioutil.Discard
 
-	conf.Name = fmt.Sprintf("%s:%s", t.cfg.UUID(), t.iface)
+	conf.Name = fmt.Sprintf("%s:%s", t.cfg.UUID().FullString(), t.iface)
 
 	conf.BindAddr = t.iface
 	conf.BindPort = t.port

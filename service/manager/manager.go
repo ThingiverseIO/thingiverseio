@@ -1,6 +1,7 @@
 package manager
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/joernweissenborn/eventual2go"
@@ -20,7 +21,7 @@ const (
 )
 
 type msgToSend struct {
-	uuid string
+	uuid config.UUID
 	m    messages.Message
 }
 
@@ -28,7 +29,7 @@ type Manager struct {
 	r *eventual2go.Reactor
 
 	connected *typed_events.BoolStreamController
-	peers     map[string]*peer.Peer
+	peers     map[config.UUID]*peer.Peer
 	tracker   []*tracker.Tracker
 
 	logger *log.Logger
@@ -38,9 +39,13 @@ func New(cfg *config.Config) (m *Manager, err error) {
 	m = &Manager{
 		r:         eventual2go.NewReactor(),
 		connected: typed_events.NewBoolStreamController(),
-		peers:     map[string]*peer.Peer{},
-		logger:    log.New(cfg.Logger(), "MANAGER ", 0),
+		peers:     map[config.UUID]*peer.Peer{},
+		logger:    log.New(cfg.Logger(), fmt.Sprintf("%s MANAGER ", cfg.UUID()), 0),
 	}
+
+	m.r.React(peerLeave, m.peerLeave)
+	m.r.React(peerConnected, m.peerConnected)
+	m.r.React(peerSend, m.peerSend)
 
 	for _, iface := range cfg.Interfaces() {
 
@@ -77,7 +82,7 @@ func (m *Manager) Connected() *typed_events.BoolStream {
 	return m.connected.Stream()
 }
 
-func (m *Manager) Send(uuid string, msg messages.Message) {
+func (m *Manager) SendTo(uuid config.UUID, msg messages.Message) {
 	m.r.Fire(peerSend, &msgToSend{uuid, msg})
 }
 
@@ -87,7 +92,7 @@ func (m *Manager) SendAll(msg messages.Message) {
 
 func (m *Manager) peerConnected(d eventual2go.Data) {
 	p := d.(*peer.Peer)
-	m.logger.Println("Successfully connected to",p.UUID())
+	m.logger.Println("Successfully connected to", p.UUID())
 	m.r.AddFuture(peerLeave, p.Removed().Future)
 
 	if len(m.peers) == 0 {

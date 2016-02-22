@@ -1,8 +1,8 @@
 package discoverer
 
 import (
+	"fmt"
 	"log"
-	"strings"
 	"sync"
 
 	"github.com/joernweissenborn/thingiverse.io/config"
@@ -14,16 +14,12 @@ import (
 
 // Discoverer is a reactor for service discovery.
 type Discoverer struct {
-	cfg *config.Config
-
-	incoming *connection.Incoming
-
+	cfg            *config.Config
+	incoming       *connection.Incoming
 	connectedPeers *peer.PeerStreamController
-
-	seenNodes map[string]interface{}
-	m         *sync.Mutex
-
-	logger *log.Logger
+	seenNodes      map[config.UUID]*peer.Peer
+	m              *sync.Mutex
+	logger         *log.Logger
 }
 
 // New Creates a new Discoverer.
@@ -32,9 +28,9 @@ func New(join *tracker.NodeStream, incoming *connection.Incoming, cfg *config.Co
 		cfg:            cfg,
 		incoming:       incoming,
 		connectedPeers: peer.NewPeerStreamController(),
-		seenNodes:      map[string]interface{}{},
+		seenNodes:      map[config.UUID]*peer.Peer{},
 		m:              &sync.Mutex{},
-		logger:         log.New(cfg.Logger(), "DISCOVERER ", 0),
+		logger:         log.New(cfg.Logger(), fmt.Sprintf("%s DISCOVERER ", cfg.UUID()), 0),
 	}
 
 	join.Where(d.isNodeInteresting).Listen(d.onInterestingNode)
@@ -46,13 +42,8 @@ func (d *Discoverer) ConnectedPeers() *peer.PeerStream {
 	return d.connectedPeers.Stream()
 }
 
-func (d *Discoverer) nodeSeen(uuid string) (s bool) {
-	d.m.Lock()
-	defer d.m.Unlock()
-	_, s = d.seenNodes[uuid]
-	if !s {
-		d.seenNodes[uuid] = nil
-	}
+func (d *Discoverer) nodeSeen(uuid config.UUID) (p *peer.Peer, s bool) {
+	p, s = d.seenNodes[uuid]
 	return
 }
 
@@ -67,10 +58,13 @@ func (d *Discoverer) removeFromSeen(p *peer.Peer) *peer.Peer {
 }
 
 func (d *Discoverer) onHello(m messages.Message) {
+	d.m.Lock()
+	defer d.m.Unlock()
 	h := m.(*messages.Hello)
 	d.logger.Println("Got HELLO from", h.UUID)
-	if d.nodeSeen(h.UUID) {
+	if p, s := d.nodeSeen(config.UUID(h.UUID)); s {
 		d.logger.Println("Node is already known")
+		p.Send(&messages.HelloOk{})
 		return
 	}
 	p, err := peer.NewFromHello(h, d.incoming, d.cfg)
@@ -84,13 +78,17 @@ func (d *Discoverer) onHello(m messages.Message) {
 	p.Connected().Then(d.removeFromSeen)
 
 	d.connectedPeers.JoinFuture(p.Connected())
+	d.seenNodes[p.UUID()] = p
 }
 
 func (d *Discoverer) onInterestingNode(node tracker.Node) {
+	d.m.Lock()
+	defer d.m.Unlock()
 	meta, _ := node.Meta()
-	uuid := strings.Split(node.Name, ":")[0]
-	d.logger.Println("Found interesting node", uuid)
-	if d.nodeSeen(uuid) {
+	uuid := node.UUID()
+	d.logger.Println("Found interesting node", string(uuid))
+	if p, s := d.nodeSeen(uuid); s {
+		p.Send(&messages.HelloOk{})
 		d.logger.Println("Node is already known")
 		return
 	}
@@ -106,6 +104,7 @@ func (d *Discoverer) onInterestingNode(node tracker.Node) {
 	}
 
 	d.connectedPeers.JoinFuture(p.Connected())
+	d.seenNodes[p.UUID()] = p
 
 }
 

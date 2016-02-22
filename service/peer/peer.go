@@ -15,7 +15,7 @@ import (
 
 // Peer is node with an rpc connection.
 type Peer struct {
-	uuid        string
+	uuid        config.UUID
 	cfg         *config.Config
 	incoming    *connection.Incoming
 	initialized *eventual2go.Completer
@@ -27,7 +27,7 @@ type Peer struct {
 }
 
 // New creates a new Peer.
-func New(uuid, address string, port int, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
+func New(uuid config.UUID, address string, port int, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
 	p = &Peer{
 		uuid:      uuid,
 		cfg:       cfg,
@@ -35,7 +35,7 @@ func New(uuid, address string, port int, incoming *connection.Incoming, cfg *con
 		msgIn:     incoming.MessagesFromSender(uuid),
 		connected: NewPeerCompleter(),
 		removed:   NewPeerCompleter(),
-		logger:    log.New(cfg.Logger(), fmt.Sprintf("PEER %s@%s ", uuid[:5], cfg.UUID()[:5]), 0),
+		logger:    log.New(cfg.Logger(), fmt.Sprintf("%s PEER %s ", cfg.UUID(), uuid), 0),
 	}
 
 	p.msgOut, err = connection.NewOutgoing(cfg.UUID(), address, port)
@@ -54,13 +54,14 @@ func New(uuid, address string, port int, incoming *connection.Incoming, cfg *con
 	p.msgIn.CloseOnFuture(p.removed.Future().Future)
 	p.removed.Future().Then(p.closeOutgoing)
 
-	p.setupInitCompleter()
+	p.initialized = eventual2go.NewTimeoutCompleter(5 * time.Second)
+	p.initialized.Future().Err(p.onError)
 	return
 }
 
 // NewFromHello creates a new Peer from a HELLO message.
 func NewFromHello(m *messages.Hello, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
-	p, err = New(m.UUID, m.Address, m.Port, incoming, cfg)
+	p, err = New(config.UUID(m.UUID), m.Address, m.Port, incoming, cfg)
 	if err != nil {
 		return
 	}
@@ -71,21 +72,20 @@ func NewFromHello(m *messages.Hello, incoming *connection.Incoming, cfg *config.
 	return
 }
 
-func (p *Peer) setupInitCompleter() {
-	p.initialized = eventual2go.NewTimeoutCompleter(5 * time.Second)
-	p.initialized.Future().Err(p.onError)
-}
-
 // InitConnection initializes the connection.
 func (p *Peer) InitConnection() {
 
-	hello := &messages.Hello{p.cfg.UUID(), p.incoming.Addr(), p.incoming.Port()}
+	if p.initialized.Completed(){
+		return
+	}
+
+	hello := &messages.Hello{string(p.cfg.UUID()), p.incoming.Addr(), p.incoming.Port()}
 
 	p.Send(hello)
 
 }
 
-func (p *Peer) UUID() string {
+func (p *Peer) UUID() config.UUID {
 	return p.uuid
 }
 
@@ -128,6 +128,7 @@ func (p *Peer) onEnd(messages.Message) {
 func (p *Peer) onHelloOk(messages.Message) {
 	p.logger.Println("Received HELLO_OK")
 	if !p.initialized.Completed() {
+		p.logger.Println("Initialized")
 		p.initialized.Complete(nil)
 		p.Send(&messages.HelloOk{})
 	}

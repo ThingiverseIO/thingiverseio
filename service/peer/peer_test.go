@@ -81,9 +81,8 @@ func TestConnecting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p1.setupInitCompleter()
 
-	p2, err := NewFromHello(&messages.Hello{cfg1.UUID(), "127.0.0.1", i1.Port()}, i2, cfg2)
+	p2, err := NewFromHello(&messages.Hello{string(cfg1.UUID()), "127.0.0.1", i1.Port()}, i2, cfg2)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,9 +121,8 @@ func TestNotConnecting(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	p1.setupInitCompleter()
 
-	p2, err := NewFromHello(&messages.Hello{cfg1.UUID(), "127.0.0.1", i1.Port()}, i2, cfg2)
+	p2, err := NewFromHello(&messages.Hello{string(cfg1.UUID()), "127.0.0.1", i1.Port()}, i2, cfg2)
 	if err != nil {
 		t.Fatal(err)
 	}

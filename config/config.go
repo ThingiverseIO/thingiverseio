@@ -8,6 +8,24 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
+type UUID string
+
+func (u UUID) isSet() bool {
+	return len(u) != 0
+}
+
+func (u UUID) Is(s string) bool {
+	return string(u) == s
+}
+
+func (u UUID) String() string {
+	return string(u[:5])
+}
+
+func (u UUID) FullString() string {
+	return string(u)
+}
+
 type Config struct {
 	debug bool
 
@@ -20,7 +38,7 @@ type Config struct {
 	functionTags map[string]string
 	userTags     map[string]string
 
-	uuid string
+	uuid UUID
 }
 
 func New(logger io.Writer, exporting bool) (cfg *Config) {
@@ -34,10 +52,10 @@ func New(logger io.Writer, exporting bool) (cfg *Config) {
 	return
 }
 
-func (cfg *Config) UUID() string {
+func (cfg *Config) UUID() UUID {
 	if cfg.uuid == "" {
 		id, _ := uuid.NewV4()
-		cfg.uuid = id.String()
+		cfg.uuid = UUID(id.String())
 	}
 	return cfg.uuid
 }
