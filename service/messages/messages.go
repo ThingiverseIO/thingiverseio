@@ -17,6 +17,7 @@ const (
 	LISTEN
 	STOPLISTEN
 	END
+	MOCK
 )
 
 func Get(messagetype MessageType) (msg Message) {
@@ -42,6 +43,8 @@ func Get(messagetype MessageType) (msg Message) {
 		msg = new(StopListen)
 	case END:
 		msg = new(End)
+	case MOCK:
+		msg = new(Mock)
 	}
 	return
 }

@@ -163,6 +163,7 @@ func (p *Peer) Removed() *PeerFuture {
 
 // Send send a message to the peer.
 func (p *Peer) Send(m messages.Message) *eventual2go.Future {
+	p.logger.Println("Sending Message ",m.GetType())
 	return p.msgOut.Send(messages.Flatten(m))
 }
 

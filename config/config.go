@@ -14,11 +14,11 @@ func (u UUID) isSet() bool {
 	return len(u) != 0
 }
 
-func (u UUID) Is(s string) bool {
-	return string(u) == s
-}
 
-func (u UUID) String() string {
+func (u UUID) String() (s string) {
+	if len(u) <=5 {
+		return string(u)
+	}
 	return string(u[:5])
 }
 
@@ -85,6 +85,11 @@ func (cfg *Config) Interfaces() []string {
 func (cfg *Config) OverrideInterfaces(interfaces []string) {
 	cfg.interfaces = interfaces
 }
+
+func (cfg *Config) OverrideUUID(uuid string) {
+	cfg.uuid = UUID(uuid)
+}
+
 
 func (cfg *Config) Exporting() bool {
 	return cfg.exporting
