@@ -105,14 +105,7 @@ func (p *Peer) Remove() {
 	if !p.removed.Completed() {
 		p.Send(&messages.End{})
 		p.removed.Complete(p)
-		//f.Then(p.removeAfterFuture)
-		//f.Err(p.onError)
 	}
-}
-
-func (p *Peer) removeAfterFuture(eventual2go.Data) eventual2go.Data {
-	p.removed.Complete(p)
-	return nil
 }
 
 func (p *Peer) onError(err error) (eventual2go.Data, error) {

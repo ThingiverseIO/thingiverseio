@@ -1,34 +1,57 @@
 package tracker
 
-import "github.com/hashicorp/memberlist"
+import (
+	"sync"
 
-func newEventHandler() (eh eventHandler) {
-	eh.join = NewNodeStreamController()
-	eh.leave = NewNodeStreamController()
+	"github.com/hashicorp/memberlist"
+)
+
+func newEventHandler() (eh *eventHandler) {
+	eh = &eventHandler{
+		Mutex: &sync.Mutex{},
+		join:  NewNodeStreamController(),
+		leave: NewNodeStreamController(),
+	}
 	return
 }
 
 type eventHandler struct {
+	*sync.Mutex
 	join  *NodeStreamController
 	leave *NodeStreamController
 }
 
-func (eh eventHandler) Join() *NodeStream {
+func (eh *eventHandler) Join() *NodeStream {
 	return eh.join.Stream()
 }
 
-func (eh eventHandler) NotifyJoin(n *memberlist.Node) {
-	eh.join.Add(Node{n})
+func (eh *eventHandler) NotifyJoin(n *memberlist.Node) {
+	eh.Lock()
+	defer eh.Unlock()
+	if !eh.join.Closed().Completed() {
+		eh.join.Add(Node{n})
+	}
 }
 
-func (eh eventHandler) Leave() *NodeStream {
+func (eh *eventHandler) Leave() *NodeStream {
 	return eh.leave.Stream()
 }
 
-func (eh eventHandler) NotifyLeave(n *memberlist.Node) {
-	eh.leave.Add(Node{n})
+func (eh *eventHandler) NotifyLeave(n *memberlist.Node) {
+	eh.Lock()
+	defer eh.Unlock()
+	if !eh.leave.Closed().Completed() {
+		eh.leave.Add(Node{n})
+	}
 }
 
-func (eh eventHandler) NotifyUpdate(n *memberlist.Node) {
+func (eh *eventHandler) NotifyUpdate(n *memberlist.Node) {
 	// not handled at the moment
+}
+
+func (eh *eventHandler) close() {
+	eh.Lock()
+	defer eh.Unlock()
+	eh.join.Close()
+	eh.leave.Close()
 }

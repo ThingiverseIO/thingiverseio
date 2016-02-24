@@ -31,17 +31,20 @@ func TestManagerConnection(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer m1.Shutdown()
 
 	m2, err := New(cfg2)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer m2.Shutdown()
 	c2 := m2.Connected().First().AsChan()
 
 	m3, err := New(cfg3)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer m3.Shutdown()
 	c3 := m3.Connected().First().AsChan()
 
 	m1.Run()

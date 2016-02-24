@@ -32,6 +32,9 @@ type Manager struct {
 	messageIn          *messages.MessageStreamController
 	guaranteedMessages map[messages.Message]*peer.Peer
 	logger             *log.Logger
+	shutdown           *eventual2go.Completer
+	shutdownComplete   *eventual2go.Completer
+	shutdownWg         *eventual2go.FutureWaitGroup
 }
 
 func New(cfg *config.Config) (m *Manager, err error) {
@@ -42,6 +45,9 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		guaranteedMessages: map[messages.Message]*peer.Peer{},
 		messageIn:          messages.NewMessageStreamController(),
 		logger:             log.New(cfg.Logger(), fmt.Sprintf("%s MANAGER ", cfg.UUID()), 0),
+		shutdown:           eventual2go.NewCompleter(),
+		shutdownComplete:   eventual2go.NewCompleter(),
+		shutdownWg:         eventual2go.NewFutureWaitGroup(),
 	}
 
 	m.messageIn.Stream().Listen(func(msg messages.Message) {
@@ -50,6 +56,7 @@ func New(cfg *config.Config) (m *Manager, err error) {
 
 	m.r.React(peerLeave, m.peerLeave)
 	m.r.React(peerConnected, m.peerConnected)
+	m.r.OnShutdown(m.onShutdown)
 
 	for _, iface := range cfg.Interfaces() {
 
@@ -58,7 +65,8 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		if err != nil {
 			return
 		}
-
+		m.shutdown.Future().Then(i.CloseOnFuture)
+		m.shutdownWg.Add(i.Closed())
 		m.messageIn.Join(i.Messages().Where(filterMessages))
 
 		var t *tracker.Tracker
@@ -67,6 +75,8 @@ func New(cfg *config.Config) (m *Manager, err error) {
 			return
 		}
 		m.tracker = append(m.tracker, t)
+		m.shutdown.Future().Then(t.StopOnFuture)
+		m.shutdownWg.Add(t.Stopped())
 		m.r.AddStream(peerLeave, t.Leave().Stream)
 
 		var d *discoverer.Discoverer
@@ -82,6 +92,19 @@ func (m *Manager) Run() {
 	for _, t := range m.tracker {
 		t.StartAutoJoin()
 	}
+}
+
+func (m *Manager) Shutdown() {
+	m.r.Shutdown(nil)
+	m.shutdownComplete.Future().WaitUntilComplete()
+}
+
+func (m *Manager) onShutdown(eventual2go.Data) {
+	m.logger.Println("shutting down")
+	m.shutdown.Complete(nil)
+	m.shutdownWg.Wait()
+	m.shutdownComplete.Complete(nil)
+	m.logger.Println("shutdown complete")
 }
 
 func (m *Manager) Connected() *typed_events.BoolStream {

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hashicorp/memberlist"
+	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/joernweissenborn/thingiverse.io/service"
 	"github.com/joernweissenborn/thingiverse.io/service/tracker/beacon"
@@ -16,17 +17,14 @@ import (
 
 type Tracker struct {
 	beacon     *beacon.Beacon
+	cfg        *config.Config
+	evtHandler *eventHandler
+	iface      string
+	logger     *log.Logger
 	memberlist *memberlist.Memberlist
-
-	logger *log.Logger
-
-	cfg *config.Config
-
-	iface  string
-	port   int //memberlist bind port
-	adport int //port to advertise
-
-	evtHandler eventHandler
+	port       int //memberlist bind port
+	adport     int //port to advertise
+	stopped    *eventual2go.Completer
 }
 
 func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
@@ -35,6 +33,7 @@ func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
 		cfg:        cfg,
 		iface:      iface,
 		adport:     adport,
+		stopped:    eventual2go.NewCompleter(),
 		evtHandler: newEventHandler(),
 	}
 
@@ -51,11 +50,22 @@ func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
 
 func (t *Tracker) Stop() (err error) {
 	t.logger.Println("Stopping")
+	t.evtHandler.close()
 	t.StopAutoJoin()
 	t.memberlist.Leave(1 * time.Second)
 	err = t.memberlist.Shutdown()
+	t.stopped.Complete(err)
 	t.logger.Println("Stopped")
 	return
+}
+
+func (t *Tracker) Stopped() *eventual2go.Future {
+	return t.stopped.Future()
+}
+
+func (t *Tracker) StopOnFuture(eventual2go.Data) eventual2go.Data {
+	t.Stop()
+	return nil
 }
 
 func (t *Tracker) StartAutoJoin() (err error) {

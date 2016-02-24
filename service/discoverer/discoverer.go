@@ -33,6 +33,7 @@ func New(join *tracker.NodeStream, incoming *connection.Incoming, cfg *config.Co
 		logger:         log.New(cfg.Logger(), fmt.Sprintf("%s DISCOVERER ", cfg.UUID()), 0),
 	}
 
+	//TODO replace with listenwhere
 	join.Where(d.isNodeInteresting).Listen(d.onInterestingNode)
 	incoming.Messages().Where(messages.Is(messages.HELLO)).Listen(d.onHello)
 	return

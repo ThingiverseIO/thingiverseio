@@ -14,18 +14,20 @@ import (
 )
 
 type Incoming struct {
-	addr string
-	port int
-	skt  *zmq4.Socket
-	in   *MessageStreamController
-	stop *eventual2go.Completer
+	addr   string
+	port   int
+	skt    *zmq4.Socket
+	in     *MessageStreamController
+	close  *eventual2go.Completer
+	closed *eventual2go.Completer
 }
 
 func NewIncoming(addr string) (i *Incoming, err error) {
 	i = &Incoming{
-		addr: addr,
-		in:   NewMessageStreamController(),
-		stop: eventual2go.NewCompleter(),
+		addr:   addr,
+		in:     NewMessageStreamController(),
+		close:  eventual2go.NewCompleter(),
+		closed: eventual2go.NewCompleter(),
 	}
 	err = i.setupSocket()
 	if err == nil {
@@ -78,8 +80,10 @@ func (i *Incoming) listen() {
 	poller.Add(i.skt, zmq4.POLLIN)
 
 	for {
-		if i.stop.Completed() {
+		if i.close.Completed() {
 			i.skt.Close()
+			i.in.Close()
+			i.closed.Complete(nil)
 			return
 		}
 		sockets, err := poller.Poll(100 * time.Millisecond)
@@ -88,7 +92,7 @@ func (i *Incoming) listen() {
 		}
 		for range sockets {
 			msg, err := i.skt.RecvMessage(0)
-			if err == nil {
+			if err == nil && !i.in.Closed().Completed() {
 				i.in.Add(Message{i.addr, config.UUID(msg[0]), msg[1:]})
 			}
 		}
@@ -96,5 +100,14 @@ func (i *Incoming) listen() {
 }
 
 func (i *Incoming) Close() {
-	i.stop.Complete(nil)
+	i.close.Complete(nil)
+}
+
+func (i *Incoming) Closed() *eventual2go.Future {
+	return i.closed.Future()
+}
+
+func (i *Incoming) CloseOnFuture(eventual2go.Data) eventual2go.Data {
+	i.Close()
+	return nil
 }

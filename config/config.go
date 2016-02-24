@@ -14,9 +14,8 @@ func (u UUID) isSet() bool {
 	return len(u) != 0
 }
 
-
 func (u UUID) String() (s string) {
-	if len(u) <=5 {
+	if len(u) <= 5 {
 		return string(u)
 	}
 	return string(u[:5])
@@ -89,7 +88,6 @@ func (cfg *Config) OverrideInterfaces(interfaces []string) {
 func (cfg *Config) OverrideUUID(uuid string) {
 	cfg.uuid = UUID(uuid)
 }
-
 
 func (cfg *Config) Exporting() bool {
 	return cfg.exporting

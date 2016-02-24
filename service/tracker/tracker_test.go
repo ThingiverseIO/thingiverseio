@@ -43,8 +43,8 @@ func TestJoin(t *testing.T) {
 		t.Fatal("Couldnt find tracker 2")
 	case n := <-c1:
 
-		if n.UUID() == cfg2.UUID() {
-			t.Error("Found wrong UUID")
+		if n.UUID() != cfg2.UUID() {
+			t.Error("Found wrong UUID",n.UUID().FullString(),cfg2.UUID().FullString())
 		}
 
 		if n.Node.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Node.Meta[1:3], port2byte(p2)) || n.Node.Meta[3] != 0 || string(n.Node.Meta[4:]) != "tag:2" {
@@ -56,8 +56,8 @@ func TestJoin(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("Couldnt find tracker 1")
 	case n := <-c2:
-		if n.UUID() == cfg1.UUID() {
-			t.Error("Found wrong UUID")
+		if n.UUID() != cfg1.UUID() {
+			t.Error("Found wrong UUID",n.UUID().FullString(),cfg2.UUID().FullString())
 		}
 
 		if n.Node.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Node.Meta[1:3], port2byte(p1)) || n.Node.Meta[3] != 1 || string(n.Node.Meta[4:]) != "tag:1" {

@@ -179,7 +179,7 @@ func (b *Beacon) Silence() {
 	defer b.m.Unlock()
 	if !b.silence.Completed() {
 		b.silence.Complete(nil)
-	b.logger.Println("Silenced")
+		b.logger.Println("Silencing")
 	}
 }
 
@@ -204,7 +204,7 @@ func (b *Beacon) ping() {
 	for {
 		select {
 		case <-silence:
-			b.logger.Println("Silencing")
+			b.logger.Println("Silenced")
 			return
 
 		case <-t.C:

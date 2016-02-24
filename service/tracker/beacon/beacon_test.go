@@ -74,7 +74,7 @@ func TestBeaconstop(t *testing.T) {
 	time.Sleep(100 * time.Millisecond)
 	b2.Stop()
 	c1 := b1.Signals().First().AsChan()
-	time.Sleep(2 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	select {
 	case <-c1:
 		t.Error("Becaon didnt stop")
