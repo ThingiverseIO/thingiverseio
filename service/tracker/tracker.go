@@ -73,6 +73,7 @@ func (t *Tracker) StartAutoJoin() (err error) {
 		t.logger.Println("Autodiscovery already running")
 		return
 	}
+	t.logger.Println("Starting to advertise port", t.port)
 
 	conf := &beacon.Config{
 		Addr:         t.iface,
@@ -87,7 +88,7 @@ func (t *Tracker) StartAutoJoin() (err error) {
 		return
 	}
 
-	t.beacon.Signals().Where(validSignal).First().Then(t.silenceOnFirstSignal)
+	t.Join().First().Then(t.silenceOnFirstJoin)
 	t.beacon.Signals().Where(validSignal).Listen(t.joinOnSignal)
 
 	t.beacon.Run()
@@ -104,15 +105,19 @@ func (t *Tracker) StopAutoJoin() {
 	t.beacon = nil
 }
 
-func (t *Tracker) silenceOnFirstSignal(b beacon.Signal) beacon.Signal {
+func (t *Tracker) silenceOnFirstJoin(n Node) Node {
+	t.logger.Println("Joined memberlist cluster")
 	t.beacon.Silence()
-	return b
+	return n
 }
 func (t *Tracker) joinOnSignal(s beacon.Signal) {
 	addr := net.IP(s.SenderIp)
 	port := binary.LittleEndian.Uint16(s.Data[1:])
-	t.logger.Printf("Found service %s:%d", addr, port)
-	t.JoinCluster([]string{fmt.Sprintf("%s:%d", addr, port)})
+	t.logger.Printf("Joining service %s:%d", addr, port)
+	err := t.JoinCluster([]string{fmt.Sprintf("%s:%d", addr, port)})
+	if err != nil {
+		t.logger.Println("ERROR", err)
+	}
 }
 
 func (t *Tracker) Port() int {

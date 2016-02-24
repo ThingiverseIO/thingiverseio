@@ -63,6 +63,8 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		var i *connection.Incoming
 		i, err = connection.NewIncoming(iface)
 		if err != nil {
+			m.logger.Println("ERROR setting up incoming:", err)
+			m.Shutdown()
 			return
 		}
 		m.shutdown.Future().Then(i.CloseOnFuture)
@@ -72,6 +74,8 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		var t *tracker.Tracker
 		t, err = tracker.New(iface, i.Port(), cfg)
 		if err != nil {
+			m.logger.Println("ERROR setting up tracker:", err)
+			m.Shutdown()
 			return
 		}
 		m.tracker = append(m.tracker, t)
@@ -127,10 +131,16 @@ func (m *Manager) Send(msg messages.Message) {
 func (m *Manager) SendGuaranteed(msg messages.Message) (c *eventual2go.Completer) {
 	m.r.Lock()
 	defer m.r.Unlock()
-	for _, p := range m.peers {
-		m.guaranteedMessages[msg] = p
-		p.Send(msg)
-		return
+	if len(m.peers) == 0 {
+		m.logger.Println("no peer found for guaranteed message, storing")
+		m.guaranteedMessages[msg] = nil
+	} else {
+		for _, p := range m.peers {
+			m.logger.Println("Sending guaranteed message to", p.UUID())
+			m.guaranteedMessages[msg] = p
+			p.Send(msg)
+			return
+		}
 	}
 	c = eventual2go.NewCompleter()
 	c.Future().Then(m.acknowdledeReception(msg))
@@ -170,6 +180,12 @@ func (m *Manager) peerConnected(d eventual2go.Data) {
 		m.connected.Add(true)
 	}
 
+	for msg, p := range m.guaranteedMessages {
+		if p == nil {
+			go m.SendGuaranteed(msg)
+		}
+	}
+
 	m.peers[p.UUID()] = p
 }
 
@@ -177,8 +193,10 @@ func (m *Manager) peerLeave(d eventual2go.Data) {
 	l := d.(hasUuid)
 
 	if p, ok := m.peers[l.UUID()]; ok {
+		m.logger.Println("Peer left", l.UUID())
 		for msg, r := range m.guaranteedMessages {
 			if r == p {
+				m.logger.Println("Peer had guarantteed message, resending")
 				go m.SendGuaranteed(msg)
 			}
 		}

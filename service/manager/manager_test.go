@@ -95,18 +95,21 @@ func TestManagerMessaging(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer m1.Shutdown()
 	c1 := m1.Messages().AsChan()
 
 	m2, err := New(cfg2)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer m2.Shutdown()
 	c2 := m2.Messages().AsChan()
 
 	m3, err := New(cfg3)
 	if err != nil {
 		t.Fatal(err)
 	}
+	defer m3.Shutdown()
 	c3 := m3.Messages().AsChan()
 
 	m1.Run()
@@ -135,4 +138,58 @@ func TestManagerMessaging(t *testing.T) {
 	if r := (<-c3).(*messages.Mock); r.Data != msg.Data {
 		t.Error("peer3 did not not got the message", r)
 	}
+}
+
+func TestManagerSendGuaranteed(t *testing.T) {
+
+	m1 := getTestManager(true)
+	defer m1.Shutdown()
+	m1.Run()
+
+	msg := &messages.Mock{true}
+	akn := m1.SendGuaranteed(msg)
+	m2 := getTestManager(false)
+	c2 := m2.Messages().AsChan()
+
+	f := m2.Connected().First()
+	m2.Run()
+	f.WaitUntilComplete()
+
+
+	select {
+	case <-c2:
+	case <-time.After(10 * time.Millisecond):
+		t.Error("p2 didnt got msg")
+	}
+
+	m2.Shutdown()
+
+	m3 := getTestManager(false)
+	c3 := m3.Messages().AsChan()
+	m3.Run()
+
+	if r := (<-c3).(*messages.Mock); r.Data != msg.Data {
+		t.Error("peer1 did not not got the message", r)
+	}
+	akn.Complete(nil)
+	m3.Shutdown()
+
+	m4 := getTestManager(false)
+	c4 := m4.Messages().AsChan()
+	m4.Run()
+	select {
+	case <-c4:
+		t.Error("p4 did got msg")
+	case <-time.After(500 * time.Millisecond):
+	}
+	m4.Shutdown()
+}
+
+func getTestManager(e bool) (m *Manager) {
+	cfg := config.New(os.Stdout, e)
+	cfg.AddOrSetUserTag("tag1", "1")
+	cfg.OverrideInterfaces([]string{"127.0.0.1"})
+
+	m, _ = New(cfg)
+	return
 }
