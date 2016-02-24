@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"strings"
 
-	uuid "github.com/nu7hatch/gouuid"
+	"github.com/joernweissenborn/thingiverse.io/config"
 	"github.com/ugorji/go/codec"
 )
 
+//go:generate event_generator -t *Request -n Result
+
 type Request struct {
-	UUID     string
+	UUID     config.UUID
 	Importer string
 	Function string
 	CallType CallType
@@ -25,11 +27,10 @@ func NewRequest(importer, function string, call_type CallType, parameter interfa
 
 func NewEncodedRequest(importer, function string, call_type CallType, params []byte) (r *Request) {
 	r = new(Request)
-	id, _ := uuid.NewV4()
-	return NewEncodedRequestWithId(id.String(), importer, function, call_type, params)
+	return NewEncodedRequestWithId(config.NewUUID(), importer, function, call_type, params)
 }
 
-func NewEncodedRequestWithId(uuid, importer, function string, call_type CallType, params []byte) (r *Request) {
+func NewEncodedRequestWithId(uuid config.UUID, importer, function string, call_type CallType, params []byte) (r *Request) {
 	r = &Request{
 		UUID:     uuid,
 		Importer: importer,

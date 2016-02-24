@@ -8,23 +8,6 @@ import (
 	"github.com/nu7hatch/gouuid"
 )
 
-type UUID string
-
-func (u UUID) isSet() bool {
-	return len(u) != 0
-}
-
-func (u UUID) String() (s string) {
-	if len(u) <= 5 {
-		return string(u)
-	}
-	return string(u[:5])
-}
-
-func (u UUID) FullString() string {
-	return string(u)
-}
-
 type Config struct {
 	debug bool
 

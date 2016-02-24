@@ -29,7 +29,8 @@ type Manager struct {
 	connected          *typed_events.BoolStreamController
 	peers              map[config.UUID]*peer.Peer
 	tracker            []*tracker.Tracker
-	messageIn          *messages.MessageStreamController
+	messageIn          *connection.MessageStreamController
+	leave              *config.UUIDStreamController
 	guaranteedMessages map[messages.Message]*peer.Peer
 	logger             *log.Logger
 	shutdown           *eventual2go.Completer
@@ -42,17 +43,14 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		r:                  eventual2go.NewReactor(),
 		connected:          typed_events.NewBoolStreamController(),
 		peers:              map[config.UUID]*peer.Peer{},
+		leave:              config.NewUUIDStreamController(),
 		guaranteedMessages: map[messages.Message]*peer.Peer{},
-		messageIn:          messages.NewMessageStreamController(),
+		messageIn:          connection.NewMessageStreamController(),
 		logger:             log.New(cfg.Logger(), fmt.Sprintf("%s MANAGER ", cfg.UUID()), 0),
 		shutdown:           eventual2go.NewCompleter(),
 		shutdownComplete:   eventual2go.NewCompleter(),
 		shutdownWg:         eventual2go.NewFutureWaitGroup(),
 	}
-
-	m.messageIn.Stream().Listen(func(msg messages.Message) {
-		m.logger.Println("Received Massage", msg.GetType())
-	})
 
 	m.r.React(peerLeave, m.peerLeave)
 	m.r.React(peerConnected, m.peerConnected)
@@ -69,7 +67,7 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		}
 		m.shutdown.Future().Then(i.CloseOnFuture)
 		m.shutdownWg.Add(i.Closed())
-		m.messageIn.Join(i.Messages().Where(filterMessages))
+		m.messageIn.Join(i.In().Where(filterMessages))
 
 		var t *tracker.Tracker
 		t, err = tracker.New(iface, i.Port(), cfg)
@@ -98,6 +96,16 @@ func (m *Manager) Run() {
 	}
 }
 
+func (m *Manager) PeerLeave(uuid config.UUID) *config.UUIDFuture{
+	return m.leave.Stream().FirstWhere(isPeer(uuid))
+}
+
+func isPeer(uuid config.UUID) config.UUIDFilter {
+	return func(id config.UUID) bool{
+		return id == uuid
+	}
+}
+
 func (m *Manager) Shutdown() {
 	m.r.Shutdown(nil)
 	m.shutdownComplete.Future().WaitUntilComplete()
@@ -115,8 +123,12 @@ func (m *Manager) Connected() *typed_events.BoolStream {
 	return m.connected.Stream()
 }
 
-func (m *Manager) Messages() *messages.MessageStream {
+func (m *Manager) Messages() *connection.MessageStream {
 	return m.messageIn.Stream()
+}
+
+func (m *Manager) MessagesOfType(t messages.MessageType) *connection.MessageStream {
+	return m.messageIn.Stream().Where(filterMsgType(t))
 }
 
 func (m *Manager) Send(msg messages.Message) {
@@ -205,9 +217,16 @@ func (m *Manager) peerLeave(d eventual2go.Data) {
 		if len(m.peers) == 0 {
 			m.connected.Add(false)
 		}
+		m.leave.Add(l.UUID())
 	}
 }
 
-func filterMessages(msg messages.Message) bool {
-	return msg.GetType() != messages.HELLO && msg.GetType() != messages.HELLOOK && msg.GetType() != messages.DOHAVE && msg.GetType() != messages.HAVE && msg.GetType() != messages.CONNECT && msg.GetType() != messages.END
+func filterMessages(msg connection.Message) bool {
+	return messages.PeakType(msg.Payload) != messages.HELLO && messages.PeakType(msg.Payload) != messages.HELLOOK && messages.PeakType(msg.Payload) != messages.DOHAVE && messages.PeakType(msg.Payload) != messages.HAVE && messages.PeakType(msg.Payload) != messages.CONNECT && messages.PeakType(msg.Payload) != messages.END
+}
+
+func filterMsgType(t messages.MessageType) connection.MessageFilter {
+	return func(m connection.Message) bool {
+		return messages.PeakType(m.Payload) == t
+	}
 }

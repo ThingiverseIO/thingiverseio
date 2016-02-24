@@ -33,7 +33,7 @@ func validMsg(m Message) bool {
 	return true
 }
 
-func transformToMessage(d eventual2go.Data) eventual2go.Data {
+func ToMessage(d eventual2go.Data) eventual2go.Data {
 	m := d.(Message)
 	return messages.Unflatten(m.Payload)
 }

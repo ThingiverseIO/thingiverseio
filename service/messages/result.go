@@ -2,26 +2,30 @@ package messages
 
 import (
 	"bytes"
-	"github.com/ugorji/go/codec"
 	"strings"
+
+	"github.com/joernweissenborn/thingiverse.io/config"
+	"github.com/ugorji/go/codec"
 )
+
+//go:generate event_generator -t *Result -n Result
 
 type Result struct {
 	Request  *Request
-	Exporter string
+	Exporter config.UUID
 	params   []byte
 }
 
-func NewResult(export string, request *Request, parameter interface{}) (r *Result) {
+func NewResult(exporter config.UUID, request *Request, parameter interface{}) (r *Result) {
 	var params bytes.Buffer
 	enc := codec.NewEncoder(&params, &mh)
 	enc.Encode(parameter)
-	return NewEncodedResult(export, request, params.Bytes())
+	return NewEncodedResult(exporter, request, params.Bytes())
 }
 
-func NewEncodedResult(export string, request *Request, parameter []byte) (r *Result) {
+func NewEncodedResult(exporter config.UUID, request *Request, parameter []byte) (r *Result) {
 	r = new(Result)
-	r.Exporter = export
+	r.Exporter = exporter
 	r.Request = request
 	r.params = parameter
 	return

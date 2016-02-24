@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/joernweissenborn/thingiverse.io/config"
+	"github.com/joernweissenborn/thingiverse.io/service/connection"
 	"github.com/joernweissenborn/thingiverse.io/service/messages"
 )
 
@@ -96,21 +97,21 @@ func TestManagerMessaging(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer m1.Shutdown()
-	c1 := m1.Messages().AsChan()
+	c1 := m1.Messages().Transform(connection.ToMessage).AsChan()
 
 	m2, err := New(cfg2)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer m2.Shutdown()
-	c2 := m2.Messages().AsChan()
+	c2 := m2.Messages().Transform(connection.ToMessage).AsChan()
 
 	m3, err := New(cfg3)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer m3.Shutdown()
-	c3 := m3.Messages().AsChan()
+	c3 := m3.Messages().Transform(connection.ToMessage).AsChan()
 
 	m1.Run()
 	f := m2.Connected().First()
@@ -155,7 +156,6 @@ func TestManagerSendGuaranteed(t *testing.T) {
 	m2.Run()
 	f.WaitUntilComplete()
 
-
 	select {
 	case <-c2:
 	case <-time.After(10 * time.Millisecond):
@@ -165,7 +165,7 @@ func TestManagerSendGuaranteed(t *testing.T) {
 	m2.Shutdown()
 
 	m3 := getTestManager(false)
-	c3 := m3.Messages().AsChan()
+	c3 := m3.Messages().Transform(connection.ToMessage).AsChan()
 	m3.Run()
 
 	if r := (<-c3).(*messages.Mock); r.Data != msg.Data {

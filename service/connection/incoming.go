@@ -37,15 +37,15 @@ func NewIncoming(addr string) (i *Incoming, err error) {
 }
 
 func (i *Incoming) In() *MessageStream {
-	return i.in.Stream()
+	return i.in.Stream().Where(validMsg)
 }
 
 func (i *Incoming) Messages() *messages.MessageStream {
-	return &messages.MessageStream{i.In().Where(validMsg).Transform(transformToMessage)}
+	return &messages.MessageStream{i.In().Transform(ToMessage)}
 }
 
 func (i *Incoming) MessagesFromSender(sender config.UUID) *messages.MessageStream {
-	return &messages.MessageStream{i.In().Where(validMsg).Where(isMsgFromSender(sender)).Transform(transformToMessage)}
+	return &messages.MessageStream{i.In().Where(validMsg).Where(isMsgFromSender(sender)).Transform(ToMessage)}
 }
 
 func (i *Incoming) Addr() (addr string) {

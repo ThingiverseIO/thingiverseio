@@ -33,8 +33,13 @@ func Flatten(m Message) [][]byte {
 }
 
 func Unflatten(m []string) (msg Message) {
-	mtype, _ := strconv.ParseInt(m[1], 10, 8)
+	mtype := PeakType(m)
 	msg = Get(MessageType(mtype))
 	msg.Unflatten(m[2:])
 	return
+}
+
+func PeakType(m []string) MessageType {
+	t, _ := strconv.ParseInt(m[1], 10, 8)
+	return MessageType(t)
 }
