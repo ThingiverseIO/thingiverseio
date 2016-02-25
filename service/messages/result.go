@@ -11,21 +11,21 @@ import (
 //go:generate event_generator -t *Result -n Result
 
 type Result struct {
-	Request  *Request
-	Exporter config.UUID
-	params   []byte
+	Request *Request
+	Output  config.UUID
+	params  []byte
 }
 
-func NewResult(exporter config.UUID, request *Request, parameter interface{}) (r *Result) {
+func NewResult(output config.UUID, request *Request, parameter interface{}) (r *Result) {
 	var params bytes.Buffer
 	enc := codec.NewEncoder(&params, &mh)
 	enc.Encode(parameter)
-	return NewEncodedResult(exporter, request, params.Bytes())
+	return NewEncodedResult(output, request, params.Bytes())
 }
 
-func NewEncodedResult(exporter config.UUID, request *Request, parameter []byte) (r *Result) {
+func NewEncodedResult(output config.UUID, request *Request, parameter []byte) (r *Result) {
 	r = new(Result)
-	r.Exporter = exporter
+	r.Output = output
 	r.Request = request
 	r.params = parameter
 	return

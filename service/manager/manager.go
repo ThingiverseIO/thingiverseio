@@ -30,6 +30,7 @@ type Manager struct {
 	peers              map[config.UUID]*peer.Peer
 	tracker            []*tracker.Tracker
 	messageIn          *connection.MessageStreamController
+	arrive             *config.UUIDStreamController
 	leave              *config.UUIDStreamController
 	guaranteedMessages map[messages.Message]*peer.Peer
 	logger             *log.Logger
@@ -42,6 +43,7 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		r:                  eventual2go.NewReactor(),
 		connected:          typed_events.NewBoolStreamController(),
 		peers:              map[config.UUID]*peer.Peer{},
+		arrive:             config.NewUUIDStreamController(),
 		leave:              config.NewUUIDStreamController(),
 		guaranteedMessages: map[messages.Message]*peer.Peer{},
 		messageIn:          connection.NewMessageStreamController(),
@@ -89,6 +91,10 @@ func (m *Manager) Run() {
 	for _, t := range m.tracker {
 		t.StartAutoJoin()
 	}
+}
+
+func (m *Manager) PeerArrive() *config.UUIDStream {
+	return m.leave.Stream()
 }
 
 func (m *Manager) PeerLeave(uuid config.UUID) *config.UUIDFuture {
@@ -185,6 +191,7 @@ func (m *Manager) peerConnected(d eventual2go.Data) {
 	m.logger.Println("Successfully connected to", p.UUID())
 	m.r.AddFuture(peerLeave, p.Removed().Future)
 
+	m.arrive.Add(p.UUID())
 	if len(m.peers) == 0 {
 		m.connected.Add(true)
 	}

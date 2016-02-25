@@ -12,28 +12,27 @@ import (
 
 type Request struct {
 	UUID     config.UUID
-	Importer string
+	Input    config.UUID
 	Function string
 	CallType CallType
 	params   []byte
 }
 
-func NewRequest(importer, function string, call_type CallType, parameter interface{}) (r *Request) {
+func NewRequest(input config.UUID, function string, call_type CallType, parameter interface{}) (r *Request) {
 	var params bytes.Buffer
 	enc := codec.NewEncoder(&params, &mh)
 	enc.Encode(parameter)
-	return NewEncodedRequest(importer, function, call_type, params.Bytes())
+	return NewEncodedRequest(input, function, call_type, params.Bytes())
 }
 
-func NewEncodedRequest(importer, function string, call_type CallType, params []byte) (r *Request) {
-	r = new(Request)
-	return NewEncodedRequestWithId(config.NewUUID(), importer, function, call_type, params)
+func NewEncodedRequest(input config.UUID, function string, call_type CallType, params []byte) (r *Request) {
+	return NewEncodedRequestWithId(config.NewUUID(), input, function, call_type, params)
 }
 
-func NewEncodedRequestWithId(uuid config.UUID, importer, function string, call_type CallType, params []byte) (r *Request) {
+func NewEncodedRequestWithId(uuid, input config.UUID, function string, call_type CallType, params []byte) (r *Request) {
 	r = &Request{
 		UUID:     uuid,
-		Importer: importer,
+		Input:    input,
 		Function: function,
 		CallType: call_type,
 		params:   params,
