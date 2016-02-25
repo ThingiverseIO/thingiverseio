@@ -126,7 +126,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 	}
 
 	c1 := t1.Join().AsChan()
-	c2 := t2.Leave().First().AsChan()
+	c2 := t1.Leave().First().AsChan()
 
 	err = t1.StartAutoJoin()
 	if err != nil {
@@ -139,16 +139,16 @@ func TestLeaveAndReconnect(t *testing.T) {
 	}
 
 	select {
-	case <-time.After(10 * time.Second):
+	case <-time.After(5 * time.Second):
 		t.Fatal("Service didnt join")
 	case <-c1:
 	}
 
-	t2.Stop()
+	t2.Shutdown(nil)
 
 	select {
-	case <-time.After(1 * time.Second):
-		t.Fatal("Service didnt join")
+	case <-time.After(5 * time.Second):
+		t.Fatal("Service didnt leave")
 	case <-c2:
 	}
 

@@ -33,9 +33,8 @@ type Manager struct {
 	leave              *config.UUIDStreamController
 	guaranteedMessages map[messages.Message]*peer.Peer
 	logger             *log.Logger
-	shutdown           *eventual2go.Completer
+	shutdown           *eventual2go.Shutdown
 	shutdownComplete   *eventual2go.Completer
-	shutdownWg         *eventual2go.FutureWaitGroup
 }
 
 func New(cfg *config.Config) (m *Manager, err error) {
@@ -47,9 +46,8 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		guaranteedMessages: map[messages.Message]*peer.Peer{},
 		messageIn:          connection.NewMessageStreamController(),
 		logger:             log.New(cfg.Logger(), fmt.Sprintf("%s MANAGER ", cfg.UUID()), 0),
-		shutdown:           eventual2go.NewCompleter(),
+		shutdown:           eventual2go.NewShutdown(),
 		shutdownComplete:   eventual2go.NewCompleter(),
-		shutdownWg:         eventual2go.NewFutureWaitGroup(),
 	}
 
 	m.r.React(peerLeave, m.peerLeave)
@@ -65,8 +63,7 @@ func New(cfg *config.Config) (m *Manager, err error) {
 			m.Shutdown()
 			return
 		}
-		m.shutdown.Future().Then(i.CloseOnFuture)
-		m.shutdownWg.Add(i.Closed())
+		m.shutdown.Register(i)
 		m.messageIn.Join(i.In().Where(filterMessages))
 
 		var t *tracker.Tracker
@@ -77,13 +74,11 @@ func New(cfg *config.Config) (m *Manager, err error) {
 			return
 		}
 		m.tracker = append(m.tracker, t)
-		m.shutdown.Future().Then(t.StopOnFuture)
-		m.shutdownWg.Add(t.Stopped())
+		m.shutdown.Register(t)
 		m.r.AddStream(peerLeave, t.Leave().Stream)
 
 		var d *discoverer.Discoverer
 		d = discoverer.New(t.Join(), i, cfg)
-
 		m.r.AddStream(peerConnected, d.ConnectedPeers().Stream)
 	}
 
@@ -96,12 +91,12 @@ func (m *Manager) Run() {
 	}
 }
 
-func (m *Manager) PeerLeave(uuid config.UUID) *config.UUIDFuture{
+func (m *Manager) PeerLeave(uuid config.UUID) *config.UUIDFuture {
 	return m.leave.Stream().FirstWhere(isPeer(uuid))
 }
 
 func isPeer(uuid config.UUID) config.UUIDFilter {
-	return func(id config.UUID) bool{
+	return func(id config.UUID) bool {
 		return id == uuid
 	}
 }
@@ -113,10 +108,12 @@ func (m *Manager) Shutdown() {
 
 func (m *Manager) onShutdown(eventual2go.Data) {
 	m.logger.Println("shutting down")
-	m.shutdown.Complete(nil)
-	m.shutdownWg.Wait()
-	m.shutdownComplete.Complete(nil)
+	errs := m.shutdown.Do(nil)
+	for _, err := range errs {
+		m.logger.Println("ERROR shutdown", err)
+	}
 	m.logger.Println("shutdown complete")
+	m.shutdownComplete.Complete(errs)
 }
 
 func (m *Manager) Connected() *typed_events.BoolStream {

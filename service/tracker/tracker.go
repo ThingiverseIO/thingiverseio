@@ -24,7 +24,6 @@ type Tracker struct {
 	memberlist *memberlist.Memberlist
 	port       int //memberlist bind port
 	adport     int //port to advertise
-	stopped    *eventual2go.Completer
 }
 
 func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
@@ -33,7 +32,6 @@ func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
 		cfg:        cfg,
 		iface:      iface,
 		adport:     adport,
-		stopped:    eventual2go.NewCompleter(),
 		evtHandler: newEventHandler(),
 	}
 
@@ -48,24 +46,14 @@ func New(iface string, adport int, cfg *config.Config) (t *Tracker, err error) {
 	return
 }
 
-func (t *Tracker) Stop() (err error) {
+func (t *Tracker) Shutdown(eventual2go.Data) (err error) {
 	t.logger.Println("Stopping")
 	t.evtHandler.close()
 	t.StopAutoJoin()
 	t.memberlist.Leave(1 * time.Second)
 	err = t.memberlist.Shutdown()
-	t.stopped.Complete(err)
 	t.logger.Println("Stopped")
 	return
-}
-
-func (t *Tracker) Stopped() *eventual2go.Future {
-	return t.stopped.Future()
-}
-
-func (t *Tracker) StopOnFuture(eventual2go.Data) eventual2go.Data {
-	t.Stop()
-	return nil
 }
 
 func (t *Tracker) StartAutoJoin() (err error) {

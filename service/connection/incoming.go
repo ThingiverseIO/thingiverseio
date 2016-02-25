@@ -81,9 +81,9 @@ func (i *Incoming) listen() {
 
 	for {
 		if i.close.Completed() {
-			i.skt.Close()
+			err := i.skt.Close()
 			i.in.Close()
-			i.closed.Complete(nil)
+			i.closed.Complete(err)
 			return
 		}
 		sockets, err := poller.Poll(100 * time.Millisecond)
@@ -99,15 +99,9 @@ func (i *Incoming) listen() {
 	}
 }
 
-func (i *Incoming) Close() {
+func (i *Incoming) Shutdown(eventual2go.Data) (err error) {
 	i.close.Complete(nil)
-}
-
-func (i *Incoming) Closed() *eventual2go.Future {
-	return i.closed.Future()
-}
-
-func (i *Incoming) CloseOnFuture(eventual2go.Data) eventual2go.Data {
-	i.Close()
-	return nil
+	i.closed.Future().WaitUntilComplete()
+	err, _ = i.closed.Future().GetResult().(error)
+	return
 }
