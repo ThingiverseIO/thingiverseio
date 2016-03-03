@@ -18,6 +18,7 @@ const (
 )
 
 type Input struct {
+	cfg     *config.Config
 	m       *manager.Manager
 	r       *eventual2go.Reactor
 	results *messages.ResultStream
@@ -31,8 +32,9 @@ func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {
 	m, err := manager.New(cfg)
 	i = &Input{
 		m:       m,
+		cfg:     cfg,
 		r:       eventual2go.NewReactor(),
-		logger:  log.New(cfg.Logger(), fmt.Sprintf("export %s ", i.UUID()), log.Lshortfile),
+		logger:  log.New(cfg.Logger(), fmt.Sprintf("s input ", cfg.UUID()), log.Lshortfile),
 		results: &messages.ResultStream{m.MessagesOfType(messages.RESULT).Transform(connection.ToMessage)},
 	}
 
@@ -97,7 +99,8 @@ func (i *Input) startListen(d eventual2go.Data) {
 func (i *Input) StopListen(function string) {
 	i.r.Fire(stopListenEvent, function)
 }
-func (i *Input) stopListen(function string) {
+func (i *Input) stopListen(d eventual2go.Data) {
+	function := d.(string)
 	if _, ok := i.listen[funtion]; ok {
 		delete(i.listen, function)
 		i.m.SendToAll(messages.Flatten(&messages.StopListen{function}))
