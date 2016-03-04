@@ -5,17 +5,11 @@ import (
 	"log"
 
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service/connection"
-	"github.com/joernweissenborn/thingiverse.io/service/manager"
-	"github.com/joernweissenborn/thingiverse.io/service/messages"
-)
-
-const (
-	listenEvent     = "listen"
-	stopListenEvent = "stop_listen"
-	peerGoneEvent   = "peer_gone"
-	replyEvent      = "reply"
+	"github.com/joernweissenborn/eventual2go/typed_events"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service/connection"
+	"github.com/joernweissenborn/thingiverseio/service/manager"
+	"github.com/joernweissenborn/thingiverseio/service/messages"
 )
 
 type Output struct {
@@ -34,30 +28,52 @@ func NewOutputFromConfig(cfg *config.Config) (o *Output, err error) {
 		m:         m,
 		requests:  &messages.RequestStream{m.MessagesOfType(messages.REQUEST).Transform(connection.ToMessage)},
 		listeners: map[string]map[config.UUID]interface{}{},
-		logger:    log.New(cfg.Logger(), fmt.Sprintf("%s EXPORT", cfg.UUID()), 0),
+		logger:    log.New(cfg.Logger(), fmt.Sprintf("%s OUTPUT ", cfg.UUID()), 0),
 		r:         eventual2go.NewReactor(),
 	}
 
-	o.r.React(listenEvent, o.onListen)
-	o.r.AddStream(listenEvent, m.MessagesOfType(messages.LISTEN).Stream)
+	o.r.React(startListenEvent{}, o.onListen)
+	o.r.AddStream(startListenEvent{}, m.MessagesOfType(messages.LISTEN).Stream)
 
-	o.r.React(stopListenEvent, o.onStopListen)
-	o.r.AddStream(stopListenEvent, m.MessagesOfType(messages.STOPLISTEN).Stream)
+	o.r.React(stopListenEvent{}, o.onStopListen)
+	o.r.AddStream(stopListenEvent{}, m.MessagesOfType(messages.STOPLISTEN).Stream)
 
-	o.r.React(peerGoneEvent, o.onPeerGone)
+	o.r.React(leaveEvent{}, o.onPeerGone)
 
-	o.r.React(replyEvent, o.deliverResult)
+	o.r.React(replyEvent{}, o.deliverResult)
 	return
+}
+
+func (o *Output) UUID() config.UUID {
+	return o.cfg.UUID()
+}
+
+func (o *Output) Remove() (errs []error) {
+	errs = o.m.Shutdown()
+	o.r.Shutdown(nil)
+	return
+}
+
+func (o *Output) Run() {
+	o.m.Run()
+}
+
+func (o *Output) Connected() *typed_events.BoolFuture {
+	return o.m.Connected().FirstWhere(func(b bool) bool { return b })
+}
+
+func (o *Output) Disconnected() *typed_events.BoolFuture {
+	return o.m.Connected().FirstWhereNot(func(b bool) bool { return b })
 }
 
 func (o *Output) Reply(r *messages.Request, params interface{}) {
 	res := messages.NewResult(o.cfg.UUID(), r, params)
-	o.r.Fire(replyEvent, res)
+	o.r.Fire(replyEvent{}, res)
 }
 
 func (o *Output) ReplyEncoded(r *messages.Request, params []byte) {
 	res := messages.NewEncodedResult(o.cfg.UUID(), r, params)
-	o.r.Fire(replyEvent, res)
+	o.r.Fire(replyEvent{}, res)
 }
 
 func (o *Output) Emit(function string, inparams interface{}, outparams interface{}) {
@@ -85,7 +101,7 @@ func (o *Output) onListen(d eventual2go.Data) {
 	} else {
 		o.listeners[f] = map[config.UUID]interface{}{m.Sender: nil}
 	}
-	o.r.AddFuture(peerGoneEvent, o.m.PeerLeave(m.Sender).Future)
+	o.r.AddFuture(leaveEvent{}, o.m.PeerLeave(m.Sender).Future)
 }
 
 func (o *Output) onStopListen(d eventual2go.Data) {
@@ -116,9 +132,11 @@ func (o *Output) removePeerListen(uuid config.UUID, f string) {
 func (o *Output) deliverResult(d eventual2go.Data) {
 	result := d.(*messages.Result)
 	o.logger.Println("Delivering result", result.Request.Function, result.Request.CallType)
+
 	switch result.Request.CallType {
 	case messages.ONE2MANY, messages.ONE2ONE:
-		o.m.SendTo(result.Request.UUID, result)
+		o.logger.Println("Delivering to", result.Request.Input)
+		o.m.SendTo(result.Request.Input, result)
 
 	case messages.MANY2MANY, messages.MANY2ONE:
 		if ls, ok := o.listeners[result.Request.Function]; ok {

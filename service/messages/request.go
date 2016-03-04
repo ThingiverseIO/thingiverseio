@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/joernweissenborn/thingiverse.io/config"
+	"github.com/joernweissenborn/thingiverseio/config"
 	"github.com/ugorji/go/codec"
 )
 
-//go:generate event_generator -t *Request -n Result
+//go:generate event_generator -t *Request -n Request
 
 type Request struct {
 	UUID     config.UUID

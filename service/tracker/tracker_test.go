@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service"
 )
 
 func TestJoin(t *testing.T) {

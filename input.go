@@ -5,16 +5,11 @@ import (
 	"log"
 
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service/connection"
-	"github.com/joernweissenborn/thingiverse.io/service/manager"
-	"github.com/joernweissenborn/thingiverse.io/service/messages"
-)
-
-const (
-	arriveEvent      = "arrive"
-	startListenEvent = "start_listen"
-	stopListenEvent  = "stop_listen"
+	"github.com/joernweissenborn/eventual2go/typed_events"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service/connection"
+	"github.com/joernweissenborn/thingiverseio/service/manager"
+	"github.com/joernweissenborn/thingiverseio/service/messages"
 )
 
 type Input struct {
@@ -22,10 +17,8 @@ type Input struct {
 	m       *manager.Manager
 	r       *eventual2go.Reactor
 	results *messages.ResultStream
-
-	listen map[string]interface{}
-
-	logger *log.Logger
+	listen  map[string]interface{}
+	logger  *log.Logger
 }
 
 func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {
@@ -34,23 +27,47 @@ func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {
 		m:       m,
 		cfg:     cfg,
 		r:       eventual2go.NewReactor(),
-		logger:  log.New(cfg.Logger(), fmt.Sprintf("s input ", cfg.UUID()), log.Lshortfile),
+		listen:  map[string]interface{}{},
+		logger:  log.New(cfg.Logger(), fmt.Sprintf("%s input ", cfg.UUID()), log.Lshortfile),
 		results: &messages.ResultStream{m.MessagesOfType(messages.RESULT).Transform(connection.ToMessage)},
 	}
 
-	i.r.React(arriveEvent, i.sendListenFunctions)
-	i.r.AddStream(arriveEvent, m.PeerArrive().Stream)
+	i.r.React(arriveEvent{}, i.sendListenFunctions)
+	i.r.AddStream(arriveEvent{}, m.PeerArrive().Stream)
 
-	i.r.React(startListenEvent, i.startListen)
-	i.r.React(stopListenEvent, i.stopListen)
+	i.r.React(startListenEvent{}, i.startListen)
+	i.r.React(stopListenEvent{}, i.stopListen)
 
 	return
 }
 
+func (i *Input) UUID() config.UUID {
+	return i.cfg.UUID()
+}
+
+func (i *Input) Remove() (errs []error) {
+	errs = i.m.Shutdown()
+	i.r.Shutdown(nil)
+	return
+}
+
+func (i *Input) Run() {
+	i.m.Run()
+}
+
+func (i *Input) Connected() *typed_events.BoolFuture {
+	return i.m.Connected().FirstWhere(func(b bool) bool { return b })
+}
+
+func (i *Input) Disconnected() *typed_events.BoolFuture {
+	return i.m.Connected().FirstWhereNot(func(b bool) bool { return b })
+}
+
 func (i *Input) sendListenFunctions(d eventual2go.Data) {
 	uuid := d.(config.UUID)
+	i.logger.Println("found output", uuid)
 	for f := range i.listen {
-		i.m.SendTo(uuid, messages.Flatten(&messages.Listen{f}))
+		i.m.SendTo(uuid, &messages.Listen{f})
 	}
 	return
 }
@@ -60,12 +77,14 @@ func (i *Input) Call(function string, parameter interface{}) (f *messages.Result
 	req := i.newRequest(function, parameter, messages.ONE2ONE)
 	f = i.results.FirstWhere(isRes(req.UUID))
 	akn := i.m.SendGuaranteed(req)
+	i.logger.Println("Call", akn)
 	f.Future.Then(acknowledgeResult(akn))
 	return
 }
 
-func acknowledgeResult(akn *eventual2go.Completer) messages.ResultCompletionHandler {
-	return func(*messages.Result) *messages.Result {
+func acknowledgeResult(akn *eventual2go.Completer) eventual2go.CompletionHandler {
+	return func(eventual2go.Data) eventual2go.Data {
+		fmt.Println("Received Result", akn)
 		akn.Complete(nil)
 		return nil
 	}
@@ -75,7 +94,7 @@ func (i *Input) CallAll(function string, parameter interface{}, s *messages.Resu
 	i.logger.Println("CallAll", function)
 	req := i.newRequest(function, parameter, messages.ONE2MANY)
 	s.Join(i.results.Where(isRes(req.UUID)))
-	i.SendToAll(req)
+	i.m.SendToAll(req)
 	return
 }
 
@@ -88,22 +107,23 @@ func (i *Input) TriggerAll(function string, parameter interface{}) {
 }
 
 func (i *Input) Listen(function string) {
-	i.r.Fire(startListenEvent, function)
+	i.r.Fire(startListenEvent{}, function)
 }
 func (i *Input) startListen(d eventual2go.Data) {
 	function := d.(string)
+	i.logger.Println("started listenting to functipn", function)
 	i.listen[function] = nil
-	i.m.SendToAll(messages.Flatten(&messages.Listen{function}))
+	i.m.SendToAll(&messages.Listen{function})
 }
 
 func (i *Input) StopListen(function string) {
-	i.r.Fire(stopListenEvent, function)
+	i.r.Fire(stopListenEvent{}, function)
 }
 func (i *Input) stopListen(d eventual2go.Data) {
 	function := d.(string)
-	if _, ok := i.listen[funtion]; ok {
+	if _, ok := i.listen[function]; ok {
 		delete(i.listen, function)
-		i.m.SendToAll(messages.Flatten(&messages.StopListen{function}))
+		i.m.SendToAll(&messages.StopListen{function})
 	}
 
 }

@@ -10,9 +10,9 @@ import (
 
 	"github.com/hashicorp/memberlist"
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service"
-	"github.com/joernweissenborn/thingiverse.io/service/tracker/beacon"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service"
+	"github.com/joernweissenborn/thingiverseio/service/tracker/beacon"
 )
 
 type Tracker struct {

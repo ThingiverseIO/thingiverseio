@@ -19,7 +19,7 @@ func NewRequestCompleter() *RequestCompleter {
 	return &RequestCompleter{eventual2go.NewCompleter()}
 }
 
-func (c *RequestCompleter) Complete(d Request) {
+func (c *RequestCompleter) Complete(d *Request) {
 	c.Completer.Complete(d)
 }
 
@@ -31,11 +31,11 @@ type RequestFuture struct {
 	*eventual2go.Future
 }
 
-type RequestCompletionHandler func(Request) Request
+type RequestCompletionHandler func(*Request) *Request
 
 func (ch RequestCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
 	return func(d eventual2go.Data) eventual2go.Data {
-		return ch(d.(Request))
+		return ch(d.(*Request))
 	}
 }
 
@@ -43,16 +43,16 @@ func (f *RequestFuture) Then(ch RequestCompletionHandler) *RequestFuture {
 	return &RequestFuture{f.Future.Then(ch.toCompletionHandler())}
 }
 
-func (f *RequestFuture) AsChan() chan Request {
-	c := make(chan Request, 1)
-	cmpl := func(d chan Request) RequestCompletionHandler {
-		return func(e Request) Request {
+func (f *RequestFuture) AsChan() chan *Request {
+	c := make(chan *Request, 1)
+	cmpl := func(d chan *Request) RequestCompletionHandler {
+		return func(e *Request) *Request {
 			d <- e
 			close(d)
 			return e
 		}
 	}
-	ecmpl := func(d chan Request) eventual2go.ErrorHandler {
+	ecmpl := func(d chan *Request) eventual2go.ErrorHandler {
 		return func(error) (eventual2go.Data, error) {
 			close(d)
 			return nil, nil
@@ -71,7 +71,7 @@ func NewRequestStreamController() *RequestStreamController {
 	return &RequestStreamController{eventual2go.NewStreamController()}
 }
 
-func (sc *RequestStreamController) Add(d Request) {
+func (sc *RequestStreamController) Add(d *Request) {
 	sc.StreamController.Add(d)
 }
 
@@ -91,20 +91,20 @@ type RequestStream struct {
 	*eventual2go.Stream
 }
 
-type RequestSuscriber func(Request)
+type RequestSuscriber func(*Request)
 
 func (l RequestSuscriber) toSuscriber() eventual2go.Subscriber {
-	return func(d eventual2go.Data) { l(d.(Request)) }
+	return func(d eventual2go.Data) { l(d.(*Request)) }
 }
 
 func (s *RequestStream) Listen(ss RequestSuscriber) *eventual2go.Subscription {
 	return s.Stream.Listen(ss.toSuscriber())
 }
 
-type RequestFilter func(Request) bool
+type RequestFilter func(*Request) bool
 
 func (f RequestFilter) toFilter() eventual2go.Filter {
-	return func(d eventual2go.Data) bool { return f(d.(Request)) }
+	return func(d eventual2go.Data) bool { return f(d.(*Request)) }
 }
 
 func (s *RequestStream) Where(f RequestFilter) *RequestStream {
@@ -113,6 +113,10 @@ func (s *RequestStream) Where(f RequestFilter) *RequestStream {
 
 func (s *RequestStream) WhereNot(f RequestFilter) *RequestStream {
 	return &RequestStream{s.Stream.WhereNot(f.toFilter())}
+}
+
+func (s *RequestStream) Split(f RequestFilter) (*RequestStream, *RequestStream)  {
+	return s.Where(f), s.WhereNot(f)
 }
 
 func (s *RequestStream) First() *RequestFuture {
@@ -127,19 +131,19 @@ func (s *RequestStream) FirstWhereNot(f RequestFilter) *RequestFuture {
 	return &RequestFuture{s.Stream.FirstWhereNot(f.toFilter())}
 }
 
-func (s *RequestStream) AsChan() (c chan Request) {
-	c = make(chan Request)
+func (s *RequestStream) AsChan() (c chan *Request) {
+	c = make(chan *Request)
 	s.Listen(pipeToRequestChan(c)).Closed().Then(closeRequestChan(c))
 	return
 }
 
-func pipeToRequestChan(c chan Request) RequestSuscriber {
-	return func(d Request) {
+func pipeToRequestChan(c chan *Request) RequestSuscriber {
+	return func(d *Request) {
 		c <- d
 	}
 }
 
-func closeRequestChan(c chan Request) eventual2go.CompletionHandler {
+func closeRequestChan(c chan *Request) eventual2go.CompletionHandler {
 	return func(d eventual2go.Data) eventual2go.Data {
 		close(c)
 		return nil

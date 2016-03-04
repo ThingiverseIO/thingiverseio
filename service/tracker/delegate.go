@@ -1,6 +1,6 @@
 package tracker
 
-import "github.com/joernweissenborn/thingiverse.io/config"
+import "github.com/joernweissenborn/thingiverseio/config"
 
 type memberlistDelegate struct {
 	adport int

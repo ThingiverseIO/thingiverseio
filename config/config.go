@@ -23,12 +23,12 @@ type Config struct {
 	uuid UUID
 }
 
-func New(logger io.Writer, exporting bool) (cfg *Config) {
+func New(logger io.Writer, exporting bool, functionTags map[string]string) (cfg *Config) {
 	cfg = &Config{
 		logger:       logger,
 		exporting:    exporting,
 		interfaces:   []string{"127.0.0.1"},
-		functionTags: map[string]string{},
+		functionTags: functionTags,
 		userTags:     map[string]string{},
 	}
 	return

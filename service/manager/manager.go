@@ -6,18 +6,16 @@ import (
 
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/eventual2go/typed_events"
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service/connection"
-	"github.com/joernweissenborn/thingiverse.io/service/discoverer"
-	"github.com/joernweissenborn/thingiverse.io/service/messages"
-	"github.com/joernweissenborn/thingiverse.io/service/peer"
-	"github.com/joernweissenborn/thingiverse.io/service/tracker"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service/connection"
+	"github.com/joernweissenborn/thingiverseio/service/discoverer"
+	"github.com/joernweissenborn/thingiverseio/service/messages"
+	"github.com/joernweissenborn/thingiverseio/service/peer"
+	"github.com/joernweissenborn/thingiverseio/service/tracker"
 )
 
-const (
-	peerLeave     = "peer_leave"
-	peerConnected = "peer_connected"
-)
+type peerLeave struct{}
+type peerConnected struct{}
 
 type msgToSend struct {
 	uuid config.UUID
@@ -52,8 +50,8 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		shutdownComplete:   eventual2go.NewCompleter(),
 	}
 
-	m.r.React(peerLeave, m.peerLeave)
-	m.r.React(peerConnected, m.peerConnected)
+	m.r.React(peerLeave{}, m.peerLeave)
+	m.r.React(peerConnected{}, m.peerConnected)
 	m.r.OnShutdown(m.onShutdown)
 
 	for _, iface := range cfg.Interfaces() {
@@ -77,11 +75,11 @@ func New(cfg *config.Config) (m *Manager, err error) {
 		}
 		m.tracker = append(m.tracker, t)
 		m.shutdown.Register(t)
-		m.r.AddStream(peerLeave, t.Leave().Stream)
+		m.r.AddStream(peerLeave{}, t.Leave().Stream)
 
 		var d *discoverer.Discoverer
 		d = discoverer.New(t.Join(), i, cfg)
-		m.r.AddStream(peerConnected, d.ConnectedPeers().Stream)
+		m.r.AddStream(peerConnected{}, d.ConnectedPeers().Stream)
 	}
 
 	return
@@ -94,7 +92,7 @@ func (m *Manager) Run() {
 }
 
 func (m *Manager) PeerArrive() *config.UUIDStream {
-	return m.leave.Stream()
+	return m.arrive.Stream()
 }
 
 func (m *Manager) PeerLeave(uuid config.UUID) *config.UUIDFuture {
@@ -107,9 +105,13 @@ func isPeer(uuid config.UUID) config.UUIDFilter {
 	}
 }
 
-func (m *Manager) Shutdown() {
+func (m *Manager) Shutdown() (errs []error) {
 	m.r.Shutdown(nil)
 	m.shutdownComplete.Future().WaitUntilComplete()
+	if r:= m.shutdownComplete.Future().GetResult(); r != nil {
+		errs = r.([]error)
+	}
+	return
 }
 
 func (m *Manager) onShutdown(eventual2go.Data) {
@@ -154,7 +156,6 @@ func (m *Manager) SendGuaranteed(msg messages.Message) (c *eventual2go.Completer
 			m.logger.Println("Sending guaranteed message to", p.UUID())
 			m.guaranteedMessages[msg] = p
 			p.Send(msg)
-			return
 		}
 	}
 	c = eventual2go.NewCompleter()
@@ -189,7 +190,7 @@ func (m *Manager) SendToAll(msg messages.Message) {
 func (m *Manager) peerConnected(d eventual2go.Data) {
 	p := d.(*peer.Peer)
 	m.logger.Println("Successfully connected to", p.UUID())
-	m.r.AddFuture(peerLeave, p.Removed().Future)
+	m.r.AddFuture(peerLeave{}, p.Removed().Future)
 
 	m.arrive.Add(p.UUID())
 	if len(m.peers) == 0 {
@@ -212,7 +213,7 @@ func (m *Manager) peerLeave(d eventual2go.Data) {
 		m.logger.Println("Peer left", l.UUID())
 		for msg, r := range m.guaranteedMessages {
 			if r == p {
-				m.logger.Println("Peer had guarantteed message, resending")
+				m.logger.Println("Peer had guaranteed message, resending")
 				go m.SendGuaranteed(msg)
 			}
 		}

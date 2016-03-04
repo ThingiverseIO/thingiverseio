@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service/messages"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service/messages"
 )
 
 type Incoming struct {

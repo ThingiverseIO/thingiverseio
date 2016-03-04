@@ -5,14 +5,13 @@ import (
 	"sync"
 
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverse.io/config"
+	"github.com/joernweissenborn/thingiverseio/config"
 	"github.com/pebbe/zmq4"
 )
 
 type Outgoing struct {
 	m      *sync.Mutex
 	skt    *zmq4.Socket
-	out    *eventual2go.StreamController
 	closed *eventual2go.Completer
 }
 
@@ -34,43 +33,37 @@ func NewOutgoing(uuid config.UUID, targetAddress string, targetPort int) (out *O
 	}
 
 	out = &Outgoing{
+		m:      &sync.Mutex{},
 		skt:    skt,
-		out:    eventual2go.NewStreamController(),
 		closed: eventual2go.NewCompleter(),
 	}
 
-	out.out.Stream().Listen(out.send).Closed().Then(out.close)
-
 	return
 }
 
-func (o *Outgoing) Send(data [][]byte) (sent *eventual2go.Future) {
-	c := eventual2go.NewCompleter()
-	sent = c.Future()
-	o.out.Add(outgoingMessage{c, data})
-	return
+func (o *Outgoing) Send(data [][]byte) error {
+	return o.send(data)
 }
 
 func (o *Outgoing) Close() {
-	o.out.Close()
-}
+	o.m.Lock()
+	defer o.m.Unlock()
 
-func (o *Outgoing) send(d eventual2go.Data) {
-	m := d.(outgoingMessage)
-	_, err := o.skt.SendMessage(m.payload)
-
-	if err != nil {
-		if !o.closed.Completed() {
-			o.closed.CompleteError(err)
-		}
-		m.sent.CompleteError(err)
-		o.close(nil)
+	if err := o.skt.Close(); err != nil {
+		o.closed.CompleteError(err)
 		return
 	}
-	m.sent.Complete(nil)
-	return
+	o.closed.Complete(nil)
 }
-func (o *Outgoing) close(eventual2go.Data) eventual2go.Data {
-	return o.skt.Close()
 
+func (o *Outgoing) send(d [][]byte) (err error) {
+	o.m.Lock()
+	defer o.m.Unlock()
+	_, err = o.skt.SendMessage(d)
+	if err != nil {
+		if !o.closed.Completed() {
+			o.Close()
+		}
+	}
+	return
 }

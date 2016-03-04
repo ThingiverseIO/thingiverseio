@@ -5,9 +5,9 @@ import (
 
 )
 
-func Configure(logger io.Writer, exporting bool) (cfg *Config) {
+func Configure(logger io.Writer, exporting bool, functionTags map[string]string) (cfg *Config) {
 
-	cfg = New(logger, exporting)
+	cfg = New(logger, exporting, functionTags)
 
 	CheckCfgFile(cfg, CfgFileGlobal())
 

@@ -3,7 +3,7 @@ package messages
 import (
 	"strconv"
 
-	"github.com/joernweissenborn/thingiverse.io/service"
+	"github.com/joernweissenborn/thingiverseio/service"
 	"github.com/ugorji/go/codec"
 )
 

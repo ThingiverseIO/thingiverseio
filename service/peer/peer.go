@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service/connection"
-	"github.com/joernweissenborn/thingiverse.io/service/messages"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service/connection"
+	"github.com/joernweissenborn/thingiverseio/service/messages"
 )
 
 //go:generate event_generator -t *Peer -n Peer
@@ -75,7 +75,7 @@ func NewFromHello(m *messages.Hello, incoming *connection.Incoming, cfg *config.
 // InitConnection initializes the connection.
 func (p *Peer) InitConnection() {
 
-	if p.initialized.Completed(){
+	if p.initialized.Completed() {
 		return
 	}
 
@@ -155,9 +155,9 @@ func (p *Peer) Removed() *PeerFuture {
 }
 
 // Send send a message to the peer.
-func (p *Peer) Send(m messages.Message) *eventual2go.Future {
-	p.logger.Println("Sending Message ",m.GetType())
-	return p.msgOut.Send(messages.Flatten(m))
+func (p *Peer) Send(m messages.Message) {
+	p.logger.Println("Sending Message ", m.GetType())
+	p.msgOut.Send(messages.Flatten(m))
 }
 
 func (p *Peer) closeOutgoing(*Peer) *Peer {

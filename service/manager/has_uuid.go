@@ -1,6 +1,6 @@
 package manager
 
-import "github.com/joernweissenborn/thingiverse.io/config"
+import "github.com/joernweissenborn/thingiverseio/config"
 
 type hasUuid interface {
 	UUID() config.UUID

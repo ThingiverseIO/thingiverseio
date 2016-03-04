@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service"
 )
 
 type Meta struct {

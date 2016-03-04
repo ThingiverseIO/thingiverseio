@@ -2,9 +2,9 @@ package connection
 
 import (
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service"
-	"github.com/joernweissenborn/thingiverse.io/service/messages"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service"
+	"github.com/joernweissenborn/thingiverseio/service/messages"
 )
 
 //go:generate event_generator -t Message

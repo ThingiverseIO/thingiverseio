@@ -5,25 +5,25 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/joernweissenborn/thingiverse.io/service/connection"
-	"github.com/joernweissenborn/thingiverse.io/service/messages"
+	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/joernweissenborn/thingiverseio/service/connection"
+	"github.com/joernweissenborn/thingiverseio/service/messages"
 )
 
 func TestManagerConnection(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
 	cfg1.OverrideUUID("exp")
 	cfg1.AddOrSetUserTag("tag1", "1")
 	cfg1.AddOrSetUserTag("tag2", "2")
 	cfg1.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg2 := config.New(os.Stdout, false)
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 	cfg2.OverrideUUID("imp1")
 	cfg2.AddOrSetUserTag("tag2", "2")
 	cfg2.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg3 := config.New(os.Stdout, false)
+	cfg3 := config.New(os.Stdout, false, map[string]string{})
 	cfg3.OverrideUUID("imp2")
 	cfg3.AddOrSetUserTag("tag1", "1")
 	cfg3.OverrideInterfaces([]string{"127.0.0.1"})
@@ -77,17 +77,17 @@ func TestManagerConnection(t *testing.T) {
 }
 
 func TestManagerMessaging(t *testing.T) {
-	cfg1 := config.New(os.Stdout, true)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
 	cfg1.OverrideUUID("exp")
 	cfg1.AddOrSetUserTag("tag1", "1")
 	cfg1.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg2 := config.New(os.Stdout, false)
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 	cfg2.OverrideUUID("imp1")
 	cfg2.AddOrSetUserTag("tag1", "1")
 	cfg2.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg3 := config.New(os.Stdout, false)
+	cfg3 := config.New(os.Stdout, false, map[string]string{})
 	cfg3.OverrideUUID("imp2")
 	cfg3.AddOrSetUserTag("tag1", "1")
 	cfg3.OverrideInterfaces([]string{"127.0.0.1"})
@@ -186,7 +186,7 @@ func TestManagerSendGuaranteed(t *testing.T) {
 }
 
 func getTestManager(e bool) (m *Manager) {
-	cfg := config.New(os.Stdout, e)
+	cfg := config.New(os.Stdout, e, map[string]string{})
 	cfg.AddOrSetUserTag("tag1", "1")
 	cfg.OverrideInterfaces([]string{"127.0.0.1"})
 
