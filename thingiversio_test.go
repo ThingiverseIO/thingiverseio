@@ -82,8 +82,8 @@ func TestTrigger(t *testing.T) {
 	defer e.Remove()
 	c := e.Requests().AsChan()
 
-	c1 := i1.Results().AsChan()
-	c2 := i2.Results().AsChan()
+	c1 := i1.ListenResults().AsChan()
+	c2 := i2.ListenResults().AsChan()
 
 	f1 := i1.Connected()
 	f2 := i2.Connected()
@@ -265,7 +265,7 @@ func TestEmit(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer e.Remove()
-	c := i.Results().AsChan()
+	c := i.ListenResults().AsChan()
 	i.Listen("SayHello")
 	f1 := i.Connected()
 	f2 := e.Connected()

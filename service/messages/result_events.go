@@ -31,6 +31,10 @@ type ResultFuture struct {
 	*eventual2go.Future
 }
 
+func (f *ResultFuture) GetResult() *Result {
+	return f.Future.GetResult().(*Result)
+}
+
 type ResultCompletionHandler func(*Result) *Result
 
 func (ch ResultCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
@@ -91,14 +95,14 @@ type ResultStream struct {
 	*eventual2go.Stream
 }
 
-type ResultSuscriber func(*Result)
+type ResultSubscriber func(*Result)
 
-func (l ResultSuscriber) toSuscriber() eventual2go.Subscriber {
+func (l ResultSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(*Result)) }
 }
 
-func (s *ResultStream) Listen(ss ResultSuscriber) *eventual2go.Subscription {
-	return s.Stream.Listen(ss.toSuscriber())
+func (s *ResultStream) Listen(ss ResultSubscriber) *eventual2go.Subscription {
+	return s.Stream.Listen(ss.toSubscriber())
 }
 
 type ResultFilter func(*Result) bool
@@ -137,7 +141,7 @@ func (s *ResultStream) AsChan() (c chan *Result) {
 	return
 }
 
-func pipeToResultChan(c chan *Result) ResultSuscriber {
+func pipeToResultChan(c chan *Result) ResultSubscriber {
 	return func(d *Result) {
 		c <- d
 	}
@@ -148,4 +152,32 @@ func closeResultChan(c chan *Result) eventual2go.CompletionHandler {
 		close(c)
 		return nil
 	}
+}
+
+type ResultCollector struct {
+	*eventual2go.Collector
+}
+
+func NewResultCollector() *ResultCollector {
+	return &ResultCollector{eventual2go.NewCollector()}
+}
+
+func (c *ResultCollector) Add(d *Result) {
+	c.Collector.Add(d)
+}
+
+func (c *ResultCollector) AddFuture(f *ResultFuture) {
+	c.Collector.Add(f.Future)
+}
+
+func (c *ResultCollector) AddStream(s *ResultStream) {
+	c.Collector.AddStream(s.Stream)
+}
+
+func (c *ResultCollector) Get() *Result {
+	return c.Collector.Get().(*Result)
+}
+
+func (c *ResultCollector) Preview() *Result {
+	return c.Collector.Preview().(*Result)
 }

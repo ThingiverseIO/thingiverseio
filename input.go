@@ -2,8 +2,8 @@ package thingiverseio
 
 import (
 	"fmt"
-	"io/ioutil"
 	"log"
+	"os"
 
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/eventual2go/typed_events"
@@ -23,7 +23,7 @@ type Input struct {
 }
 
 func NewInput(desc string) (i *Input, err error) {
-	i, err = NewInputFromConfig(config.Configure(ioutil.Discard, false, descFromYaml(desc).AsTagSet()))
+	i, err = NewInputFromConfig(config.Configure(os.Stdout, false, descFromYaml(desc).AsTagSet()))
 	return
 }
 
@@ -34,7 +34,7 @@ func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {
 		cfg:     cfg,
 		r:       eventual2go.NewReactor(),
 		listen:  map[string]interface{}{},
-		logger:  log.New(cfg.Logger(), fmt.Sprintf("%s input ", cfg.UUID()), log.Lshortfile),
+		logger:  log.New(cfg.Logger(), fmt.Sprintf("%s INPUT ", cfg.UUID()), 0),
 		results: &messages.ResultStream{m.MessagesOfType(messages.RESULT).Transform(connection.ToMessage)},
 	}
 
@@ -80,17 +80,28 @@ func (i *Input) sendListenFunctions(d eventual2go.Data) {
 
 func (i *Input) Call(function string, parameter interface{}) (f *messages.ResultFuture) {
 	i.logger.Println("Call", function)
-	req := i.newRequest(function, parameter, messages.ONE2ONE)
+	req := i.newRequest(function, parameter, messages.CALL)
+	f = i.call(req)
+	return
+}
+
+func (i *Input) CallBin(function string, parameter []byte) (uuid config.UUID, f *messages.ResultFuture) {
+	i.logger.Println("CallBin", function)
+	req := i.newRequestBin(function, parameter, messages.CALL)
+	f = i.call(req)
+	uuid = req.UUID
+	return
+}
+
+func (i *Input) call(req *messages.Request) (f *messages.ResultFuture) {
 	f = i.results.FirstWhere(isRes(req.UUID))
 	akn := i.m.SendGuaranteed(req)
-	i.logger.Println("Call", akn)
 	f.Future.Then(acknowledgeResult(akn))
 	return
 }
 
 func acknowledgeResult(akn *eventual2go.Completer) eventual2go.CompletionHandler {
 	return func(eventual2go.Data) eventual2go.Data {
-		fmt.Println("Received Result", akn)
 		akn.Complete(nil)
 		return nil
 	}
@@ -98,18 +109,18 @@ func acknowledgeResult(akn *eventual2go.Completer) eventual2go.CompletionHandler
 
 func (i *Input) CallAll(function string, parameter interface{}, s *messages.ResultStreamController) {
 	i.logger.Println("CallAll", function)
-	req := i.newRequest(function, parameter, messages.ONE2MANY)
+	req := i.newRequest(function, parameter, messages.CALLALL)
 	s.Join(i.results.Where(isRes(req.UUID)))
 	i.m.SendToAll(req)
 	return
 }
 
 func (i *Input) Trigger(function string, parameter interface{}) {
-	i.m.Send(i.newRequest(function, parameter, messages.MANY2ONE))
+	i.m.Send(i.newRequest(function, parameter, messages.TRIGGER))
 }
 
 func (i *Input) TriggerAll(function string, parameter interface{}) {
-	i.m.SendToAll(i.newRequest(function, parameter, messages.MANY2MANY))
+	i.m.SendToAll(i.newRequest(function, parameter, messages.TRIGGERALL))
 }
 
 func (i *Input) Listen(function string) {
@@ -134,20 +145,23 @@ func (i *Input) stopListen(d eventual2go.Data) {
 
 }
 
-func (i *Input) Results() *messages.ResultStream {
-	return i.results
-}
+//func (i *Input) Results() *messages.ResultStream {
+//	return i.results
+//}
 
 func (i *Input) ListenResults() *messages.ResultStream {
 	return i.results.Where(func(d *messages.Result) bool {
-		return d.Request.CallType == messages.MANY2MANY || d.Request.CallType == messages.MANY2ONE
+		return d.Request.CallType == messages.TRIGGER || d.Request.CallType == messages.TRIGGERALL
 	})
 }
 
 func (i *Input) newRequest(function string, parameter interface{}, ctype messages.CallType) (req *messages.Request) {
-
 	req = messages.NewRequest(i.cfg.UUID(), function, ctype, parameter)
+	return
+}
 
+func (i *Input) newRequestBin(function string, parameter []byte, ctype messages.CallType) (req *messages.Request) {
+	req = messages.NewEncodedRequest(i.cfg.UUID(), function, ctype, parameter)
 	return
 }
 

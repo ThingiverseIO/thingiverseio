@@ -31,6 +31,10 @@ type RequestFuture struct {
 	*eventual2go.Future
 }
 
+func (f *RequestFuture) GetResult() *Request {
+	return f.Future.GetResult().(*Request)
+}
+
 type RequestCompletionHandler func(*Request) *Request
 
 func (ch RequestCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
@@ -91,14 +95,14 @@ type RequestStream struct {
 	*eventual2go.Stream
 }
 
-type RequestSuscriber func(*Request)
+type RequestSubscriber func(*Request)
 
-func (l RequestSuscriber) toSuscriber() eventual2go.Subscriber {
+func (l RequestSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(*Request)) }
 }
 
-func (s *RequestStream) Listen(ss RequestSuscriber) *eventual2go.Subscription {
-	return s.Stream.Listen(ss.toSuscriber())
+func (s *RequestStream) Listen(ss RequestSubscriber) *eventual2go.Subscription {
+	return s.Stream.Listen(ss.toSubscriber())
 }
 
 type RequestFilter func(*Request) bool
@@ -137,7 +141,7 @@ func (s *RequestStream) AsChan() (c chan *Request) {
 	return
 }
 
-func pipeToRequestChan(c chan *Request) RequestSuscriber {
+func pipeToRequestChan(c chan *Request) RequestSubscriber {
 	return func(d *Request) {
 		c <- d
 	}
@@ -148,4 +152,32 @@ func closeRequestChan(c chan *Request) eventual2go.CompletionHandler {
 		close(c)
 		return nil
 	}
+}
+
+type RequestCollector struct {
+	*eventual2go.Collector
+}
+
+func NewRequestCollector() *RequestCollector {
+	return &RequestCollector{eventual2go.NewCollector()}
+}
+
+func (c *RequestCollector) Add(d *Request) {
+	c.Collector.Add(d)
+}
+
+func (c *RequestCollector) AddFuture(f *RequestFuture) {
+	c.Collector.Add(f.Future)
+}
+
+func (c *RequestCollector) AddStream(s *RequestStream) {
+	c.Collector.AddStream(s.Stream)
+}
+
+func (c *RequestCollector) Get() *Request {
+	return c.Collector.Get().(*Request)
+}
+
+func (c *RequestCollector) Preview() *Request {
+	return c.Collector.Preview().(*Request)
 }

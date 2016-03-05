@@ -4,9 +4,9 @@ package messages
 
 import "fmt"
 
-const _CallType_name = "ONE2ONEONE2MANYMANY2ONEMANY2MANY"
+const _CallType_name = "CALLCALLALLTRIGGERTRIGGERALL"
 
-var _CallType_index = [...]uint8{0, 7, 15, 23, 32}
+var _CallType_index = [...]uint8{0, 4, 11, 18, 28}
 
 func (i CallType) String() string {
 	if i < 0 || i >= CallType(len(_CallType_index)-1) {

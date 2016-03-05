@@ -5,8 +5,8 @@ package messages
 type CallType int
 
 const (
-	ONE2ONE CallType = iota
-	ONE2MANY
-	MANY2ONE
-	MANY2MANY
+	CALL CallType = iota
+	CALLALL
+	TRIGGER
+	TRIGGERALL
 )

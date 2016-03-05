@@ -3,6 +3,7 @@ package thingiverseio
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/eventual2go/typed_events"
@@ -19,6 +20,11 @@ type Output struct {
 	logger    *log.Logger
 	r         *eventual2go.Reactor
 	requests  *messages.RequestStream
+}
+
+func NewOutput(desc string) (o *Output, err error) {
+	o, err = NewOutputFromConfig(config.Configure(os.Stdout, true, descFromYaml(desc).AsTagSet()))
+	return
 }
 
 func NewOutputFromConfig(cfg *config.Config) (o *Output, err error) {
@@ -77,12 +83,12 @@ func (o *Output) ReplyEncoded(r *messages.Request, params []byte) {
 }
 
 func (o *Output) Emit(function string, inparams interface{}, outparams interface{}) {
-	req := messages.NewRequest(o.cfg.UUID(), function, messages.MANY2ONE, inparams)
+	req := messages.NewRequest(o.cfg.UUID(), function, messages.TRIGGER, inparams)
 	o.Reply(req, outparams)
 }
 
 func (o *Output) EmitEncoded(function string, inparams []byte, outparams []byte) {
-	req := messages.NewEncodedRequest("", function, messages.MANY2ONE, inparams)
+	req := messages.NewEncodedRequest("", function, messages.TRIGGER, inparams)
 	o.ReplyEncoded(req, outparams)
 }
 
@@ -134,11 +140,11 @@ func (o *Output) deliverResult(d eventual2go.Data) {
 	o.logger.Println("Delivering result", result.Request.Function, result.Request.CallType)
 
 	switch result.Request.CallType {
-	case messages.ONE2MANY, messages.ONE2ONE:
+	case messages.CALL, messages.CALLALL:
 		o.logger.Println("Delivering to", result.Request.Input)
 		o.m.SendTo(result.Request.Input, result)
 
-	case messages.MANY2MANY, messages.MANY2ONE:
+	case messages.TRIGGER, messages.TRIGGERALL:
 		if ls, ok := o.listeners[result.Request.Function]; ok {
 			for uuid := range ls {
 				o.m.SendTo(uuid, result)
