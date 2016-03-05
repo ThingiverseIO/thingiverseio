@@ -2,18 +2,22 @@ language: go
 
 go:
   - 1.5
-  - release
+  - 1.6
   - tip
+
+matrix:
+  allow_failures:
+    - go: tip
 
 before_install:
   - sudo apt-get update -y
   - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf
 
 install:
-  - curl -o ./zeromq.tar.gz http://download.zeromq.org/zeromq-4.0.4.tar.gz
+  - curl -o ./zeromq.tar.gz http://download.zeromq.org/zeromq-4.1.2.tar.gz
   - tar -C . -zxvf ./zeromq.tar.gz
   - rm ./zeromq.tar.gz
-  - cd zeromq-4.0.4
+  - cd zeromq-4.1.2
   - ./autogen.sh
   - ./configure
   - make
@@ -30,3 +34,4 @@ install:
 
 script:
   - go test -v ./service/tracker/beacon ./service/peer ./service/tracker /service/manager .
+  - make
