@@ -11,23 +11,9 @@ matrix:
 
 before_install:
   - sudo apt-get update -y
-  - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf
+  - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf libzmq-devel
 
 install:
-  - git clone --depth 1 -b stable git://github.com/jedisct1/libsodium.git
-  - ( cd libsodium; ./autogen.sh; ./configure --prefix=$BUILD_PREFIX; make check; make install)
-  - sudo ldconfig
-  - curl -o ./zeromq.tar.gz http://download.zeromq.org/zeromq-4.1.2.tar.gz
-  - tar -C . -zxvf ./zeromq.tar.gz
-  - rm ./zeromq.tar.gz
-  - cd zeromq-4.1.2
-  - ./autogen.sh
-  - ./configure
-  - make
-  - sudo make install
-  - sudo ldconfig
-  - cd ..
-  - sudo ifconfig
   - go get github.com/nu7hatch/gouuid
   - go get gopkg.in/gcfg.v1
   - go get github.com/joernweissenborn/eventual2go
