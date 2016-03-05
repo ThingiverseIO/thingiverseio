@@ -2,6 +2,7 @@ package thingiverseio
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 
 	"github.com/joernweissenborn/eventual2go"
@@ -19,6 +20,11 @@ type Input struct {
 	results *messages.ResultStream
 	listen  map[string]interface{}
 	logger  *log.Logger
+}
+
+func NewInput(desc string) (i *Input, err error) {
+	i, err = NewInputFromConfig(config.Configure(ioutil.Discard, false, descFromYaml(desc).AsTagSet()))
+	return
 }
 
 func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {

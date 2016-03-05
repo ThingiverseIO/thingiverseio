@@ -1,7 +1,6 @@
 package thingiverseio
 
 import (
-	"encoding/json"
 	"fmt"
 
 	"gopkg.in/yaml.v2"
@@ -54,16 +53,7 @@ func (a Descriptor) AsTagSet() (tagset map[string]string) {
 	return
 }
 
-func FromJson(JSON string) (dsc *Descriptor) {
-	dsc = &Descriptor{}
-	err := json.Unmarshal([]byte(JSON), dsc)
-	if err != nil {
-		panic(fmt.Sprint("Insane ServiceDescriptor", err))
-	}
-	return
-}
-
-func FromYaml(YAML string) (dsc *Descriptor) {
+func descFromYaml(YAML string) (dsc *Descriptor) {
 	dsc = &Descriptor{}
 	if err := yaml.Unmarshal([]byte(YAML), dsc); err != nil {
 		panic(fmt.Sprint("Insane ServiceDescriptor", err))
