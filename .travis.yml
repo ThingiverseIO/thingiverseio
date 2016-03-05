@@ -11,9 +11,20 @@ matrix:
 
 before_install:
   - sudo apt-get update -y
-  - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf libzmq-dev
+  - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf 
 
 install:
+  - curl -o ./zeromq.tar.gz http://download.zeromq.org/zeromq-4.0.4.tar.gz
+  - tar -C . -zxvf ./zeromq.tar.gz
+  - rm ./zeromq.tar.gz
+  - cd zeromq-4.0.4
+  - ./autogen.sh
+  - ./configure
+  - make
+  - sudo make install
+  - sudo ldconfig
+  - cd ..
+  - sudo ifconfig
   - go get github.com/nu7hatch/gouuid
   - go get gopkg.in/gcfg.v1
   - go get github.com/joernweissenborn/eventual2go
