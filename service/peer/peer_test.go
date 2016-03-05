@@ -22,8 +22,8 @@ func TestInitConnection(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg1 := config.New(os.Stdout, true)
-	cfg2 := config.New(os.Stdout, false)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 
 	c := i2.MessagesFromSender(cfg1.UUID()).Where(messages.Is(messages.HELLO)).AsChan()
 
@@ -71,10 +71,10 @@ func TestConnecting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg1 := config.New(os.Stdout, true)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag1", "1")
 	cfg1.AddOrSetUserTag("tag2", "2")
-	cfg2 := config.New(os.Stdout, false)
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag2", "2")
 
 	p1, err := New(cfg2.UUID(), "127.0.0.1", i2.Port(), i1, cfg1)
@@ -110,10 +110,10 @@ func TestNotConnecting(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cfg1 := config.New(os.Stdout, true)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag1", "1")
 	cfg1.AddOrSetUserTag("tag2", "2")
-	cfg2 := config.New(os.Stdout, false)
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag2", "2")
 	cfg2.AddOrSetUserTag("tag1", "2")
 

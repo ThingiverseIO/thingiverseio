@@ -3,6 +3,7 @@ package peer
 import (
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
 	"github.com/joernweissenborn/eventual2go"
@@ -15,6 +16,7 @@ import (
 
 // Peer is node with an rpc connection.
 type Peer struct {
+	m           *sync.Mutex
 	uuid        config.UUID
 	cfg         *config.Config
 	incoming    *connection.Incoming
@@ -29,6 +31,7 @@ type Peer struct {
 // New creates a new Peer.
 func New(uuid config.UUID, address string, port int, incoming *connection.Incoming, cfg *config.Config) (p *Peer, err error) {
 	p = &Peer{
+		m:         &sync.Mutex{},
 		uuid:      uuid,
 		cfg:       cfg,
 		incoming:  incoming,
@@ -101,8 +104,10 @@ func (p *Peer) Connected() *PeerFuture {
 
 // Remove closes the peer.
 func (p *Peer) Remove() {
-	p.logger.Println("Removing")
+	p.m.Lock()
+	defer p.m.Unlock()
 	if !p.removed.Completed() {
+		p.logger.Println("Removing")
 		p.Send(&messages.End{})
 		p.removed.Complete(p)
 	}
