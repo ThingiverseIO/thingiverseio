@@ -13,9 +13,9 @@ import (
 
 func TestJoin(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag", "1")
-	cfg2 := config.New(os.Stdout, false)
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag", "2")
 
 	p1 := 666
@@ -68,9 +68,9 @@ func TestJoin(t *testing.T) {
 
 func TestAutoJoin(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag", "1")
-	cfg2 := config.New(os.Stdout, false)
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag", "2")
 
 	t1, err := New("127.0.0.1", 0, cfg1)
@@ -110,9 +110,9 @@ func TestAutoJoin(t *testing.T) {
 }
 func TestLeaveAndReconnect(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true)
+	cfg1 := config.New(os.Stdout, true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag", "1")
-	cfg2 := config.New(os.Stdout, false)
+	cfg2 := config.New(os.Stdout, false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag", "2")
 
 	t1, err := New("127.0.0.1", 0, cfg1)
@@ -152,7 +152,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 	case <-c2:
 	}
 
-	cfg3 := config.New(os.Stdout, false)
+	cfg3 := config.New(os.Stdout, false, map[string]string{})
 	cfg3.AddOrSetUserTag("tag", "2")
 
 	t3, err := New("127.0.0.1", 0, cfg3)
