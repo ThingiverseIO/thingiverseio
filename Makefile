@@ -11,7 +11,7 @@ library-archive:
 
 library-shared:
 	go build --buildmode="c-shared" -o build/shared/libthingiverseio.so lib/input.go lib/output.go lib/main.go
-	mkdir build/include
+	mkdir -p build/include
 	mv build/shared/libthingiverseio.h build/include/
 
 tvio-cfg:
