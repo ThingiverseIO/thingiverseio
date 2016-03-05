@@ -11,7 +11,7 @@ matrix:
 
 before_install:
   - sudo apt-get update -y
-  - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf libzmq-devel
+  - sudo apt-get install -y curl make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf libzmq-dev
 
 install:
   - go get github.com/nu7hatch/gouuid
