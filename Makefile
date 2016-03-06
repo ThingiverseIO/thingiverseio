@@ -1,4 +1,4 @@
-all: library-shared library-archive test
+all: library-archive library-archive test
 
 test:
 	mkdir -p _test
@@ -7,7 +7,7 @@ test:
 	rm -rf _test
 
 library-archive:
-	go build --buildmode="c-archive" -o build/archive/libthingiverseio.a shared_library/input.go shared_library/output.go shared_library/main.go
+	go build --buildmode="c-archive" -o build/archive/tvio.a shared_library/input.go shared_library/output.go shared_library/main.go
 
 library-shared:
 	go build --buildmode="c-shared" -o build/shared/libthingiverseio.so shared_library/input.go shared_library/output.go shared_library/main.go
