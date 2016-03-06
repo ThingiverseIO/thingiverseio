@@ -107,10 +107,22 @@ func acknowledgeResult(akn *eventual2go.Completer) eventual2go.CompletionHandler
 	}
 }
 
-func (i *Input) CallAll(function string, parameter interface{}, s *messages.ResultStreamController) {
+func (i *Input) CallAll(function string, parameter interface{}, results *messages.ResultStreamController) (uuid config.UUID) {
 	i.logger.Println("CallAll", function)
 	req := i.newRequest(function, parameter, messages.CALLALL)
-	s.Join(i.results.Where(isRes(req.UUID)))
+	i.callAll(req, results)
+	return req.UUID
+}
+
+func (i *Input) CallAllBin(function string, parameter []byte, results *messages.ResultStreamController) (uuid config.UUID) {
+	i.logger.Println("CallAll", function)
+	req := i.newRequestBin(function, parameter, messages.CALLALL)
+	i.callAll(req, results)
+	return req.UUID
+}
+
+func (i *Input) callAll(req *messages.Request, results *messages.ResultStreamController) {
+	results.Join(i.results.Where(isRes(req.UUID)))
 	i.m.SendToAll(req)
 	return
 }
@@ -119,8 +131,16 @@ func (i *Input) Trigger(function string, parameter interface{}) {
 	i.m.Send(i.newRequest(function, parameter, messages.TRIGGER))
 }
 
+func (i *Input) TriggerBin(function string, parameter []byte) {
+	i.m.Send(i.newRequestBin(function, parameter, messages.TRIGGER))
+}
+
 func (i *Input) TriggerAll(function string, parameter interface{}) {
 	i.m.SendToAll(i.newRequest(function, parameter, messages.TRIGGERALL))
+}
+
+func (i *Input) TriggerAllBin(function string, parameter []byte) {
+	i.m.SendToAll(i.newRequestBin(function, parameter, messages.TRIGGERALL))
 }
 
 func (i *Input) Listen(function string) {

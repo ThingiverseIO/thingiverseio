@@ -111,10 +111,10 @@ int main() {
 		printf("FAIL, result hasnt arrived\n");
 		return 1;
 	}
-	
+
 	char * resultparams;
 	int resultparams_size;
-	err = retrieve_result_params(output, uuid, &resultparams, &resultparams_size);
+	err = retrieve_result_params(input, uuid, &resultparams, &resultparams_size);
 	if (err != 0) {
 		printf("FAIL, err not 0\n");
 		return 1;
@@ -123,7 +123,65 @@ int main() {
 		printf("FAIL, rparams_size is 0\n");
 		return 1;
 	};
-;
+
+	printf("SUCCES\n");
+
+	printf("Testing Trigger...\n");
+
+	err = start_listen(input, fun);
+	if (err != 0) {
+		printf("FAIL, err not 0\n");
+		return 1;
+	};
+
+	sleep(5);
+
+	err = trigger(input, fun,params,params_size);
+	if (err != 0) {
+		printf("FAIL, err not 0\n");
+		return 1;
+	};
+	sleep(5);
+
+	err = get_next_request_id(output, &req_uuid, &req_uuid_size);
+	if (err != 0) {
+		printf("FAIL, get_gext_req err not 0\n");
+		return 1;
+	};
+	if (req_uuid_size == 0) {
+		printf("FAIL, req_uuid_size is 0\n");
+		return 1;
+	};
+
+	err = reply(output, req_uuid, resparams, resparams_size);
+	if (err != 0) {
+		printf("FAIL, err not 0\n");
+		return 1;
+	};
+
+	sleep(5);
+
+	err = listen_result_available(input, &ready);
+	if (err != 0) {
+		printf("FAIL, err not 0\n");
+		return 1;
+	};
+	if (ready != 1) {
+		printf("FAIL, result hasnt arrived\n");
+		return 1;
+	}
+
+	err = retrieve_listen_result_params(input, &resultparams, &resultparams_size);
+	if (err != 0) {
+		printf("FAIL, err not 0\n");
+		return 1;
+	};
+	if (resultparams_size != 10) {
+		printf("FAIL, rparams_size is 0\n");
+		return 1;
+	};
+
+	printf("SUCCES\n");
 
 	return 0;
 }
