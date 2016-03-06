@@ -28,14 +28,7 @@ func (ic *InitCmd) Run(args []string) int {
 }
 
 func initcfgfile(path string, ui cli.Ui) {
-	cfgfile := `
-[network]
-interface=127.0.0.1
 
-[usertags]
-tag=my_tag1:myvalue1
-tag=my_tag2:myvalue2
-`
 	ui.Info(fmt.Sprintf("Initializing config at %s", path))
 
 	f, err := os.OpenFile(path, os.O_RDWR, 0666)
@@ -60,3 +53,12 @@ tag=my_tag2:myvalue2
 	}
 	ui.Info("File created sucessfully")
 }
+
+var cfgfile = `
+[network]
+interface=127.0.0.1
+
+[usertags]
+tag=my_tag1:myvalue1
+tag=my_tag2:myvalue2
+`

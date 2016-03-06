@@ -1,8 +1,8 @@
-all: library-archive library-archive test
+all: library-archive test
 
 test:
 	mkdir -p _test
-	gcc -Wall shared_library/test.c build/archive/libthingiverseio.a -Ibuild/archive -lpthread -lzmq -o _test/test
+	gcc shared_library/test.c build/archive/tvio.a -Ibuild/archive -lpthread -lzmq -o _test/test
 	./_test/test
 	rm -rf _test
 
@@ -14,8 +14,8 @@ library-shared:
 	mkdir -p build/include
 	mv build/shared/libthingiverseio.h build/include/
 
-tvio-cfg:
-	go build  tvio-cfg/main.go
+tool:
+	go build tool/main.go -o bin/tvio
 
 clean:
 	rm -rf build/
