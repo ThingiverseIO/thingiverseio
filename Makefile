@@ -10,9 +10,7 @@ library-archive:
 	go build --buildmode="c-archive" -o build/archive/tvio.a shared_library/input.go shared_library/output.go shared_library/main.go
 
 library-shared:
-	go build --buildmode="c-shared" -o build/shared/libthingiverseio.so shared_library/input.go shared_library/output.go shared_library/main.go
-	mkdir -p build/include
-	mv build/shared/libthingiverseio.h build/include/
+	gcc -fPIC -shared -Lbuild/archive -Ibuild/archive shared_library/thingiverseio.c -l:tvio.a -o build/thingiverseio.so
 
 tool:
 	go build tool/main.go -o bin/tvio
