@@ -86,10 +86,10 @@ func (i *Input) Call(function string, parameter interface{}) (f *messages.Result
 }
 
 func (i *Input) CallBin(function string, parameter []byte) (uuid config.UUID, f *messages.ResultFuture) {
-	i.logger.Println("CallBin", function)
 	req := i.newRequestBin(function, parameter, messages.CALL)
 	f = i.call(req)
 	uuid = req.UUID
+	i.logger.Println("CallBin", function, uuid)
 	return
 }
 

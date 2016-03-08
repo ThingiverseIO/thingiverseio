@@ -99,7 +99,7 @@ int main() {
 		return 1;
 	};
 
-	sleep(5);
+	Sleep(5);
 
 	int ready;
 	err = result_ready(input, uuid, &ready);
@@ -134,14 +134,14 @@ int main() {
 		return 1;
 	};
 
-	sleep(5);
+	Sleep(5);
 
 	err = trigger(input, fun,params,params_size);
 	if (err != 0) {
 		printf("FAIL, err not 0\n");
 		return 1;
 	};
-	sleep(5);
+	Sleep(5);
 
 	err = get_next_request_id(output, &req_uuid, &req_uuid_size);
 	if (err != 0) {
@@ -159,7 +159,7 @@ int main() {
 		return 1;
 	};
 
-	sleep(5);
+	Sleep(5);
 
 	err = listen_result_available(input, &ready);
 	if (err != 0) {

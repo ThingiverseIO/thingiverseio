@@ -1,0 +1,33 @@
+all: library-archive test
+
+test: test-archive test-shared
+
+test-archive: tvio.a
+	mkdir -p _test
+	gcc shared_library/test.c tvio.a -I. -lpthread -lzmq -lzmq -lws2_32 -lntdll -o _test/test.exe
+	./_test/test
+	rm -rf _test
+	rm tvio.*
+
+test-shared:
+	mkdir -p _test
+	gcc shared_library/test_shared.c -Ibuild/include -Lbuild/lib -lpthread -lzmq -lthingiverse -o _test/test.exe
+	./_test/test
+	rm -rf _test
+
+libthingiverse.dll: tvio.a
+	gcc -c shared_library/thingiverseio.c -L. -I. -fPIC -lpthread -lzmq -l:tvio.a -o tvio.o
+	mkdir -p build/lib
+	gcc -shared -fPIC tvio.o tvio.a -o build/lib/libthingiverse.dll -lpthread -lzmq -lws2_32 -lntdll
+	rm tvio.*
+	mkdir -p build/include
+	cp shared_library/thingiverseio.h build/include/
+
+tvio.a:
+	go build --buildmode="c-archive" -o tvio.a shared_library/input.go shared_library/output.go shared_library/main.go
+
+tool:
+	go build tool/main.go -o bin/tvio
+
+clean:
+	rm -rf build/
