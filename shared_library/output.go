@@ -67,6 +67,16 @@ func new_output(descriptor *C.char) C.int {
 	return C.int(newOutput(d))
 }
 
+//export remove_output
+func remove_output(o C.int) C.int {
+	if out, ok := outputs[int(o)]; ok {
+		out.Remove()
+		delete(outputs, int(o))
+		return C.int(0)
+	}
+	return C.int(1)
+}
+
 //export get_next_request_id
 func get_next_request_id(o C.int, uuid **C.char, uuid_size *C.int) C.int {
 	if waiting, ok := waiting_requestIn[int(o)]; ok {
@@ -74,6 +84,19 @@ func get_next_request_id(o C.int, uuid **C.char, uuid_size *C.int) C.int {
 			*uuid = C.CString(string(waiting[0]))
 			*uuid_size = C.int(len(waiting[0]))
 			waiting_requestIn[int(o)] = waiting_requestIn[int(o)][1:]
+		}
+		return C.int(0)
+	}
+	return C.int(1)
+}
+
+//export request_available
+func request_available(o C.int, is *C.int) C.int {
+	if waiting, ok := waiting_requestIn[int(o)]; ok {
+		if len(waiting) != 0 {
+			*is = C.int(1)
+		} else {
+			*is = C.int(0)
 		}
 		return C.int(0)
 	}
@@ -105,7 +128,7 @@ func reply(o C.int, uuid *C.char, parameter unsafe.Pointer, parameter_size C.int
 	r := requestIn[int(o)][config.UUID(C.GoString(uuid))]
 	out := outputs[int(o)]
 	if r != nil && out != nil {
-		params := []byte(C.GoStringN((*C.char)(parameter), parameter_size))
+		params := getParams(parameter, parameter_size)
 		out.ReplyEncoded(r, params)
 		delete(requestIn[int(o)], config.UUID(C.GoString(uuid)))
 		return C.int(0)
@@ -119,11 +142,10 @@ func emit(o C.int, function *C.char, inparameter unsafe.Pointer, inparameter_siz
 	if out != nil {
 		out.EmitEncoded(
 			C.GoString(function),
-			[]byte(C.GoStringN((*C.char)(inparameter), inparameter_size)),
-			[]byte(C.GoStringN((*C.char)(outparameter), outparameter_size)),
+			getParams(inparameter, inparameter_size),
+			getParams(outparameter, outparameter_size),
 		)
 		return C.int(0)
 	}
 	return C.int(1)
 }
-

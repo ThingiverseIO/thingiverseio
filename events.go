@@ -1,5 +1,7 @@
 package thingiverseio
 
+type connectionEvent struct{}
+
 type arriveEvent struct{}
 
 type leaveEvent struct{}

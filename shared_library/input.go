@@ -5,6 +5,7 @@ package main
 import "C"
 
 import (
+	"fmt"
 	"unsafe"
 
 	"github.com/joernweissenborn/thingiverseio"
@@ -46,6 +47,29 @@ func new_input(descriptor *C.char) (i C.int) {
 	return C.int(newInput(d))
 }
 
+//export remove_input
+func remove_input(i C.int) C.int {
+	if in, ok := inputs[int(i)]; ok {
+		in.Remove()
+		delete(inputs, int(i))
+		return C.int(0)
+	}
+	return C.int(1)
+}
+
+//export connected
+func connected(i C.int, is *C.int) C.int {
+	if in, ok := inputs[int(i)]; ok {
+		if in.HasConnection() {
+			*is = 1
+		} else {
+			*is = 0
+		}
+		return C.int(0)
+	}
+	return C.int(1)
+}
+
 //export start_listen
 func start_listen(i C.int, function *C.char) C.int {
 	if in, ok := inputs[int(i)]; ok {
@@ -68,13 +92,15 @@ func stop_listen(i C.int, function *C.char) C.int {
 func call(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int, request_id **C.char, request_id_size *C.int) C.int {
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
-		params := []byte(C.GoStringN((*C.char)(parameter), parameter_size))
+		params := getParams(parameter, parameter_size)
+
 		uuid, f := in.CallBin(fun, params)
 
 		request[int(i)][uuid] = f
 
 		*request_id = C.CString(string(uuid))
 		*request_id_size = C.int(len(uuid))
+		fmt.Println("blalawf", *request_id, *request_id_size)
 		return C.int(0)
 	}
 	return C.int(1)
@@ -84,7 +110,7 @@ func call(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.
 func call_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int, request_id **C.char, request_id_size *C.int) C.int {
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
-		params := []byte(C.GoStringN((*C.char)(parameter), parameter_size))
+		params := getParams(parameter, parameter_size)
 
 		s := messages.NewResultStreamController()
 		c := messages.NewResultCollector()
@@ -103,7 +129,7 @@ func call_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_siz
 func trigger(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int) C.int {
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
-		params := []byte(C.GoStringN((*C.char)(parameter), parameter_size))
+		params := getParams(parameter, parameter_size)
 		in.TriggerBin(fun, params)
 		return C.int(0)
 	}
@@ -114,7 +140,7 @@ func trigger(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size
 func trigger_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int) C.int {
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
-		params := []byte(C.GoStringN((*C.char)(parameter), parameter_size))
+		params := getParams(parameter, parameter_size)
 		in.TriggerAllBin(fun, params)
 		return C.int(0)
 	}
@@ -139,7 +165,6 @@ func result_ready(i C.int, uuid *C.char, ready *C.int) C.int {
 
 //export retrieve_result_params
 func retrieve_result_params(i C.int, uuid *C.char, result *unsafe.Pointer, result_size *C.int) C.int {
-
 	if request[int(i)] == nil {
 		return C.int(1)
 	}
@@ -197,7 +222,8 @@ func retrieve_listen_result_function(i C.int, function **C.char, function_size *
 	return C.int(1)
 }
 
-//export retrieve_listen_result_request_params
+//Nexport retrieve_listen_result_request_params
+//TODO: rework scheme of getting request parameter
 func retrieve_listen_result_request_params(i C.int, params *unsafe.Pointer, params_size *C.int) C.int {
 	if res, ok := listen_results[int(i)]; ok {
 		if res.Empty() {

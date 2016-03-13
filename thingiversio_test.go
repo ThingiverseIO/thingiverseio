@@ -270,12 +270,11 @@ func TestEmit(t *testing.T) {
 	f1 := i.Connected()
 	f2 := e.Connected()
 
-
 	i.Run()
 	e.Run()
 	f1.WaitUntilComplete()
 	f2.WaitUntilComplete()
-	time.Sleep(500*time.Millisecond)
+	time.Sleep(500 * time.Millisecond)
 
 	params := []byte{4, 5, 63, 4}
 	e.Emit("SayHello", nil, params)

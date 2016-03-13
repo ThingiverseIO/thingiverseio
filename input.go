@@ -14,12 +14,13 @@ import (
 )
 
 type Input struct {
-	cfg     *config.Config
-	m       *manager.Manager
-	r       *eventual2go.Reactor
-	results *messages.ResultStream
-	listen  map[string]interface{}
-	logger  *log.Logger
+	cfg       *config.Config
+	connected bool
+	m         *manager.Manager
+	r         *eventual2go.Reactor
+	results   *messages.ResultStream
+	listen    map[string]interface{}
+	logger    *log.Logger
 }
 
 func NewInput(desc string) (i *Input, err error) {
@@ -29,6 +30,9 @@ func NewInput(desc string) (i *Input, err error) {
 
 func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {
 	m, err := manager.New(cfg)
+	if err != nil {
+		return
+	}
 	i = &Input{
 		m:       m,
 		cfg:     cfg,
@@ -37,6 +41,9 @@ func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {
 		logger:  log.New(cfg.Logger(), fmt.Sprintf("%s INPUT ", cfg.UUID()), 0),
 		results: &messages.ResultStream{m.MessagesOfType(messages.RESULT).Transform(connection.ToMessage)},
 	}
+
+	i.r.React(connectionEvent{},i.onConnection)
+	i.r.AddStream(connectionEvent{}, m.Connected().Stream)
 
 	i.r.React(arriveEvent{}, i.sendListenFunctions)
 	i.r.AddStream(arriveEvent{}, m.PeerArrive().Stream)
@@ -59,6 +66,16 @@ func (i *Input) Remove() (errs []error) {
 
 func (i *Input) Run() {
 	i.m.Run()
+}
+
+func (i *Input) HasConnection() bool {
+	i.r.Lock()
+	defer i.r.Unlock()
+	return i.connected
+}
+
+func (i *Input) onConnection(c eventual2go.Data) {
+	i.connected = c.(bool)
 }
 
 func (i *Input) Connected() *typed_events.BoolFuture {
