@@ -13,9 +13,9 @@ func main() {
 
 //export version
 func version(maj, min, fix *C.int) C.int {
-	*maj = thingiverseio.CurrentVersion.Major
-	*min = thingiverseio.CurrentVersion.Minor
-	*fix = thingiverseio.CurrentVersion.Fix
+	*maj = C.int(thingiverseio.CurrentVersion.Major)
+	*min = C.int(thingiverseio.CurrentVersion.Minor)
+	*fix = C.int(thingiverseio.CurrentVersion.Fix)
 	return C.int(0)
 }
 
