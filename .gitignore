@@ -14,7 +14,10 @@ tvio-cfg
 # Folders
 _obj
 _test
+shared_lib/_test
 bin
+shared_lib/bin
+shared_lib/lib
 build
 
 # Architecture specific extensions/prefixes
