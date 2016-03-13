@@ -1,13 +1,15 @@
-package cmds
+package config
 
 import (
 	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/joernweissenborn/thingiverse.io/config"
+	"github.com/joernweissenborn/thingiverseio/config"
 	"github.com/mitchellh/cli"
 )
+
+
 
 type InitCmd struct {
 	Ui cli.Ui

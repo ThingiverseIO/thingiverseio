@@ -2,7 +2,11 @@ package main
 
 import "C"
 
-import "unsafe"
+import (
+	"unsafe"
+
+	"github.com/joernweissenborn/thingiverseio"
+)
 
 func main() {
 }

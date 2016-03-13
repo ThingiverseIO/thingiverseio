@@ -1,33 +1,29 @@
-package cmds
+package config
 
 import (
 	"fmt"
 	"io/ioutil"
 
-	"github.com/joernweissenborn/thingiverse.io/config"
-	"github.com/mitchellh/cli"
+	"github.com/codegangsta/cli"
+	"github.com/joernweissenborn/thingiverseio/config"
 )
 
-type ShowCommand struct {
-	Ui cli.Ui
+var ShowCommand = cli.Command{
+	Name:        "show",
+	Usage:       "Show the current configuration",
+	Description: "Shows the current configuration of the thingiverse.io network on this machine",
+	Action:      runShow,
 }
 
-func (*ShowCommand) Help() string {
-	return `Shows the current configuration of the thingiverse.io network on this machine`
-}
-func (*ShowCommand) Synopsis() string {
-	return `Shows the current configuration of the thingiverse.io network on this machine`
-}
+func runShow(c *cli.Context) {
 
-func (sc *ShowCommand) Run(args []string) int {
+	checkfmtger := ioutil.Discard
 
-	checklogger := ioutil.Discard
-
-	cfg := config.New(checklogger, false)
+	cfg := config.New(checkfmtger, false, map[string]string{})
 
 	config.CheckEnviroment(cfg)
 
-	sc.Ui.Info(fmt.Sprintf(`
+	fmt.Println(fmt.Sprintf(`
 Enviroment Configuration
 ========================
 
@@ -36,8 +32,8 @@ Enviroment Configuration
 
 	//Global Dir
 
-	cfg = config.New(checklogger, false)
-	sc.Ui.Info(fmt.Sprintf(`
+	cfg = config.New(checkfmtger, false, map[string]string{})
+	fmt.Println(fmt.Sprintf(`
 Global Configuration
 ========================
 file: %s
@@ -46,16 +42,16 @@ file: %s
 
 	if config.CfgFileGlobalPresent() {
 		config.CheckCfgFile(cfg, config.CfgFileGlobal())
-		sc.Ui.Info(cfg.String())
+		fmt.Println(cfg.String())
 	} else {
-		sc.Ui.Info("Not Present")
+		fmt.Println("Not Present")
 	}
 
 	//User Dir
 
-	cfg = config.New(checklogger, false)
+	cfg = config.New(checkfmtger, false, map[string]string{})
 
-	sc.Ui.Info(fmt.Sprintf(`
+	fmt.Println(fmt.Sprintf(`
 User Configuration
 ========================
 file: %s
@@ -64,15 +60,15 @@ file: %s
 
 	if config.CfgFileUserPresent() {
 		config.CheckCfgFile(cfg, config.CfgFileUser())
-		sc.Ui.Info(cfg.String())
+		fmt.Println(cfg.String())
 	} else {
-		sc.Ui.Info("Not Present")
+		fmt.Println("Not Present")
 	}
 
 	//WD
 
-	cfg = config.New(checklogger, false)
-	sc.Ui.Info(fmt.Sprintf(`
+	cfg = config.New(checkfmtger, false, map[string]string{})
+	fmt.Println(fmt.Sprintf(`
 Working Dir Configuration
 ========================
 file: %s
@@ -81,17 +77,16 @@ file: %s
 
 	if config.CfgFileCwdPresent() {
 		config.CheckCfgFile(cfg, config.CfgFileCwd())
-		sc.Ui.Info(cfg.String())
+		fmt.Println(cfg.String())
 	} else {
-		sc.Ui.Info("Not Present")
+		fmt.Println("Not Present")
 	}
 
-	sc.Ui.Info(fmt.Sprintf(`
+	fmt.Println(fmt.Sprintf(`
 Configuration Used
 ==================
 
 %s
-`, config.Configure(ioutil.Discard, false)))
+`, config.Configure(ioutil.Discard, false, map[string]string{})))
 
-	return 0
 }
