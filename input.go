@@ -24,7 +24,11 @@ type Input struct {
 }
 
 func NewInput(desc string) (i *Input, err error) {
-	i, err = NewInputFromConfig(config.Configure(os.Stdout, false, descFromYaml(desc).AsTagSet()))
+	var d Descriptor
+	d, err = ParseDescriptor(desc)
+	if err == nil {
+		i, err = NewInputFromConfig(config.Configure(os.Stdout, false, d.AsTagSet()))
+	}
 	return
 }
 
@@ -42,7 +46,9 @@ func NewInputFromConfig(cfg *config.Config) (i *Input, err error) {
 		results: &messages.ResultStream{m.MessagesOfType(messages.RESULT).Transform(connection.ToMessage)},
 	}
 
-	i.r.React(connectionEvent{},i.onConnection)
+	i.logger.Println("Launching with tagset", cfg.Tags())
+
+	i.r.React(connectionEvent{}, i.onConnection)
 	i.r.AddStream(connectionEvent{}, m.Connected().Stream)
 
 	i.r.React(arriveEvent{}, i.sendListenFunctions)

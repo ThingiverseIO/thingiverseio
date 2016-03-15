@@ -1,9 +1,10 @@
 package thingiverseio
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
-
-	"gopkg.in/yaml.v2"
+	"strings"
 )
 
 type Descriptor struct {
@@ -53,10 +54,150 @@ func (a Descriptor) AsTagSet() (tagset map[string]string) {
 	return
 }
 
-func descFromYaml(YAML string) (dsc *Descriptor) {
-	dsc = &Descriptor{}
-	if err := yaml.Unmarshal([]byte(YAML), dsc); err != nil {
-		panic(fmt.Sprint("Insane ServiceDescriptor", err))
+func ParseDescriptor(desc string) (d Descriptor, err error) {
+	scanner := bufio.NewScanner(strings.NewReader(desc))
+	linecounter := 0
+	d.Tags = map[string]string{}
+	for scanner.Scan() {
+		line := strings.TrimLeft(scanner.Text(), " ")
+		linecounter++
+		switch {
+		case line == "":
+		case strings.HasPrefix(line, "#"):
+		case strings.HasPrefix(line, "func"):
+			var f Function
+			f, err = parseFunction(linecounter, line)
+			if err != nil {
+				return
+			}
+			d.Functions = append(d.Functions, f)
+		case strings.HasPrefix(line, "tags"):
+			var tags map[string]string
+			tags, err = parseTagsLine(linecounter, line)
+			if err != nil {
+				return
+			}
+			for k, v := range tags {
+				d.Tags[k] = v
+			}
+		case strings.HasPrefix(line, "tag"):
+			var k, v string
+			k, v, err = parseTagLine(linecounter, line)
+			if err != nil {
+				return
+			}
+			d.Tags[k] = v
+		default:
+			err = newLineError(linecounter, "malformed line")
+			return
+		}
 	}
 	return
+}
+
+func parseFunction(line int, s string) (f Function, err error) {
+	s = strings.TrimLeft(s, "func")
+	s = strings.TrimLeft(s, " ")
+	split := strings.Split(s, "(")
+	if len(split) != 3 {
+		err = newLineError(line, "malformed function")
+		return
+	}
+	f.Name = strings.TrimRight(split[0], " ")
+	ins := strings.TrimRight(strings.TrimRight(split[1], " "), ")")
+	outs := strings.TrimRight(strings.TrimRight(split[2], " "), ")")
+
+	split = strings.Split(ins, ",")
+
+	for _, in := range split {
+		in = strings.TrimLeft(in, " ")
+		in = strings.TrimRight(in, " ")
+		spl := strings.Split(in, " ")
+		if len(spl) != 2 {
+			err = newLineError(line, "malformed function")
+			return
+		}
+		n := spl[0]
+		t := spl[1]
+
+		if !containsAny(t, "string", "bool", "bin", "int", "float") {
+			err = newLineError(line, fmt.Sprint("malformed function, unknown type", t))
+			return
+		}
+		f.Input = append(f.Input, Parameter{n, t})
+	}
+
+	split = strings.Split(outs, ",")
+	for _, out := range split {
+		out = strings.TrimLeft(out, " ")
+		out = strings.TrimRight(out, " ")
+		spl := strings.Split(out, " ")
+		if len(spl) != 2 {
+			err = newLineError(line, "malformed function")
+			return
+		}
+		n := spl[0]
+		t := spl[1]
+
+		if !containsAny(t, "string", "bool", "bin", "int", "float") {
+			err = newLineError(line, fmt.Sprint("malformed function, unknown type", t))
+			return
+		}
+		f.Output = append(f.Input, Parameter{n, t})
+	}
+
+	return
+}
+
+func parseTagLine(line int, s string) (k, v string, err error) {
+	s = strings.TrimLeft(s, "tag")
+	return parseTag(line, s)
+}
+
+func parseTagsLine(line int, s string) (tags map[string]string, err error) {
+	tags = map[string]string{}
+	s = strings.TrimLeft(s, "tags")
+	split := strings.Split(s, ",")
+	for _, t := range split {
+		var k, v string
+		k, v, err = parseTag(line, t)
+		if err != nil {
+			return
+		}
+		tags[k] = v
+	}
+	return
+}
+
+func parseTag(line int, s string) (k, v string, err error) {
+	if strings.Contains(s, ",") {
+		err = newLineError(line, "malformed tag, ',' not allowed in tag")
+		return
+	}
+	if strings.Contains(s, ":") {
+		split := strings.Split(s, ":")
+		if len(split) != 2 {
+			err = newLineError(line, "malformed tag")
+			return
+		}
+		k = strings.Trim(split[0], " ")
+		v = strings.Trim(split[1], " ")
+		return
+	} else {
+		k = strings.Trim(s, " ")
+	}
+	return
+}
+
+func newLineError(line int, reason string) error {
+	return errors.New(fmt.Sprintf("LINE %d: %s", line, reason))
+}
+
+func containsAny(s string, t ...string) bool {
+	for _, str := range t {
+		if strings.Contains(s, str) {
+			return true
+		}
+	}
+	return false
 }

@@ -23,7 +23,11 @@ type Output struct {
 }
 
 func NewOutput(desc string) (o *Output, err error) {
-	o, err = NewOutputFromConfig(config.Configure(os.Stdout, true, descFromYaml(desc).AsTagSet()))
+	var d Descriptor
+	d, err = ParseDescriptor(desc)
+	if err == nil {
+		o, err = NewOutputFromConfig(config.Configure(os.Stdout, true, d.AsTagSet()))
+	}
 	return
 }
 
@@ -37,6 +41,8 @@ func NewOutputFromConfig(cfg *config.Config) (o *Output, err error) {
 		logger:    log.New(cfg.Logger(), fmt.Sprintf("%s OUTPUT ", cfg.UUID()), 0),
 		r:         eventual2go.NewReactor(),
 	}
+
+	o.logger.Println("Launching with tagset", cfg.Tags())
 
 	o.r.React(startListenEvent{}, o.onListen)
 	o.r.AddStream(startListenEvent{}, m.MessagesOfType(messages.LISTEN).Stream)

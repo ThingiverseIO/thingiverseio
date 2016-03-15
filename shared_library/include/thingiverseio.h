@@ -3,6 +3,10 @@ extern "C" {
 #endif
 
 
+extern int tvio_version(int* major, int* minor, int* fix);
+
+extern void tvio_check_descriptor(char* descriptor, char** result, int* result_size);
+
 extern int tvio_new_input(char* descriptor);
 
 extern int tvio_remove_input(int input);

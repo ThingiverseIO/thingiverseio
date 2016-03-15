@@ -19,8 +19,11 @@ wget https://storage.googleapis.com/golang/go1.6.linux-amd64.tar.gz
 tar -xf go1.6.linux-amd64.tar.gz
 
 export GOROOT=/home/vagrant/go
+echo 'export GOROOT=/home/vagrant/go' > /home/vagrant/.bashrc
 export GOPATH=/home/vagrant/goprog
+echo 'export GOPATH=/home/vagrant/goprog' > /home/vagrant/.bashrc
 export PATH=/home/vagrant/go/bin:$PATH
+echo 'export PATH=/home/vagrant/go/bin:$PATH' > /home/vagrant/.bashrc
 
 go get github.com/nu7hatch/gouuid
 go get gopkg.in/gcfg.v1

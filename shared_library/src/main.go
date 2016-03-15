@@ -19,6 +19,18 @@ func version(maj, min, fix *C.int) C.int {
 	return C.int(0)
 }
 
+//export check_descriptor
+func check_descriptor(desc *C.char, result **C.char, result_size *C.int) {
+	_, err := thingiverseio.ParseDescriptor(C.GoString(desc))
+	if err != nil {
+		*result = C.CString(err.Error())
+		*result_size = C.int(len(err.Error()))
+	} else {
+		*result = C.CString("")
+		*result_size = C.int(0)
+	}
+}
+
 func getParams(parameter unsafe.Pointer, parameter_size C.int) (params []byte) {
 	params = make([]byte, parameter_size)
 	if parameter_size > 0 {

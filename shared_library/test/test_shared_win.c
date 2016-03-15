@@ -1,7 +1,17 @@
 #include<stdio.h>
 #include "thingiverseio.h"
+#include <windows.h>
 
-  char * const DESCRIPTOR = "func SayHello(Greeting string) (Answer string)";
+  char * const DESCRIPTOR = "\
+  functions:\n\
+    - name: SayHello\n\
+      input:\n\
+        - name: Greeting\n\
+          type: string\n\
+      output:\n\
+        - name: Answer\n\
+          type: string\n\
+  ";
 
   int main() {
 
@@ -103,7 +113,7 @@
 		return 1;
 	};
 
-	sleep(5);
+	Sleep(5);
 
 	int ready;
 	err = tvio_result_ready(input, uuid, &ready);
@@ -138,14 +148,14 @@
 		return 1;
 	};
 
-	sleep(5);
+	Sleep(5);
 
 	err = tvio_trigger(input, fun,params,params_size);
 	if (err != 0) {
 		printf("FAIL, tvio_trigger err not 0\n");
 		return 1;
 	};
-	sleep(5);
+	Sleep(5);
 
 	err = tvio_get_next_request_id(output, &req_uuid, &req_uuid_size);
 	if (err != 0) {
@@ -163,7 +173,7 @@
 		return 1;
 	};
 
-	sleep(5);
+	Sleep(5*1000);
 
 	err = tvio_listen_result_available(input, &ready);
 	if (err != 0) {

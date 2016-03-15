@@ -1,26 +1,31 @@
-all: library-archive test
+all: libthingiverseio.so
+
+.PHONY: all test clean
 
 test:
 	mkdir -p _test
-	gcc shared_library/test.c build/archive/tvio.a -Ibuild/archive -lpthread -lzmq -o _test/test
+	gcc test/test_shared.c -Iinclude -Lbin -lpthread -lzmq -lthingiverseio -ltvio -o _test/test
+	cp bin/lib* ./
 	./_test/test
 	rm -rf _test
+	rm -f libtvio.so
+	rm -f libthingiverseio.so
 
-test-shared:
-	mkdir -p _test
-	gcc shared_library/test_shared.c -Ibuild/archive -Ishared_library -Lbuild -lpthread -lzmq -lthingiverse -o _test/test
-	./_test/test
-	rm -rf _test
+tvio.so:
+	go build --buildmode="c-shared" -o bin/tvio.so src/input.go src/output.go src/main.go
+	mv bin/tvio.h include/
+	mv bin/tvio.so bin/libtvio.so
+tvio.o: tvio.so
+	gcc -c src/thingiverseio.c -L./bin/ -I./include/ -fPIC -lpthread -lzmq -ltvio -o tvio.o
 
-library-archive:
-	go build --buildmode="c-archive" -o build/archive/tvio.a shared_library/input.go shared_library/output.go shared_library/main.go
+libthingiverseio.so: tvio.o
+	gcc -shared -fPIC tvio.o -o bin/libthingiverseio.so -lpthread -lzmq -L./bin -ltvio
 
-library-shared:
-	gcc -c shared_library/thingiverseio.c -Lbuild/archive -Ibuild/archive -fPIC -lpthread -lzmq -l:tvio.a -o build/tvio.o
-	gcc -shared -fPIC build/tvio.o build/archive/tvio.a -o build/libthingiverse.dll -lpthread -lzmq -lws2_32 -lntdll
-
-tool:
-	go build tool/main.go -o bin/tvio
+install:
+	cp bin/lib* /usr/lib/
+	cp include/* /usr/include/
 
 clean:
-	rm -rf build/
+	rm -f *.tvio
+	rm -rf bin
+	rm -f include/tvio.h

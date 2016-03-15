@@ -1,5 +1,13 @@
 #include "tvio.h"
 
+int tvio_version(int* major, int* minor, int* fix) {
+	return version(major, minor, fix);
+}
+
+void tvio_check_descriptor(char* descriptor, char** result, int* result_size) {
+	check_descriptor(descriptor, result, result_size);
+}
+
 int tvio_new_input(char* descriptor){
 	return new_input(descriptor);
 }
