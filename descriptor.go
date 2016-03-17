@@ -98,23 +98,25 @@ func ParseDescriptor(desc string) (d Descriptor, err error) {
 func parseFunction(line int, s string) (f Function, err error) {
 	s = strings.TrimLeft(s, "func")
 	s = strings.TrimLeft(s, " ")
-	split := strings.Split(s, "(")
-	if len(split) != 3 {
-		err = newLineError(line, "malformed function")
+	split1 := strings.Split(s, "(")
+	f.Name = strings.TrimRight(split1[0], " ")
+
+	if len(split1) == 1 {
 		return
 	}
-	f.Name = strings.TrimRight(split[0], " ")
-	ins := strings.TrimRight(strings.TrimRight(split[1], " "), ")")
-	outs := strings.TrimRight(strings.TrimRight(split[2], " "), ")")
 
-	split = strings.Split(ins, ",")
+	ins := strings.TrimRight(strings.TrimRight(split1[1], " "), ")")
+	split2 := strings.Split(ins, ",")
 
-	for _, in := range split {
+	for _, in := range split2 {
 		in = strings.TrimLeft(in, " ")
 		in = strings.TrimRight(in, " ")
+		if len(in) == 0 {
+			break
+		}
 		spl := strings.Split(in, " ")
 		if len(spl) != 2 {
-			err = newLineError(line, "malformed function")
+			err = newLineError(line, fmt.Sprint("malformed function input parameter", in))
 			return
 		}
 		n := spl[0]
@@ -127,13 +129,21 @@ func parseFunction(line int, s string) (f Function, err error) {
 		f.Input = append(f.Input, Parameter{n, t})
 	}
 
-	split = strings.Split(outs, ",")
-	for _, out := range split {
+	if len(split1) == 2 {
+		return
+	}
+
+	outs := strings.TrimRight(strings.TrimRight(split1[2], " "), ")")
+	split2 = strings.Split(outs, ",")
+	for _, out := range split2 {
 		out = strings.TrimLeft(out, " ")
 		out = strings.TrimRight(out, " ")
+		if len(out) == 0 {
+			break
+		}
 		spl := strings.Split(out, " ")
 		if len(spl) != 2 {
-			err = newLineError(line, "malformed function")
+			err = newLineError(line, fmt.Sprint("malformed function output parameter", out))
 			return
 		}
 		n := spl[0]

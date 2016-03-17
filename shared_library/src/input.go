@@ -6,6 +6,7 @@ import "C"
 
 import (
 	"fmt"
+	"sync"
 	"unsafe"
 
 	"github.com/joernweissenborn/thingiverseio"
@@ -15,9 +16,17 @@ import (
 
 var nextInput = 0
 
+var inputs = map[int]*thingiverseio.Input{}
+var inputsLock = &sync.RWMutex{}
+
 var request = map[int]map[config.UUID]*messages.ResultFuture{}
-var listen_results = map[int]*messages.ResultCollector{}
-var call_all_results = map[int]map[config.UUID]*messages.ResultCollector{}
+var requestLock = &sync.RWMutex{}
+
+var listenResults = map[int]*messages.ResultCollector{}
+var listenResultsLock = &sync.RWMutex{}
+
+var callAllResults = map[int]map[config.UUID]*messages.ResultCollector{}
+var callAllResultsLock = &sync.RWMutex{}
 
 func getNextInput() (n int) {
 	n = nextInput
@@ -25,9 +34,13 @@ func getNextInput() (n int) {
 	return
 }
 
-var inputs = map[int]*thingiverseio.Input{}
-
 func newInput(desc string) (n int) {
+	inputsLock.Lock()
+	defer inputsLock.Unlock()
+	requestLock.Lock()
+	defer requestLock.Unlock()
+	listenResultsLock.Lock()
+	defer listenResultsLock.Unlock()
 	n = getNextInput()
 	i, err := thingiverseio.NewInput(desc)
 	if err != nil {
@@ -35,8 +48,8 @@ func newInput(desc string) (n int) {
 	}
 	inputs[n] = i
 	request[n] = map[config.UUID]*messages.ResultFuture{}
-	listen_results[n] = messages.NewResultCollector()
-	listen_results[n].AddStream(i.ListenResults())
+	listenResults[n] = messages.NewResultCollector()
+	listenResults[n].AddStream(i.ListenResults())
 	i.Run()
 	return
 }
@@ -49,8 +62,19 @@ func new_input(descriptor *C.char) (i C.int) {
 
 //export remove_input
 func remove_input(i C.int) C.int {
+	inputsLock.Lock()
+	defer inputsLock.Unlock()
+	requestLock.Lock()
+	defer requestLock.Unlock()
+	listenResultsLock.Lock()
+	defer listenResultsLock.Unlock()
+	callAllResultsLock.Lock()
+	defer callAllResultsLock.Unlock()
 	if in, ok := inputs[int(i)]; ok {
 		in.Remove()
+		delete(request, int(i))
+		delete(listenResults, int(i))
+		delete(callAllResults, int(i))
 		delete(inputs, int(i))
 		return C.int(0)
 	}
@@ -59,6 +83,8 @@ func remove_input(i C.int) C.int {
 
 //export connected
 func connected(i C.int, is *C.int) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
 	if in, ok := inputs[int(i)]; ok {
 		if in.HasConnection() {
 			*is = 1
@@ -72,6 +98,8 @@ func connected(i C.int, is *C.int) C.int {
 
 //export start_listen
 func start_listen(i C.int, function *C.char) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
 	if in, ok := inputs[int(i)]; ok {
 		in.Listen(C.GoString(function))
 		return C.int(0)
@@ -81,6 +109,8 @@ func start_listen(i C.int, function *C.char) C.int {
 
 //export stop_listen
 func stop_listen(i C.int, function *C.char) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
 	if in, ok := inputs[int(i)]; ok {
 		in.StopListen(C.GoString(function))
 		return C.int(0)
@@ -90,6 +120,10 @@ func stop_listen(i C.int, function *C.char) C.int {
 
 //export call
 func call(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int, request_id **C.char, request_id_size *C.int) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
+	requestLock.Lock()
+	defer requestLock.Unlock()
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
 		params := getParams(parameter, parameter_size)
@@ -108,6 +142,10 @@ func call(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.
 
 //export call_all
 func call_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int, request_id **C.char, request_id_size *C.int) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
+	callAllResultsLock.Lock()
+	defer callAllResultsLock.Unlock()
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
 		params := getParams(parameter, parameter_size)
@@ -117,7 +155,7 @@ func call_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_siz
 		c.AddStream(s.Stream())
 
 		uuid := in.CallAllBin(fun, params, s)
-		call_all_results[int(i)][uuid] = c
+		callAllResults[int(i)][uuid] = c
 		*request_id = C.CString(string(uuid))
 		*request_id_size = C.int(len(uuid))
 		return C.int(0)
@@ -127,6 +165,8 @@ func call_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_siz
 
 //export trigger
 func trigger(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
 		params := getParams(parameter, parameter_size)
@@ -138,6 +178,8 @@ func trigger(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size
 
 //export trigger_all
 func trigger_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.int) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
 	if in, ok := inputs[int(i)]; ok {
 		fun := C.GoString(function)
 		params := getParams(parameter, parameter_size)
@@ -149,6 +191,8 @@ func trigger_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_
 
 //export result_ready
 func result_ready(i C.int, uuid *C.char, ready *C.int) C.int {
+	requestLock.RLock()
+	defer requestLock.RUnlock()
 	if request[int(i)] == nil {
 		return C.int(1)
 	}
@@ -165,6 +209,8 @@ func result_ready(i C.int, uuid *C.char, ready *C.int) C.int {
 
 //export retrieve_result_params
 func retrieve_result_params(i C.int, uuid *C.char, result *unsafe.Pointer, result_size *C.int) C.int {
+	requestLock.Lock()
+	defer requestLock.Unlock()
 	if request[int(i)] == nil {
 		return C.int(1)
 	}
@@ -174,6 +220,7 @@ func retrieve_result_params(i C.int, uuid *C.char, result *unsafe.Pointer, resul
 		}
 		*result = unsafe.Pointer(C.CString(string(f.GetResult().Parameter())))
 		*result_size = C.int(len(f.GetResult().Parameter()))
+		delete(request[int(i)], config.UUID(C.GoString(uuid)))
 		return C.int(0)
 	}
 	return C.int(1)
@@ -181,7 +228,9 @@ func retrieve_result_params(i C.int, uuid *C.char, result *unsafe.Pointer, resul
 
 //export listen_result_available
 func listen_result_available(i C.int, is *C.int) C.int {
-	if res, ok := listen_results[int(i)]; ok {
+	listenResultsLock.RLock()
+	defer listenResultsLock.RUnlock()
+	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
 			*is = 0
 		} else {
@@ -194,7 +243,9 @@ func listen_result_available(i C.int, is *C.int) C.int {
 
 //export retrieve_listen_result_id
 func retrieve_listen_result_id(i C.int, request_id **C.char, request_id_size *C.int) C.int {
-	if res, ok := listen_results[int(i)]; ok {
+	listenResultsLock.RLock()
+	defer listenResultsLock.RUnlock()
+	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
 			return C.int(1)
 		} else {
@@ -209,7 +260,9 @@ func retrieve_listen_result_id(i C.int, request_id **C.char, request_id_size *C.
 
 //export retrieve_listen_result_function
 func retrieve_listen_result_function(i C.int, function **C.char, function_size *C.int) C.int {
-	if res, ok := listen_results[int(i)]; ok {
+	listenResultsLock.RLock()
+	defer listenResultsLock.RUnlock()
+	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
 			return C.int(1)
 		} else {
@@ -225,7 +278,9 @@ func retrieve_listen_result_function(i C.int, function **C.char, function_size *
 //Nexport retrieve_listen_result_request_params
 //TODO: rework scheme of getting request parameter
 func retrieve_listen_result_request_params(i C.int, params *unsafe.Pointer, params_size *C.int) C.int {
-	if res, ok := listen_results[int(i)]; ok {
+	listenResultsLock.RLock()
+	defer listenResultsLock.RUnlock()
+	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
 			return C.int(1)
 		} else {
@@ -240,7 +295,9 @@ func retrieve_listen_result_request_params(i C.int, params *unsafe.Pointer, para
 
 //export retrieve_listen_result_params
 func retrieve_listen_result_params(i C.int, params *unsafe.Pointer, params_size *C.int) C.int {
-	if res, ok := listen_results[int(i)]; ok {
+	listenResultsLock.RLock()
+	defer listenResultsLock.RUnlock()
+	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
 			return C.int(1)
 		} else {
@@ -254,7 +311,9 @@ func retrieve_listen_result_params(i C.int, params *unsafe.Pointer, params_size 
 }
 
 func call_all_result_available(i C.int, uuid *C.char, is *C.int) C.int {
-	if r, ok := call_all_results[int(i)]; ok {
+	callAllResultsLock.RLock()
+	defer callAllResultsLock.RUnlock()
+	if r, ok := callAllResults[int(i)]; ok {
 		if res, ok := r[config.UUID(C.GoString(uuid))]; ok {
 			if res.Empty() {
 				*is = C.int(0)
@@ -268,7 +327,9 @@ func call_all_result_available(i C.int, uuid *C.char, is *C.int) C.int {
 
 //export retrieve_next_call_all_result_params
 func retrieve_next_call_all_result_params(i C.int, uuid *C.char, params *unsafe.Pointer, params_size *C.int) C.int {
-	if r, ok := call_all_results[int(i)]; ok {
+	callAllResultsLock.RLock()
+	defer callAllResultsLock.RUnlock()
+	if r, ok := callAllResults[int(i)]; ok {
 		if res, ok := r[config.UUID(C.GoString(uuid))]; ok {
 			p := res.Get().Parameter()
 			*params = unsafe.Pointer(C.CString(string(p)))

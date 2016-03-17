@@ -2,16 +2,7 @@
 #include "thingiverseio.h"
 #include <windows.h>
 
-  char * const DESCRIPTOR = "\
-  functions:\n\
-    - name: SayHello\n\
-      input:\n\
-        - name: Greeting\n\
-          type: string\n\
-      output:\n\
-        - name: Answer\n\
-          type: string\n\
-  ";
+  char * const DESCRIPTOR = "func SayHello(Greeting string) (Answer string)  ";
 
   int main() {
 

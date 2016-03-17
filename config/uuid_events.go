@@ -31,6 +31,10 @@ type UUIDFuture struct {
 	*eventual2go.Future
 }
 
+func (f *UUIDFuture) GetResult() UUID {
+	return f.Future.GetResult().(UUID)
+}
+
 type UUIDCompletionHandler func(UUID) UUID
 
 func (ch UUIDCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
@@ -91,14 +95,14 @@ type UUIDStream struct {
 	*eventual2go.Stream
 }
 
-type UUIDSuscriber func(UUID)
+type UUIDSubscriber func(UUID)
 
-func (l UUIDSuscriber) toSuscriber() eventual2go.Subscriber {
+func (l UUIDSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(UUID)) }
 }
 
-func (s *UUIDStream) Listen(ss UUIDSuscriber) *eventual2go.Subscription {
-	return s.Stream.Listen(ss.toSuscriber())
+func (s *UUIDStream) Listen(ss UUIDSubscriber) *eventual2go.Subscription {
+	return s.Stream.Listen(ss.toSubscriber())
 }
 
 type UUIDFilter func(UUID) bool
@@ -113,6 +117,10 @@ func (s *UUIDStream) Where(f UUIDFilter) *UUIDStream {
 
 func (s *UUIDStream) WhereNot(f UUIDFilter) *UUIDStream {
 	return &UUIDStream{s.Stream.WhereNot(f.toFilter())}
+}
+
+func (s *UUIDStream) Split(f UUIDFilter) (*UUIDStream, *UUIDStream)  {
+	return s.Where(f), s.WhereNot(f)
 }
 
 func (s *UUIDStream) First() *UUIDFuture {
@@ -133,7 +141,7 @@ func (s *UUIDStream) AsChan() (c chan UUID) {
 	return
 }
 
-func pipeToUUIDChan(c chan UUID) UUIDSuscriber {
+func pipeToUUIDChan(c chan UUID) UUIDSubscriber {
 	return func(d UUID) {
 		c <- d
 	}
@@ -144,4 +152,32 @@ func closeUUIDChan(c chan UUID) eventual2go.CompletionHandler {
 		close(c)
 		return nil
 	}
+}
+
+type UUIDCollector struct {
+	*eventual2go.Collector
+}
+
+func NewUUIDCollector() *UUIDCollector {
+	return &UUIDCollector{eventual2go.NewCollector()}
+}
+
+func (c *UUIDCollector) Add(d UUID) {
+	c.Collector.Add(d)
+}
+
+func (c *UUIDCollector) AddFuture(f *UUIDFuture) {
+	c.Collector.Add(f.Future)
+}
+
+func (c *UUIDCollector) AddStream(s *UUIDStream) {
+	c.Collector.AddStream(s.Stream)
+}
+
+func (c *UUIDCollector) Get() UUID {
+	return c.Collector.Get().(UUID)
+}
+
+func (c *UUIDCollector) Preview() UUID {
+	return c.Collector.Preview().(UUID)
 }

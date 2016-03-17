@@ -20,6 +20,7 @@ package main
 import "C"
 
 import (
+	"sync"
 	"unsafe"
 
 	"github.com/joernweissenborn/thingiverseio"
@@ -36,8 +37,21 @@ func getNextOutput() (n int) {
 }
 
 var outputs = map[int]*thingiverseio.Output{}
+var outputLock = &sync.RWMutex{}
+
+var requestIn = map[int]map[config.UUID]*messages.Request{}
+var requestInLock = &sync.RWMutex{}
+
+var waitingRequests = map[int]*config.UUIDCollector{}
+var waitingRequestsLock = &sync.RWMutex{}
 
 func newOutput(desc string) (n int) {
+	outputLock.Lock()
+	defer outputLock.Unlock()
+	requestInLock.Lock()
+	defer requestInLock.Unlock()
+	waitingRequestsLock.Lock()
+	defer waitingRequestsLock.Unlock()
 	n = getNextOutput()
 	e, err := thingiverseio.NewOutput(desc)
 	if err != nil {
@@ -45,18 +59,19 @@ func newOutput(desc string) (n int) {
 	}
 	outputs[n] = e
 	requestIn[n] = map[config.UUID]*messages.Request{}
-	waiting_requestIn[n] = []config.UUID{}
+	waitingRequests[n] = config.NewUUIDCollector()
 	e.Requests().Listen(getRequest(n))
 	e.Run()
 	return
 }
 
-var requestIn = map[int]map[config.UUID]*messages.Request{}
-var waiting_requestIn = map[int][]config.UUID{}
-
 func getRequest(n int) messages.RequestSubscriber {
 	return func(r *messages.Request) {
-		waiting_requestIn[n] = append(waiting_requestIn[n], r.UUID)
+		requestInLock.Lock()
+		defer requestInLock.Unlock()
+		waitingRequestsLock.Lock()
+		defer waitingRequestsLock.Unlock()
+		waitingRequests[n].Add(r.UUID)
 		requestIn[n][r.UUID] = r
 	}
 }
@@ -69,9 +84,18 @@ func new_output(descriptor *C.char) C.int {
 
 //export remove_output
 func remove_output(o C.int) C.int {
+	outputLock.Lock()
+	defer outputLock.Unlock()
+	requestInLock.Lock()
+	defer requestInLock.Unlock()
+	waitingRequestsLock.Lock()
+	defer waitingRequestsLock.Unlock()
 	if out, ok := outputs[int(o)]; ok {
 		out.Remove()
 		delete(outputs, int(o))
+		delete(requestIn, int(o))
+		waitingRequests[int(o)].Remove()
+		delete(waitingRequests, int(o))
 		return C.int(0)
 	}
 	return C.int(1)
@@ -79,11 +103,12 @@ func remove_output(o C.int) C.int {
 
 //export get_next_request_id
 func get_next_request_id(o C.int, uuid **C.char, uuid_size *C.int) C.int {
-	if waiting, ok := waiting_requestIn[int(o)]; ok {
-		if len(waiting) != 0 {
-			*uuid = C.CString(string(waiting[0]))
-			*uuid_size = C.int(len(waiting[0]))
-			waiting_requestIn[int(o)] = waiting_requestIn[int(o)][1:]
+	waitingRequestsLock.RLock()
+	defer waitingRequestsLock.RUnlock()
+	if waiting, ok := waitingRequests[int(o)]; ok {
+		if !waiting.Empty() {
+			*uuid = C.CString(string(waiting.Preview()))
+			*uuid_size = C.int(len(waiting.Get()))
 		}
 		return C.int(0)
 	}
@@ -92,8 +117,10 @@ func get_next_request_id(o C.int, uuid **C.char, uuid_size *C.int) C.int {
 
 //export request_available
 func request_available(o C.int, is *C.int) C.int {
-	if waiting, ok := waiting_requestIn[int(o)]; ok {
-		if len(waiting) != 0 {
+	waitingRequestsLock.RLock()
+	defer waitingRequestsLock.RUnlock()
+	if waiting, ok := waitingRequests[int(o)]; ok {
+		if !waiting.Empty() {
 			*is = C.int(1)
 		} else {
 			*is = C.int(0)
@@ -105,6 +132,8 @@ func request_available(o C.int, is *C.int) C.int {
 
 //export retrieve_request_function
 func retrieve_request_function(o C.int, uuid *C.char, function **C.char, function_size *C.int) C.int {
+	requestInLock.RLock()
+	defer requestInLock.RUnlock()
 	if r, ok := requestIn[int(o)][config.UUID(C.GoString(uuid))]; ok {
 		*function = C.CString(r.Function)
 		*function_size = C.int(len(r.Function))
@@ -115,6 +144,8 @@ func retrieve_request_function(o C.int, uuid *C.char, function **C.char, functio
 
 //export retrieve_request_params
 func retrieve_request_params(o C.int, uuid *C.char, parameter *unsafe.Pointer, parameter_size *C.int) C.int {
+	requestInLock.RLock()
+	defer requestInLock.RUnlock()
 	if r, ok := requestIn[int(o)][config.UUID(C.GoString(uuid))]; ok {
 		*parameter = unsafe.Pointer(C.CString(string(r.Parameter())))
 		*parameter_size = C.int(len(r.Parameter()))
@@ -125,6 +156,10 @@ func retrieve_request_params(o C.int, uuid *C.char, parameter *unsafe.Pointer, p
 
 //export reply
 func reply(o C.int, uuid *C.char, parameter unsafe.Pointer, parameter_size C.int) C.int {
+	outputLock.RLock()
+	defer outputLock.RUnlock()
+	requestInLock.Lock()
+	defer requestInLock.Unlock()
 	r := requestIn[int(o)][config.UUID(C.GoString(uuid))]
 	out := outputs[int(o)]
 	if r != nil && out != nil {
@@ -138,6 +173,8 @@ func reply(o C.int, uuid *C.char, parameter unsafe.Pointer, parameter_size C.int
 
 //export emit
 func emit(o C.int, function *C.char, inparameter unsafe.Pointer, inparameter_size C.int, outparameter unsafe.Pointer, outparameter_size C.int) C.int {
+	outputLock.RLock()
+	defer outputLock.RUnlock()
 	out := outputs[int(o)]
 	if out != nil {
 		out.EmitEncoded(
