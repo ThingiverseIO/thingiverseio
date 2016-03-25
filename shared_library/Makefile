@@ -24,8 +24,9 @@ libthingiverseio.so: tvio.o
 install:
 	cp bin/lib* /usr/lib/
 	cp include/* /usr/include/
+	ldconfig
 
 clean:
-	rm -f *.tvio
+	rm -f tvio.o
 	rm -rf bin
 	rm -f include/tvio.h
