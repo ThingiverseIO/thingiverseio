@@ -1,0 +1,13 @@
+package main
+
+import "C"
+
+const (
+	ERR_INVALID_DESCRIPTOR  C.int = 1
+	ERR_INVALID_INPUT       C.int = 2
+	ERR_INVALID_OUTPUT      C.int = 3
+	ERR_INVALID_RESULT_ID   C.int = 4
+	ERR_INVALID_REQUEST_ID  C.int = 5
+	ERR_NO_RESULT_AVAILABLE C.int = 6
+	ERR_RESULT_NOT_ARRIVED  C.int = 7
+)
