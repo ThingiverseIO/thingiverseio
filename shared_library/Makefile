@@ -12,7 +12,7 @@ test:
 	rm -f libthingiverseio.so
 
 tvio.so:
-	go build --buildmode="c-shared" -o bin/tvio.so src/input.go src/output.go src/main.go
+	go build --buildmode="c-shared" -o bin/tvio.so src/input.go src/output.go src/error.go src/main.go
 	mv bin/tvio.h include/
 	mv bin/tvio.so bin/libtvio.so
 tvio.o: tvio.so

@@ -98,7 +98,7 @@ func remove_output(o C.int) C.int {
 		delete(waitingRequests, int(o))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_OUTPUT
 }
 
 //export get_next_request_id
@@ -112,7 +112,7 @@ func get_next_request_id(o C.int, uuid **C.char, uuid_size *C.int) C.int {
 		}
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_OUTPUT
 }
 
 //export request_available
@@ -127,7 +127,7 @@ func request_available(o C.int, is *C.int) C.int {
 		}
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_OUTPUT
 }
 
 //export retrieve_request_function
@@ -139,7 +139,7 @@ func retrieve_request_function(o C.int, uuid *C.char, function **C.char, functio
 		*function_size = C.int(len(r.Function))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_OUTPUT
 }
 
 //export retrieve_request_params
@@ -151,7 +151,7 @@ func retrieve_request_params(o C.int, uuid *C.char, parameter *unsafe.Pointer, p
 		*parameter_size = C.int(len(r.Parameter()))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_OUTPUT
 }
 
 //export reply
@@ -160,15 +160,18 @@ func reply(o C.int, uuid *C.char, parameter unsafe.Pointer, parameter_size C.int
 	defer outputLock.RUnlock()
 	requestInLock.Lock()
 	defer requestInLock.Unlock()
-	r := requestIn[int(o)][config.UUID(C.GoString(uuid))]
 	out := outputs[int(o)]
-	if r != nil && out != nil {
+	if out == nil {
+		return ERR_INVALID_OUTPUT
+	}
+	r := requestIn[int(o)][config.UUID(C.GoString(uuid))]
+	if r != nil {
 		params := getParams(parameter, parameter_size)
 		out.ReplyEncoded(r, params)
 		delete(requestIn[int(o)], config.UUID(C.GoString(uuid)))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_REQUEST_ID
 }
 
 //export emit
@@ -184,5 +187,5 @@ func emit(o C.int, function *C.char, inparameter unsafe.Pointer, inparameter_siz
 		)
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_OUTPUT
 }

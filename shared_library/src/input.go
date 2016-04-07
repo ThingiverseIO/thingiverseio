@@ -78,7 +78,7 @@ func remove_input(i C.int) C.int {
 		delete(inputs, int(i))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export connected
@@ -93,7 +93,7 @@ func connected(i C.int, is *C.int) C.int {
 		}
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export start_listen
@@ -104,7 +104,7 @@ func start_listen(i C.int, function *C.char) C.int {
 		in.Listen(C.GoString(function))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export stop_listen
@@ -115,7 +115,7 @@ func stop_listen(i C.int, function *C.char) C.int {
 		in.StopListen(C.GoString(function))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export call
@@ -137,7 +137,7 @@ func call(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.
 		fmt.Println("blalawf", *request_id, *request_id_size)
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export call_all
@@ -160,7 +160,7 @@ func call_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_siz
 		*request_id_size = C.int(len(uuid))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export trigger
@@ -173,7 +173,7 @@ func trigger(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size
 		in.TriggerBin(fun, params)
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export trigger_all
@@ -186,7 +186,7 @@ func trigger_all(i C.int, function *C.char, parameter unsafe.Pointer, parameter_
 		in.TriggerAllBin(fun, params)
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export result_ready
@@ -194,7 +194,7 @@ func result_ready(i C.int, uuid *C.char, ready *C.int) C.int {
 	requestLock.RLock()
 	defer requestLock.RUnlock()
 	if request[int(i)] == nil {
-		return C.int(1)
+		return ERR_INVALID_INPUT
 	}
 	if f, ok := request[int(i)][config.UUID(C.GoString(uuid))]; ok {
 		if f.Completed() {
@@ -204,7 +204,7 @@ func result_ready(i C.int, uuid *C.char, ready *C.int) C.int {
 		}
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_RESULT_ID
 }
 
 //export retrieve_result_params
@@ -212,18 +212,18 @@ func retrieve_result_params(i C.int, uuid *C.char, result *unsafe.Pointer, resul
 	requestLock.Lock()
 	defer requestLock.Unlock()
 	if request[int(i)] == nil {
-		return C.int(1)
+		return ERR_INVALID_INPUT
 	}
 	if f, ok := request[int(i)][config.UUID(C.GoString(uuid))]; ok {
 		if !f.Completed() {
-			return C.int(1)
+			return ERR_RESULT_NOT_ARRIVED
 		}
 		*result = unsafe.Pointer(C.CString(string(f.GetResult().Parameter())))
 		*result_size = C.int(len(f.GetResult().Parameter()))
 		delete(request[int(i)], config.UUID(C.GoString(uuid)))
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_RESULT_ID
 }
 
 //export listen_result_available
@@ -238,7 +238,7 @@ func listen_result_available(i C.int, is *C.int) C.int {
 		}
 		return C.int(0)
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export retrieve_listen_result_id
@@ -247,7 +247,7 @@ func retrieve_listen_result_id(i C.int, request_id **C.char, request_id_size *C.
 	defer listenResultsLock.RUnlock()
 	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
-			return C.int(1)
+			return ERR_NO_RESULT_AVAILABLE
 		} else {
 			uuid := res.Preview().Request.UUID
 			*request_id = C.CString(string(uuid))
@@ -255,7 +255,7 @@ func retrieve_listen_result_id(i C.int, request_id **C.char, request_id_size *C.
 			return C.int(0)
 		}
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export retrieve_listen_result_function
@@ -264,7 +264,7 @@ func retrieve_listen_result_function(i C.int, function **C.char, function_size *
 	defer listenResultsLock.RUnlock()
 	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
-			return C.int(1)
+			return ERR_NO_RESULT_AVAILABLE
 		} else {
 			fun := res.Preview().Request.Function
 			*function = C.CString(fun)
@@ -272,7 +272,7 @@ func retrieve_listen_result_function(i C.int, function **C.char, function_size *
 			return C.int(0)
 		}
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //Nexport retrieve_listen_result_request_params
@@ -282,7 +282,7 @@ func retrieve_listen_result_request_params(i C.int, params *unsafe.Pointer, para
 	defer listenResultsLock.RUnlock()
 	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
-			return C.int(1)
+			return ERR_NO_RESULT_AVAILABLE
 		} else {
 			p := res.Preview().Request.Parameter()
 			*params = unsafe.Pointer(C.CString(string(p)))
@@ -290,7 +290,7 @@ func retrieve_listen_result_request_params(i C.int, params *unsafe.Pointer, para
 			return C.int(0)
 		}
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export retrieve_listen_result_params
@@ -299,7 +299,7 @@ func retrieve_listen_result_params(i C.int, params *unsafe.Pointer, params_size 
 	defer listenResultsLock.RUnlock()
 	if res, ok := listenResults[int(i)]; ok {
 		if res.Empty() {
-			return C.int(1)
+			return ERR_NO_RESULT_AVAILABLE
 		} else {
 			p := res.Get().Parameter()
 			*params = unsafe.Pointer(C.CString(string(p)))
@@ -307,7 +307,7 @@ func retrieve_listen_result_params(i C.int, params *unsafe.Pointer, params_size 
 			return C.int(0)
 		}
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 func call_all_result_available(i C.int, uuid *C.char, is *C.int) C.int {
@@ -322,7 +322,7 @@ func call_all_result_available(i C.int, uuid *C.char, is *C.int) C.int {
 			}
 		}
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
 
 //export retrieve_next_call_all_result_params
@@ -331,11 +331,14 @@ func retrieve_next_call_all_result_params(i C.int, uuid *C.char, params *unsafe.
 	defer callAllResultsLock.RUnlock()
 	if r, ok := callAllResults[int(i)]; ok {
 		if res, ok := r[config.UUID(C.GoString(uuid))]; ok {
+			if res.Empty() {
+				return ERR_NO_RESULT_AVAILABLE
+			}
 			p := res.Get().Parameter()
 			*params = unsafe.Pointer(C.CString(string(p)))
 			*params_size = C.int(len(p))
 			return C.int(0)
 		}
 	}
-	return C.int(1)
+	return ERR_INVALID_INPUT
 }
