@@ -8,6 +8,8 @@ extern void tvio_check_descriptor(char* descriptor, char** result, int* result_s
 
 extern int tvio_new_input(char* descriptor);
 
+extern int tvio_get_input_uuid(int input, char** uuid, int* uuid_size);
+
 extern int tvio_remove_input(int input);
 
 extern int tvio_connected(int input, int* is);
@@ -39,6 +41,8 @@ extern int tvio_retrieve_listen_result_params(int input, void** params, int* par
 extern int tvio_retrieve_next_call_all_result_params(int input, char* id, void** params, int* params_size);
 
 extern int tvio_new_output(char* descriptor);
+
+extern int tvio_get_output_uuid(int output, char** uuid, int* uuid_size);
 
 extern int tvio_remove_output(int output);
 

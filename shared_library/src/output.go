@@ -101,6 +101,18 @@ func remove_output(o C.int) C.int {
 	return ERR_INVALID_OUTPUT
 }
 
+//export get_output_uuid
+func get_output_uuid(o C.int, uuid **C.char, uuid_size *C.int) C.int {
+	outputLock.RLock()
+	defer outputLock.RUnlock()
+	if out, ok := inputs[int(o)]; ok {
+		*uuid = C.CString(string(out.UUID()))
+		*uuid_size = C.int(len(out.UUID()))
+		return C.int(0)
+	}
+	return ERR_INVALID_OUTPUT
+}
+
 //export get_next_request_id
 func get_next_request_id(o C.int, uuid **C.char, uuid_size *C.int) C.int {
 	waitingRequestsLock.RLock()

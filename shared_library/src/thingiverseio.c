@@ -12,6 +12,11 @@ int tvio_new_input(char* descriptor){
 	return new_input(descriptor);
 }
 
+int tvio_get_input_uuid(int input, char** uuid, int* uuid_size) {
+	return get_input_uuid(input, uuid, uuid_size);
+}
+
+
 int tvio_remove_input(int input) {
 	return remove_input(input);
 }
@@ -74,6 +79,10 @@ int tvio_retrieve_next_call_all_result_params(int input, char* id, void** params
 
 int tvio_new_output(char* descriptor){
 	return new_output(descriptor);
+}
+
+int tvio_get_output_uuid(int output, char** uuid, int* uuid_size) {
+	return get_output_uuid(output, uuid, uuid_size);
 }
 
 int tvio_remove_output(int output) {

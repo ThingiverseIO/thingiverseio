@@ -96,6 +96,18 @@ func connected(i C.int, is *C.int) C.int {
 	return ERR_INVALID_INPUT
 }
 
+//export get_input_uuid
+func get_input_uuid(i C.int, uuid **C.char, uuid_size *C.int) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
+	if in, ok := inputs[int(i)]; ok {
+		*uuid = C.CString(string(in.UUID()))
+		*uuid_size = C.int(len(in.UUID()))
+		return C.int(0)
+	}
+	return ERR_INVALID_INPUT
+}
+
 //export start_listen
 func start_listen(i C.int, function *C.char) C.int {
 	inputsLock.RLock()
