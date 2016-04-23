@@ -3,7 +3,6 @@ package thingiverseio
 import (
 	"fmt"
 	"log"
-	"os"
 
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/eventual2go/typed_events"
@@ -27,7 +26,7 @@ func NewInput(desc string) (i *Input, err error) {
 	var d Descriptor
 	d, err = ParseDescriptor(desc)
 	if err == nil {
-		i, err = NewInputFromConfig(config.Configure(os.Stdout, false, d.AsTagSet()))
+		i, err = NewInputFromConfig(config.Configure(false, d.AsTagSet()))
 	}
 	return
 }

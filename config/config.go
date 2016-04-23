@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 
 	"github.com/nu7hatch/gouuid"
@@ -23,9 +24,9 @@ type Config struct {
 	uuid UUID
 }
 
-func New(logger io.Writer, exporting bool, functionTags map[string]string) (cfg *Config) {
+func New(exporting bool, functionTags map[string]string) (cfg *Config) {
 	cfg = &Config{
-		logger:       logger,
+		logger:       ioutil.Discard,
 		exporting:    exporting,
 		interfaces:   []string{"127.0.0.1"},
 		functionTags: functionTags,

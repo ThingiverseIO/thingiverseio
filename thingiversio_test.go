@@ -2,7 +2,6 @@ package thingiverseio_test
 
 import (
 	"bytes"
-	"os"
 	"testing"
 	"time"
 
@@ -326,6 +325,6 @@ var testDescriptor = &thingiverseio.Descriptor{
 }
 
 func testConfig(export bool) (cfg *config.Config) {
-	cfg = config.New(os.Stdout, export, testDescriptor.AsTagSet())
+	cfg = config.New(export, testDescriptor.AsTagSet())
 	return
 }

@@ -1,13 +1,8 @@
 package config
 
-import (
-	"io"
+func Configure(exporting bool, functionTags map[string]string) (cfg *Config) {
 
-)
-
-func Configure(logger io.Writer, exporting bool, functionTags map[string]string) (cfg *Config) {
-
-	cfg = New(logger, exporting, functionTags)
+	cfg = New(exporting, functionTags)
 
 	CheckCfgFile(cfg, CfgFileGlobal())
 
