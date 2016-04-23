@@ -2,7 +2,6 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 
 	"github.com/codegangsta/cli"
 	"github.com/joernweissenborn/thingiverseio/config"
@@ -17,9 +16,7 @@ var ShowCommand = cli.Command{
 
 func runShow(c *cli.Context) {
 
-	checkfmtger := ioutil.Discard
-
-	cfg := config.New(checkfmtger, false, map[string]string{})
+	cfg := config.New(false, map[string]string{})
 
 	config.CheckEnviroment(cfg)
 
@@ -32,7 +29,7 @@ Enviroment Configuration
 
 	//Global Dir
 
-	cfg = config.New(checkfmtger, false, map[string]string{})
+	cfg = config.New(false, map[string]string{})
 	fmt.Println(fmt.Sprintf(`
 Global Configuration
 ========================
@@ -49,7 +46,7 @@ file: %s
 
 	//User Dir
 
-	cfg = config.New(checkfmtger, false, map[string]string{})
+	cfg = config.New(false, map[string]string{})
 
 	fmt.Println(fmt.Sprintf(`
 User Configuration
@@ -67,7 +64,7 @@ file: %s
 
 	//WD
 
-	cfg = config.New(checkfmtger, false, map[string]string{})
+	cfg = config.New(false, map[string]string{})
 	fmt.Println(fmt.Sprintf(`
 Working Dir Configuration
 ========================
@@ -87,6 +84,6 @@ Configuration Used
 ==================
 
 %s
-`, config.Configure(ioutil.Discard, false, map[string]string{})))
+`, config.Configure(false, map[string]string{})))
 
 }
