@@ -2,36 +2,49 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 
+	"github.com/codegangsta/cli"
 	"github.com/joernweissenborn/thingiverseio/config"
-	"github.com/mitchellh/cli"
 )
 
+var InitCmd = cli.Command{
+	Name:  "init",
+	Usage: fmt.Sprintf(`Initializes a default %s at the current directory.`, config.CFG_FILE_NAME),
 
+	Description: fmt.Sprintf(`Initializes a default %s at the current directory.
 
-type InitCmd struct {
-	Ui cli.Ui
+Specify a path or use subcommands to init a %s at different places`, config.CFG_FILE_NAME, config.CFG_FILE_NAME),
+	Action: runInitCfgFile,
+	Subcommands: []cli.Command{
+		InitGlobalCmd,
+	},
+}
+var InitGlobalCmd = cli.Command{
+	Name:  "global",
+	Usage: fmt.Sprintf(`Initializes a default %s at the global directory.`, config.CFG_FILE_NAME),
+
+	Description: fmt.Sprintf(`Initializes a default %s at %s.`, config.CFG_FILE_NAME, config.CfgFileGlobal()),
+	Action:      runInitCfgFileGlobal,
 }
 
-func (*InitCmd) Help() string {
-	return fmt.Sprintf(`Initializes a dafault %s at the current directory. 
-
-Specify a path or use subcommands to init a %s at different places`, config.CFG_FILE_NAME, config.CFG_FILE_NAME)
-}
-func (*InitCmd) Synopsis() string {
-	return fmt.Sprintf(`Initializes a dafault %s at the current directory.`, config.CFG_FILE_NAME)
+func runInitCfgFileGlobal(c *cli.Context) {
+	initCfgFile(config.CfgFileGlobal())
 }
 
-func (ic *InitCmd) Run(args []string) int {
-	initcfgfile(config.CfgFileCwd(), ic.Ui)
-	return 0
+func runInitCfgFile(c *cli.Context) {
+	path := config.CfgFileCwd()
+	if c.NArg() > 0 {
+		path = c.Args()[0]
+	}
+	initCfgFile(path)
 }
 
-func initcfgfile(path string, ui cli.Ui) {
+func initCfgFile(path string) {
 
-	ui.Info(fmt.Sprintf("Initializing config at %s", path))
+	log.Printf("Initializing config at %s", path)
 
 	f, err := os.OpenFile(path, os.O_RDWR, 0666)
 	if err != nil {
@@ -39,21 +52,24 @@ func initcfgfile(path string, ui cli.Ui) {
 		if os.IsNotExist(err) {
 			err = os.MkdirAll(filepath.Dir(path), 0777)
 			if err != nil {
-				ui.Error(err.Error())
+				log.Println(err.Error())
+				return
 			}
 			f, err = os.Create(path)
 		}
 		if err != nil {
-			ui.Error(err.Error())
+			log.Println(err.Error())
+			return
 		}
 	}
 	defer f.Close()
 
 	_, err = f.Write([]byte(cfgfile))
 	if err != nil {
-		ui.Error(err.Error())
+		log.Println(err.Error())
+		return
 	}
-	ui.Info("File created sucessfully")
+	log.Println("File created sucessfully")
 }
 
 var cfgfile = `

@@ -10,5 +10,7 @@ func Configure(exporting bool, functionTags map[string]string) (cfg *Config) {
 
 	CheckCfgFile(cfg, CfgFileUser())
 
+	CheckCfgFile(cfg, CfgFileCwd())
+
 	return
 }
