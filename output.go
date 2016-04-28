@@ -60,7 +60,7 @@ func (o *Output) UUID() config.UUID {
 }
 
 func (o *Output) Interface() string {
-	return i.cfg.Interfaces()[0]
+	return o.cfg.Interfaces()[0]
 }
 
 func (o *Output) Remove() (errs []error) {

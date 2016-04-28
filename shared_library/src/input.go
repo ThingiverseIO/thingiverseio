@@ -5,7 +5,6 @@ package main
 import "C"
 
 import (
-	"fmt"
 	"sync"
 	"unsafe"
 
@@ -158,7 +157,6 @@ func call(i C.int, function *C.char, parameter unsafe.Pointer, parameter_size C.
 
 		*request_id = C.CString(string(uuid))
 		*request_id_size = C.int(len(uuid))
-		fmt.Println("blalawf", *request_id, *request_id_size)
 		return C.int(0)
 	}
 	return ERR_INVALID_INPUT
