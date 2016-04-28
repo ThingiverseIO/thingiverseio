@@ -108,6 +108,18 @@ func get_input_uuid(i C.int, uuid **C.char, uuid_size *C.int) C.int {
 	return ERR_INVALID_INPUT
 }
 
+//export get_input_interface
+func get_input_interface(i C.int, iface **C.char, iface_size *C.int) C.int {
+	inputsLock.RLock()
+	defer inputsLock.RUnlock()
+	if in, ok := inputs[int(i)]; ok {
+		*iface = C.CString(string(in.Interface()))
+		*iface_size = C.int(len(in.Interface()))
+		return C.int(0)
+	}
+	return ERR_INVALID_INPUT
+}
+
 //export start_listen
 func start_listen(i C.int, function *C.char) C.int {
 	inputsLock.RLock()

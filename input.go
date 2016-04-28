@@ -63,6 +63,10 @@ func (i *Input) UUID() config.UUID {
 	return i.cfg.UUID()
 }
 
+func (i *Input) Interface() string {
+	return i.cfg.Interfaces()[0]
+}
+
 func (i *Input) Remove() (errs []error) {
 	errs = i.m.Shutdown()
 	i.r.Shutdown(nil)
