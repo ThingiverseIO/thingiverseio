@@ -6,10 +6,10 @@ import (
 
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/eventual2go/typed_events"
-	"github.com/joernweissenborn/thingiverseio/config"
-	"github.com/joernweissenborn/thingiverseio/service/connection"
-	"github.com/joernweissenborn/thingiverseio/service/manager"
-	"github.com/joernweissenborn/thingiverseio/service/messages"
+	"github.com/ThingiverseIO/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/service/connection"
+	"github.com/ThingiverseIO/thingiverseio/service/manager"
+	"github.com/ThingiverseIO/thingiverseio/service/messages"
 )
 
 type Input struct {

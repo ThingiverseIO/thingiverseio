@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/ThingiverseIO/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/service/connection"
+	"github.com/ThingiverseIO/thingiverseio/service/messages"
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverseio/config"
-	"github.com/joernweissenborn/thingiverseio/service/connection"
-	"github.com/joernweissenborn/thingiverseio/service/messages"
 )
 
 //go:generate event_generator -t *Peer -n Peer

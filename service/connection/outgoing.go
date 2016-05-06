@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/pebbe/zmq4"
 )
 

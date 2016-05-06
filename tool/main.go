@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/codegangsta/cli"
-	"github.com/joernweissenborn/thingiverseio/tool/cmds/config"
+	"github.com/ThingiverseIO/thingiverseio/tool/cmds/config"
 )
 
 func main() {

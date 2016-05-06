@@ -5,11 +5,11 @@ import (
 	"log"
 	"sync"
 
-	"github.com/joernweissenborn/thingiverseio/config"
-	"github.com/joernweissenborn/thingiverseio/service/connection"
-	"github.com/joernweissenborn/thingiverseio/service/messages"
-	"github.com/joernweissenborn/thingiverseio/service/peer"
-	"github.com/joernweissenborn/thingiverseio/service/tracker"
+	"github.com/ThingiverseIO/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/service/connection"
+	"github.com/ThingiverseIO/thingiverseio/service/messages"
+	"github.com/ThingiverseIO/thingiverseio/service/peer"
+	"github.com/ThingiverseIO/thingiverseio/service/tracker"
 )
 
 // Discoverer is a reactor for service discovery.

@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/joernweissenborn/thingiverseio/config"
-	"github.com/joernweissenborn/thingiverseio/service/connection"
-	"github.com/joernweissenborn/thingiverseio/service/messages"
+	"github.com/ThingiverseIO/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/service/connection"
+	"github.com/ThingiverseIO/thingiverseio/service/messages"
 )
 
 func TestInitConnection(t *testing.T) {

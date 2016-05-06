@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ugorji/go/codec"
 )
 

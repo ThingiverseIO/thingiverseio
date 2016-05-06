@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/codegangsta/cli"
-	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/config"
 )
 
 var InitCmd = cli.Command{

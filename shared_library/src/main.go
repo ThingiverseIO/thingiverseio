@@ -5,7 +5,7 @@ import "C"
 import (
 	"unsafe"
 
-	"github.com/joernweissenborn/thingiverseio"
+	"github.com/ThingiverseIO/thingiverseio"
 )
 
 func main() {

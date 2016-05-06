@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/memberlist"
-	"github.com/joernweissenborn/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/config"
 )
 
 //go:generate event_generator -t Node

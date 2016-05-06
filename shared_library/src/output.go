@@ -23,9 +23,9 @@ import (
 	"sync"
 	"unsafe"
 
-	"github.com/joernweissenborn/thingiverseio"
-	"github.com/joernweissenborn/thingiverseio/config"
-	"github.com/joernweissenborn/thingiverseio/service/messages"
+	"github.com/ThingiverseIO/thingiverseio"
+	"github.com/ThingiverseIO/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/service/messages"
 )
 
 var nextOutput = 0
