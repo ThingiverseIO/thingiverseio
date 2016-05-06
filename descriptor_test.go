@@ -3,7 +3,7 @@ package thingiverseio_test
 import (
 	"testing"
 
-	"github.com/joernweissenborn/thingiverseio"
+	"github.com/ThingiverseIO/thingiverseio"
 )
 
 var testdesc = `
@@ -18,7 +18,7 @@ tags multisimple muiltikey:val
 
 func TestParseDescriptor(t *testing.T) {
 	_, err := thingiverseio.ParseDescriptor(testdesc)
-	if err !=nil {
+	if err != nil {
 		t.Error(err)
 	}
 }
