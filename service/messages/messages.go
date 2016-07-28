@@ -17,11 +17,19 @@ const (
 	LISTEN
 	STOPLISTEN
 	END
+	REJECT
 	MOCK
 )
 
-func Get(messagetype MessageType) (msg Message) {
+var msgs = map[MessageType]Message{}
 
+func registerMessage(m Message){
+	msgs[m.GetType()] = m
+}
+
+func Get(messagetype MessageType) (msg Message) {
+	msg = msgs[messagetype]
+	/*
 	switch messagetype {
 	case HELLO:
 		msg = new(Hello)
@@ -46,6 +54,7 @@ func Get(messagetype MessageType) (msg Message) {
 	case MOCK:
 		msg = new(Mock)
 	}
+	*/
 	return
 }
 

@@ -13,6 +13,10 @@ type Have struct {
 	TagValue string
 }
 
+func (*Have) New() Message{
+	return new(Have)
+}
+
 func (*Have) GetType() MessageType { return HAVE }
 
 func (h *Have) Unflatten(d []string) {
@@ -25,4 +29,8 @@ func (h *Have) Flatten() [][]byte {
 	enc := codec.NewEncoder(&payload, &mh)
 	enc.Encode(h)
 	return [][]byte{payload.Bytes()}
+}
+
+func init(){
+	registerMessage(new(Have))
 }

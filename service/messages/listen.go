@@ -11,6 +11,10 @@ type Listen struct {
 	Function string
 }
 
+func (*Listen) New() Message{
+	return new(Listen)
+}
+
 func (*Listen) GetType() MessageType { return LISTEN }
 
 func (l *Listen) Unflatten(d []string) {
@@ -23,4 +27,8 @@ func (l *Listen) Flatten() [][]byte {
 	enc := codec.NewEncoder(&payload, &mh)
 	enc.Encode(l)
 	return [][]byte{payload.Bytes()}
+}
+
+func init(){
+	registerMessage(new(Listen))
 }

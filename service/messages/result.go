@@ -33,6 +33,10 @@ func NewEncodedResult(output config.UUID, request *Request, parameter []byte) (r
 
 func (*Result) GetType() MessageType { return RESULT }
 
+func (*Result) New() Message {
+	return new(Result)
+}
+
 func (r *Result) Unflatten(d []string) {
 	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
 	dec.Decode(r)
@@ -55,4 +59,8 @@ func (r *Result) Decode(t interface{}) {
 	dec := codec.NewDecoder(buf, &mh)
 	dec.Decode(t)
 	return
+}
+
+func init() {
+	registerMessage(new(Result))
 }

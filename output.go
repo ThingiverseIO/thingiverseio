@@ -12,6 +12,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/service/messages"
 )
 
+// Output is a ThingiverseIO node which exports functionality to the ThingiverseIO network. 
 type Output struct {
 	cfg       *config.Config
 	m         *manager.Manager
@@ -21,6 +22,7 @@ type Output struct {
 	requests  *messages.RequestStream
 }
 
+// NewOutput creates a new Output instance for a given service descriptor. Configuration is automatically determined by the thingiversio/config package.
 func NewOutput(desc string) (o *Output, err error) {
 	var d Descriptor
 	d, err = ParseDescriptor(desc)
@@ -30,6 +32,7 @@ func NewOutput(desc string) (o *Output, err error) {
 	return
 }
 
+// NewOutputFromConfig creates a new Output instance for a given configuration.
 func NewOutputFromConfig(cfg *config.Config) (o *Output, err error) {
 	m, err := manager.New(cfg)
 	o = &Output{
@@ -55,52 +58,63 @@ func NewOutputFromConfig(cfg *config.Config) (o *Output, err error) {
 	return
 }
 
+// UUID returns the UUID of a Output instance.
 func (o *Output) UUID() config.UUID {
 	return o.cfg.UUID()
 }
 
+// Interface returns the address of the interface the Output is using.
 func (o *Output) Interface() string {
 	return o.cfg.Interfaces()[0]
 }
 
+// Remove shuts down the Output.
 func (o *Output) Remove() (errs []error) {
 	errs = o.m.Shutdown()
 	o.r.Shutdown(nil)
 	return
 }
 
+// Run starts the Output creating all connections and starting service discovery.
 func (o *Output) Run() {
 	o.m.Run()
 }
 
+// Connected returns a eventual2go.Future which gets completed when a suitable Input is discovered.
 func (o *Output) Connected() *typed_events.BoolFuture {
 	return o.m.Connected().FirstWhere(func(b bool) bool { return b })
 }
 
+// Disconnected returns a eventual2go.Future which gets completed when the last suitable Input is removed from the network.
 func (o *Output) Disconnected() *typed_events.BoolFuture {
 	return o.m.Connected().FirstWhereNot(func(b bool) bool { return b })
 }
 
+// Reply reponds the given output parameter to all interested Inputs of a given request.
 func (o *Output) Reply(r *messages.Request, params interface{}) {
 	res := messages.NewResult(o.cfg.UUID(), r, params)
 	o.r.Fire(replyEvent{}, res)
 }
 
+// ReplyEncoded does the same as Reply, but takes already encoded return parameters. Used mainly by the shared library.
 func (o *Output) ReplyEncoded(r *messages.Request, params []byte) {
 	res := messages.NewEncodedResult(o.cfg.UUID(), r, params)
 	o.r.Fire(replyEvent{}, res)
 }
 
+// Emit acts like a ThingiverseIO Trigger, which is initiated by the Output.
 func (o *Output) Emit(function string, inparams interface{}, outparams interface{}) {
 	req := messages.NewRequest(o.cfg.UUID(), function, messages.TRIGGER, inparams)
 	o.Reply(req, outparams)
 }
 
+// EmitEncoded does the same as Emit, but takes already encoded return parameters. Used mainly by the shared library.
 func (o *Output) EmitEncoded(function string, inparams []byte, outparams []byte) {
 	req := messages.NewEncodedRequest("", function, messages.TRIGGER, inparams)
 	o.ReplyEncoded(req, outparams)
 }
 
+// Requests returns a RequestStream, which delivers incoming requests. Although multiple listeners can be registered, multiple replies to one request can lead to undefined behaviour. 
 func (o *Output) Requests() *messages.RequestStream {
 	return o.requests
 }
@@ -128,7 +142,7 @@ func (o *Output) onStopListen(d eventual2go.Data) {
 
 func (o *Output) onPeerGone(d eventual2go.Data) {
 	uuid := d.(config.UUID)
-	for f, _ := range o.listeners {
+	for f := range o.listeners {
 		o.removePeerListen(uuid, f)
 	}
 }

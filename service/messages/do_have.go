@@ -12,6 +12,10 @@ type DoHave struct {
 	TagValue string
 }
 
+func (*DoHave) New() Message{
+	return new(DoHave)
+}
+
 func (*DoHave) GetType() MessageType { return DOHAVE }
 
 func (h *DoHave) Unflatten(d []string) {
@@ -24,4 +28,8 @@ func (h *DoHave) Flatten() [][]byte {
 	enc := codec.NewEncoder(&payload, &mh)
 	enc.Encode(h)
 	return [][]byte{payload.Bytes()}
+}
+
+func init(){
+	registerMessage(new(DoHave))
 }

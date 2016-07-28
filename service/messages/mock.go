@@ -11,6 +11,10 @@ type Mock struct {
 	Data interface{}
 }
 
+func (*Mock) New() Message{
+	return new(Mock)
+}
+
 func (*Mock) GetType() MessageType { return MOCK }
 
 func (m *Mock) Unflatten(d []string) {

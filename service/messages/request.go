@@ -42,6 +42,10 @@ func NewEncodedRequestWithId(uuid, input config.UUID, function string, call_type
 
 func (*Request) GetType() MessageType { return REQUEST }
 
+func (*Request) New() Message {
+	return new(Request)
+}
+
 func (r *Request) Unflatten(d []string) {
 	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
 	dec.Decode(r)
@@ -65,4 +69,8 @@ func (r *Request) Decode(t interface{}) {
 	dec.Decode(t)
 
 	return
+}
+
+func init() {
+	registerMessage(new(Request))
 }

@@ -13,6 +13,10 @@ type Hello struct {
 	Port    int
 }
 
+func (*Hello) New() Message{
+	return new(Hello)
+}
+
 func (*Hello) GetType() MessageType { return HELLO }
 
 func (h *Hello) Unflatten(d []string) {
@@ -25,4 +29,8 @@ func (h *Hello) Flatten() [][]byte {
 	enc := codec.NewEncoder(&payload, &mh)
 	enc.Encode(h)
 	return [][]byte{payload.Bytes()}
+}
+
+func init(){
+	registerMessage(new(Hello))
 }

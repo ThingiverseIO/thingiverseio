@@ -18,6 +18,7 @@ func init() {
 //go:generate event_generator -t Message
 
 type Message interface {
+	New() Message
 	GetType() MessageType
 	Flatten() [][]byte
 	Unflatten([]string)

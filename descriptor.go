@@ -2,16 +2,17 @@ package thingiverseio
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"strings"
 )
 
+// Descriptor represents a ThingiverseIO service descriptor.
 type Descriptor struct {
 	Functions []Function
 	Tags      map[string]string
 }
 
+// Function represents a ThingiverseIO function, consisting of a name and in-/output parameters.
 type Function struct {
 	Name   string
 	Input  []Parameter
@@ -30,6 +31,7 @@ func (f Function) String() string {
 	return fmt.Sprintf("%s%s%s", f.Name, inpar, outpar)
 }
 
+// Parameter consists of a name and a type.
 type Parameter struct {
 	Name string
 	Type string
@@ -38,11 +40,11 @@ type Parameter struct {
 //name(par:type,...)par:type
 
 func (p Parameter) String() string {
-	return fmt.Sprintf("%s%s", p.Name, p.Type)
+	return fmt.Sprintf("%s:%s", p.Name, p.Type)
 }
 
+// AsTagSet turns a Descriptor into a map, which is used for service discovery.
 func (a Descriptor) AsTagSet() (tagset map[string]string) {
-
 	if a.Tags != nil {
 		tagset = a.Tags
 	} else {
@@ -54,6 +56,7 @@ func (a Descriptor) AsTagSet() (tagset map[string]string) {
 	return
 }
 
+// ParseDescriptor takes a string representation of a descriptor and returns a Descriptor struct. If the descriptor is malformed, and error is returned, which is intended to be displayed to user.
 func ParseDescriptor(desc string) (d Descriptor, err error) {
 	scanner := bufio.NewScanner(strings.NewReader(desc))
 	linecounter := 0
@@ -193,14 +196,14 @@ func parseTag(line int, s string) (k, v string, err error) {
 		k = strings.Trim(split[0], " ")
 		v = strings.Trim(split[1], " ")
 		return
-	} else {
-		k = strings.Trim(s, " ")
 	}
+	k = strings.Trim(s, " ")
+
 	return
 }
 
 func newLineError(line int, reason string) error {
-	return errors.New(fmt.Sprintf("LINE %d: %s", line, reason))
+	return fmt.Errorf("LINE %d: %s", line, reason)
 }
 
 func containsAny(s string, t ...string) bool {
