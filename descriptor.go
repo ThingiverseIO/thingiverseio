@@ -28,6 +28,9 @@ func (f Function) String() string {
 	for _, p := range f.Output {
 		outpar = fmt.Sprintf("%s%s", outpar, p)
 	}
+	fmt.Println(f.Name)
+	fmt.Println(inpar)
+	fmt.Println(outpar)
 	return fmt.Sprintf("%s%s%s", f.Name, inpar, outpar)
 }
 
@@ -40,7 +43,7 @@ type Parameter struct {
 //name(par:type,...)par:type
 
 func (p Parameter) String() string {
-	return fmt.Sprintf("%s:%s", p.Name, p.Type)
+	return fmt.Sprintf("%s%s", p.Name, p.Type)
 }
 
 // AsTagSet turns a Descriptor into a map, which is used for service discovery.
@@ -65,8 +68,8 @@ func ParseDescriptor(desc string) (d Descriptor, err error) {
 		line := strings.TrimLeft(scanner.Text(), " ")
 		linecounter++
 		switch {
-		case line == "":
-		case strings.HasPrefix(line, "#"):
+		case line == "", strings.HasPrefix(line, "#"): 
+		//ignore empty lines and comments
 		case strings.HasPrefix(line, "func"):
 			var f Function
 			f, err = parseFunction(linecounter, line)
@@ -156,7 +159,7 @@ func parseFunction(line int, s string) (f Function, err error) {
 			err = newLineError(line, fmt.Sprint("malformed function, unknown type", t))
 			return
 		}
-		f.Output = append(f.Input, Parameter{n, t})
+		f.Output = append(f.Output, Parameter{n, t})
 	}
 
 	return

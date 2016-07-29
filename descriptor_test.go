@@ -17,8 +17,17 @@ tags multisimple muiltikey:val
 `
 
 func TestParseDescriptor(t *testing.T) {
-	_, err := thingiverseio.ParseDescriptor(testdesc)
+	desc, err := thingiverseio.ParseDescriptor(testdesc)
 	if err != nil {
 		t.Error(err)
+	}
+	if len(desc.Functions) != 3 {
+		t.Error("Wrong number of functions, want 3, got", len(desc.Functions))
+	}
+	if len(desc.Functions[0].Input) != 2 {
+		t.Error("Wrong number of input parameters, want 2, got", len(desc.Functions[0].Input))
+	}
+	if len(desc.Functions[0].Output) != 2 {
+		t.Error("Wrong number of output parameters, want 2, got", len(desc.Functions[0].Output))
 	}
 }
