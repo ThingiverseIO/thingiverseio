@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"os"
 	"strings"
 )
@@ -13,59 +12,44 @@ const (
 )
 
 func CheckEnviroment(cfg *Config) {
-	logger := log.New(cfg.logger, "ENVIROMENT_CHECK ", log.Ltime)
-
-	CheckEnviromentLogger(cfg,logger)
-	CheckEnviromentDebug(cfg,logger)
-	CheckEnviromentInterfaces(cfg,logger)
-
+	CheckEnviromentLogger(cfg)
+	CheckEnviromentDebug(cfg)
+	CheckEnviromentInterfaces(cfg)
 }
 
+func CheckEnviromentInterfaces(cfg *Config) {
 
-func CheckEnviromentInterfaces(cfg *Config, logger *log.Logger) {
-
-	v, f := getVar(ENV_INTERFACES, logger)
-
+	v, f := getVar(ENV_INTERFACES)
 	if f {
-		cfg.interfaces = strings.Split(v, ":")
-		logger.Println("Setting interfaces to", cfg.interfaces)
+		cfg.interfaces = strings.Split(v, ";")
 	}
 
 }
 
-func CheckEnviromentLogger(cfg *Config, logger *log.Logger) {
+func CheckEnviromentLogger(cfg *Config) {
 
-	v, f := getVar(ENV_LOGGING, logger)
+	v, f := getVar(ENV_LOGGING)
 
 	if f {
-		setLoggerFromString(v,cfg,logger)
+		setLoggerFromString(v, cfg)
 	}
 
 }
 
-func CheckEnviromentDebug(cfg *Config, logger *log.Logger) {
-	v,f := getVar(ENV_DEBUG, logger)
+func CheckEnviromentDebug(cfg *Config) {
+	v, f := getVar(ENV_DEBUG)
 
 	if f {
 		switch v {
 		case "1":
-		logger.Println("Setting DEBUG on")
-		cfg.debug = true
+			cfg.debug = true
 		default:
-		logger.Println("Setting DEBUG off")
 		}
 	}
 }
 
-func getVar(key string, l *log.Logger) (v string, f bool) {
-
-	l.Printf("Looking if %s is set", key)
+func getVar(key string) (v string, f bool) {
 	v = os.Getenv(key)
 	f = v != ""
-	if f {
-		l.Println("Key found, value is", v)
-	} else {
-		l.Println("Key not found")
-	}
 	return
 }

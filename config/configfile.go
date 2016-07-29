@@ -2,7 +2,6 @@ package config
 
 import (
 	"io/ioutil"
-	"log"
 	"strings"
 
 	"gopkg.in/gcfg.v1"
@@ -29,11 +28,9 @@ type CfgFileUserTags struct {
 
 func CheckCfgFile(cfg *Config, path string) {
 
-	logger := log.New(cfg.logger, "CONFIG_FILE_CHECK ", log.Ltime)
-	logger.Println("Checking File", path)
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
-		logger.Println("Error reading file", err)
+		return
 	}
 
 	var cfgf CfgFile
@@ -41,26 +38,23 @@ func CheckCfgFile(cfg *Config, path string) {
 	err = gcfg.ReadStringInto(&cfgf, string(f))
 
 	if err != nil {
-		logger.Println("Error parsing file", err)
+		return
 	}
 
 	if len(cfgf.Network.Interface) != 0 {
 		cfg.interfaces = cfgf.Network.Interface
-		logger.Println("Setting interfaces to", cfg.interfaces)
 	}
-	setLoggerFromString(cfgf.Misc.Logging, cfg, logger)
-	parseUserTags(cfgf.UserTags.Tag, logger, cfg)
+	setLoggerFromString(cfgf.Misc.Logging, cfg)
+	parseUserTags(cfgf.UserTags.Tag, cfg)
 }
 
-func parseUserTags(t []string, logger *log.Logger, cfg *Config) {
+func parseUserTags(t []string, cfg *Config) {
 	for _, ut := range t {
 		if !strings.Contains(ut, ":") {
-			logger.Printf("Error Parsing Tag '%s', tags must be of form 'key:value'", ut)
 			continue
 		}
 		split := strings.Split(ut, ":")
 		if len(split) != 2 {
-			logger.Printf("Error Parsing Tag '%s', tags must be of form 'key:value'", ut)
 			continue
 		}
 		cfg.userTags[split[0]] = split[1]
