@@ -35,6 +35,10 @@ func New(exporting bool, functionTags map[string]string) (cfg *Config) {
 	return
 }
 
+func (cfg *Config) Debug() bool {
+	return cfg.debug
+}
+
 func (cfg *Config) UUID() UUID {
 	if cfg.uuid == "" {
 		id, _ := uuid.NewV4()

@@ -10,12 +10,14 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/service"
 )
 
+// Meta contains the incoming port of a peer, one tag of its tagset an information if the peer is exporting. Sent via Memberlist and used to determine if the peer should be further checked.
 type Meta struct {
 	Adport    int
 	Exporting bool
 	Tag       string
 }
 
+// NewMeta creates new meta information for publishing with Memberlist.
 func NewMeta(adport int, cfg *config.Config, limit int) (m *Meta) {
 	m = &Meta{
 		Adport:    adport,
@@ -79,7 +81,7 @@ func (m *Meta) TagKeyValue() (k, v string, err error) {
 		k = s[0]
 		v = s[1]
 	} else {
-		err = errors.New("invalid tag")
+		err = fmt.Errorf("invalid tag '%s'", m.Tag)
 	}
 
 	return

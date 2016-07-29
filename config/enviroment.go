@@ -41,7 +41,7 @@ func CheckEnviromentDebug(cfg *Config) {
 
 	if f {
 		switch v {
-		case "1":
+		case "1", "true":
 			cfg.debug = true
 		default:
 		}

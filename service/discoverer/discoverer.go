@@ -39,6 +39,7 @@ func New(join *tracker.NodeStream, incoming *connection.Incoming, cfg *config.Co
 	return
 }
 
+// ConnectedPeers returns a stream of peers with have been sucessfully connected
 func (d *Discoverer) ConnectedPeers() *peer.PeerStream {
 	return d.connectedPeers.Stream()
 }
@@ -110,25 +111,55 @@ func (d *Discoverer) onInterestingNode(node tracker.Node) {
 }
 
 func (d *Discoverer) isNodeInteresting(node tracker.Node) bool {
+
+	if d.cfg.Debug() {
+		d.logger.Println("Checking if node is interesting")
+	}
+
 	meta, err := node.Meta()
 	if err != nil {
+		if d.cfg.Debug() {
+			d.logger.Println("Node meta is corrupt:", err)
+		}
 		return false
 	}
 
 	if meta.Exporting == d.cfg.Exporting() {
+		if d.cfg.Debug() {
+			d.logger.Println("Node is of same type")
+		}
 		return false
 	}
 
 	tk, tv, err := meta.TagKeyValue()
 
 	if err != nil {
+		if d.cfg.Debug() {
+			d.logger.Println("Node tags corrupted:", err)
+		}
 		return false
 	}
 
+	// if we are an Input, the Output can have more tags then we, otherwise the sent tag must be part of our tagset
+
+	if !d.cfg.Exporting() {
+		return true
+	}
+
 	t, f := d.cfg.Tags()[tk]
+	if d.cfg.Debug() {
+		d.logger.Println("Node tag is not in tagset")
+	}
 	if !f {
 		return false
 	}
 
-	return t == tv
+	if t != tv {
+		if d.cfg.Debug() {
+			d.logger.Println("Node tag is not in tagset")
+		}
+		return false
+	}
+
+	return true
 }
