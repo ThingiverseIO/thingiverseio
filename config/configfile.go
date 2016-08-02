@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 
 	"gopkg.in/gcfg.v1"
@@ -28,14 +28,7 @@ type CfgFileUserTags struct {
 
 func CheckCfgFile(cfg *Config, path string) {
 
-	f, err := ioutil.ReadFile(path)
-	if err != nil {
-		return
-	}
-
-	var cfgf CfgFile
-
-	err = gcfg.ReadStringInto(&cfgf, string(f))
+	cfgf, err := ReadCfgFile(path)
 
 	if err != nil {
 		return
@@ -46,6 +39,20 @@ func CheckCfgFile(cfg *Config, path string) {
 	}
 	setLoggerFromString(cfgf.Misc.Logging, cfg)
 	parseUserTags(cfgf.UserTags.Tag, cfg)
+}
+
+func ReadCfgFile(path string) (cfgf CfgFile, err error) {
+
+	f, err := os.Open(path)
+	if err != nil {
+		return
+	}
+	defer f.Close()
+
+	err = gcfg.ReadInto(&cfgf, f)
+
+	return
+
 }
 
 func parseUserTags(t []string, cfg *Config) {
