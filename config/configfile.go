@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -86,9 +87,18 @@ func WriteCfgFile(cfgf CfgFile, path string) (err error) {
 	lines = append(lines, "[usertags]")
 
 	for _, tag := range cfgf.UserTags.Tag {
-
 		lines = append(lines, fmt.Sprintf("tag=%s", tag))
 	}
+
+	if _, err = os.Stat(path); err == nil {
+		err = os.Remove(path)
+		if err != nil {
+			return
+		}
+	}
+
+	err = ioutil.WriteFile(path, []byte(strings.Join(lines, "\n")), 0777)
+
 	return
 }
 
