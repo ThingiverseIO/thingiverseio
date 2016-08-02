@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -37,6 +38,7 @@ func CheckCfgFile(cfg *Config, path string) {
 	if len(cfgf.Network.Interface) != 0 {
 		cfg.interfaces = cfgf.Network.Interface
 	}
+
 	setLoggerFromString(cfgf.Misc.Logging, cfg)
 	parseUserTags(cfgf.UserTags.Tag, cfg)
 }
@@ -53,6 +55,41 @@ func ReadCfgFile(path string) (cfgf CfgFile, err error) {
 
 	return
 
+}
+
+func WriteCfgFile(cfgf CfgFile, path string) (err error) {
+
+	var lines []string
+
+	if len(cfgf.Network.Interface) != 0 {
+
+		lines = append(lines, "[usertags]")
+		for _, iface := range cfgf.Network.Interface {
+			lines = append(lines, fmt.Sprintf("interface=%s", iface))
+		}
+
+		lines = append(lines, "")
+	}
+
+	lines = append(lines, "[misc]")
+
+	if cfgf.Misc.Logging != "" {
+		lines = append(lines, fmt.Sprintf("logging=%s", cfgf.Misc.Logging))
+	}
+
+	debug := "false"
+	if cfgf.Misc.Debug {
+		debug = "true"
+	}
+	lines = append(lines, fmt.Sprintf("debug=%s", debug))
+
+	lines = append(lines, "[usertags]")
+
+	for _, tag := range cfgf.UserTags.Tag {
+
+		lines = append(lines, fmt.Sprintf("tag=%s", tag))
+	}
+	return
 }
 
 func parseUserTags(t []string, cfg *Config) {
