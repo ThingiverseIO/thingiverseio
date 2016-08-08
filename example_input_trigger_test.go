@@ -22,7 +22,7 @@ type SayHelloOutput struct {
 }
 
 // ExampleInputTrigger demponstrate a simple input using the TRIGGER mechanism.
-func ExampleInputTrigger() {
+func Example_inputTrigger() {
 	// Create and run the input.
 	i := thingiverseio.NewInput(desc)
 	i.Run()

@@ -22,7 +22,7 @@ type SayHelloOutput struct {
 }
 
 // ExampleInputCall demponstrate a simple input using the CALL mechanism.
-func ExampleInputCall() {
+func Example_inputCall() {
 	// Create and run the input.
 	i := thingiverseio.NewInput(desc)
 	i.Run()
