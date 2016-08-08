@@ -21,7 +21,7 @@ type SayHelloOutput struct {
 	Answer string
 }
 
-// ExampleInputTrigger demponstrate a simple input using the TRIGGER mechanism.
+// ExampleInputTrigger demonstrates a simple input using the TRIGGER mechanism.
 func Example_inputTrigger() {
 	// Create and run the input.
 	i := thingiverseio.NewInput(desc)

@@ -23,7 +23,7 @@ type SayHelloOutput struct {
 }
 
 // ExampleOutput demonstrates a simple loop based output.
-func ExampleOutput() {
+func Example_output() {
 
 	// Create the output.
 	o, err := thingiverseio.NewOutput(descriptor)

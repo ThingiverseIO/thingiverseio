@@ -21,7 +21,7 @@ type SayHelloOutput struct {
 	Answer string
 }
 
-// ExampleInputCall demponstrate a simple input using the CALL mechanism.
+// ExampleInputCall demonstrates a simple input using the CALL mechanism.
 func Example_inputCall() {
 	// Create and run the input.
 	i := thingiverseio.NewInput(desc)
