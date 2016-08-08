@@ -28,9 +28,6 @@ func (f Function) String() string {
 	for _, p := range f.Output {
 		outpar = fmt.Sprintf("%s%s", outpar, p)
 	}
-	fmt.Println(f.Name)
-	fmt.Println(inpar)
-	fmt.Println(outpar)
 	return fmt.Sprintf("%s%s%s", f.Name, inpar, outpar)
 }
 

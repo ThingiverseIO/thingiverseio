@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ENV_INTERFACES = "THINGIVERSEIO_INTERFACE"
+	ENV_INTERFACE = "THINGIVERSEIO_INTERFACE"
 	ENV_LOGGING    = "THINGIVERSEIO_LOGGING"
 	ENV_DEBUG      = "THINGIVERSEIO_DEBUG"
 )
@@ -19,7 +19,7 @@ func CheckEnviroment(cfg *Config) {
 
 func CheckEnviromentInterfaces(cfg *Config) {
 
-	v, f := getVar(ENV_INTERFACES)
+	v, f := getVar(ENV_INTERFACE)
 	if f {
 		cfg.interfaces = strings.Split(v, ";")
 	}
