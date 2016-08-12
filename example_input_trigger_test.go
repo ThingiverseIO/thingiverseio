@@ -1,3 +1,5 @@
+// +build !test
+
 package thingiverseio_test
 
 import (
@@ -24,7 +26,10 @@ type SayHelloOutput struct {
 // ExampleInputTrigger demonstrates a simple input using the TRIGGER mechanism.
 func Example_inputTrigger() {
 	// Create and run the input.
-	i := thingiverseio.NewInput(desc)
+	i , err := thingiverseio.NewInput(descriptor)
+	if err != nil {
+		log.Fatal(err)
+	}
 	i.Run()
 
 	// Start listen to the SyHello function and get a channel to receive results.

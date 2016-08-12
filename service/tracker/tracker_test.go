@@ -3,7 +3,6 @@ package tracker
 import (
 	"bytes"
 	"fmt"
-	"os"
 	"testing"
 	"time"
 
@@ -13,9 +12,9 @@ import (
 
 func TestJoin(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true, map[string]string{})
+	cfg1 := config.New(true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag", "1")
-	cfg2 := config.New(os.Stdout, false, map[string]string{})
+	cfg2 := config.New(false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag", "2")
 
 	p1 := 666
@@ -44,7 +43,7 @@ func TestJoin(t *testing.T) {
 	case n := <-c1:
 
 		if n.UUID() != cfg2.UUID() {
-			t.Error("Found wrong UUID",n.UUID().FullString(),cfg2.UUID().FullString())
+			t.Error("Found wrong UUID", n.UUID().FullString(), cfg2.UUID().FullString())
 		}
 
 		if n.Node.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Node.Meta[1:3], port2byte(p2)) || n.Node.Meta[3] != 0 || string(n.Node.Meta[4:]) != "tag:2" {
@@ -57,7 +56,7 @@ func TestJoin(t *testing.T) {
 		t.Fatal("Couldnt find tracker 1")
 	case n := <-c2:
 		if n.UUID() != cfg1.UUID() {
-			t.Error("Found wrong UUID",n.UUID().FullString(),cfg2.UUID().FullString())
+			t.Error("Found wrong UUID", n.UUID().FullString(), cfg2.UUID().FullString())
 		}
 
 		if n.Node.Meta[0] != service.PROTOCOLL_SIGNATURE || !bytes.Equal(n.Node.Meta[1:3], port2byte(p1)) || n.Node.Meta[3] != 1 || string(n.Node.Meta[4:]) != "tag:1" {
@@ -68,9 +67,9 @@ func TestJoin(t *testing.T) {
 
 func TestAutoJoin(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true, map[string]string{})
+	cfg1 := config.New(true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag", "1")
-	cfg2 := config.New(os.Stdout, false, map[string]string{})
+	cfg2 := config.New(false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag", "2")
 
 	t1, err := New("127.0.0.1", 0, cfg1)
@@ -110,9 +109,9 @@ func TestAutoJoin(t *testing.T) {
 }
 func TestLeaveAndReconnect(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true, map[string]string{})
+	cfg1 := config.New(true, map[string]string{})
 	cfg1.AddOrSetUserTag("tag", "1")
-	cfg2 := config.New(os.Stdout, false, map[string]string{})
+	cfg2 := config.New(false, map[string]string{})
 	cfg2.AddOrSetUserTag("tag", "2")
 
 	t1, err := New("127.0.0.1", 0, cfg1)
@@ -152,7 +151,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 	case <-c2:
 	}
 
-	cfg3 := config.New(os.Stdout, false, map[string]string{})
+	cfg3 := config.New(false, map[string]string{})
 	cfg3.AddOrSetUserTag("tag", "2")
 
 	t3, err := New("127.0.0.1", 0, cfg3)

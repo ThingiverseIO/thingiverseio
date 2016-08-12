@@ -1,7 +1,6 @@
 package manager
 
 import (
-	"os"
 	"testing"
 	"time"
 
@@ -12,18 +11,18 @@ import (
 
 func TestManagerConnection(t *testing.T) {
 
-	cfg1 := config.New(os.Stdout, true, map[string]string{})
+	cfg1 := config.New(true, map[string]string{})
 	cfg1.OverrideUUID("exp")
 	cfg1.AddOrSetUserTag("tag1", "1")
 	cfg1.AddOrSetUserTag("tag2", "2")
 	cfg1.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg2 := config.New(os.Stdout, false, map[string]string{})
+	cfg2 := config.New(false, map[string]string{})
 	cfg2.OverrideUUID("imp1")
 	cfg2.AddOrSetUserTag("tag2", "2")
 	cfg2.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg3 := config.New(os.Stdout, false, map[string]string{})
+	cfg3 := config.New(false, map[string]string{})
 	cfg3.OverrideUUID("imp2")
 	cfg3.AddOrSetUserTag("tag1", "1")
 	cfg3.OverrideInterfaces([]string{"127.0.0.1"})
@@ -77,17 +76,17 @@ func TestManagerConnection(t *testing.T) {
 }
 
 func TestManagerMessaging(t *testing.T) {
-	cfg1 := config.New(os.Stdout, true, map[string]string{})
+	cfg1 := config.New(true, map[string]string{})
 	cfg1.OverrideUUID("exp")
 	cfg1.AddOrSetUserTag("tag1", "1")
 	cfg1.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg2 := config.New(os.Stdout, false, map[string]string{})
+	cfg2 := config.New(false, map[string]string{})
 	cfg2.OverrideUUID("imp1")
 	cfg2.AddOrSetUserTag("tag1", "1")
 	cfg2.OverrideInterfaces([]string{"127.0.0.1"})
 
-	cfg3 := config.New(os.Stdout, false, map[string]string{})
+	cfg3 := config.New(false, map[string]string{})
 	cfg3.OverrideUUID("imp2")
 	cfg3.AddOrSetUserTag("tag1", "1")
 	cfg3.OverrideInterfaces([]string{"127.0.0.1"})
@@ -186,7 +185,7 @@ func TestManagerSendGuaranteed(t *testing.T) {
 }
 
 func getTestManager(e bool) (m *Manager) {
-	cfg := config.New(os.Stdout, e, map[string]string{})
+	cfg := config.New(e, map[string]string{})
 	cfg.AddOrSetUserTag("tag1", "1")
 	cfg.OverrideInterfaces([]string{"127.0.0.1"})
 

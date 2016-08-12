@@ -188,7 +188,7 @@ func (i *Input) TriggerAllBin(function string, parameter []byte) {
 }
 
 // Listen starts listening on the given function.
-func (i *Input) Listen(function string) {
+func (i *Input) StartListen(function string) {
 	i.r.Fire(startListenEvent{}, function)
 }
 

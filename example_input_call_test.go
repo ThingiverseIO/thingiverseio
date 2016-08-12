@@ -1,3 +1,5 @@
+// +build !test
+
 package thingiverseio_test
 
 import (
@@ -24,7 +26,11 @@ type SayHelloOutput struct {
 // ExampleInputCall demonstrates a simple input using the CALL mechanism.
 func Example_inputCall() {
 	// Create and run the input.
-	i := thingiverseio.NewInput(desc)
+	i, err := thingiverseio.NewInput(descriptor)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	i.Run()
 
 	// Create the request parameter.

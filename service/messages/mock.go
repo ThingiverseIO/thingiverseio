@@ -28,3 +28,7 @@ func (m *Mock) Flatten() [][]byte {
 	enc.Encode(m)
 	return [][]byte{payload.Bytes()}
 }
+
+func init() {
+	registerMessage(&Mock{})
+}

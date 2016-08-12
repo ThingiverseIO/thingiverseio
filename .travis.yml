@@ -9,6 +9,10 @@ matrix:
   allow_failures:
     - go: tip
 
+env:
+  - THINGIVERSEIO_LOGGING: stdout
+  - THINGIVERSEIO_DEBUG: true
+
 before_install:
   - sudo apt-get update -y
   - sudo apt-get install -y make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf
@@ -33,4 +37,4 @@ install:
   - go get github.com/ugorji/go/codec
 
 script:
-  - go test -v ./service/tracker/beacon ./service/peer ./service/tracker ./service/manager .
+  - go test -tags test -v ./service/tracker/beacon ./service/peer ./service/tracker ./service/manager .

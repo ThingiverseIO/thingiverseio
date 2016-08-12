@@ -1,3 +1,5 @@
+// +build !test
+
 package thingiverseio_test
 
 import (
