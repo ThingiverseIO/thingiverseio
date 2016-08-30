@@ -52,7 +52,7 @@ func TestManagerConnection(t *testing.T) {
 	m3.Run()
 
 	select {
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Error("peer2 did not connect", cfg2.UUID())
 	case <-c2:
 		if len(m2.peers) != 1 {
@@ -61,7 +61,7 @@ func TestManagerConnection(t *testing.T) {
 	}
 
 	select {
-	case <-time.After(5 * time.Second):
+	case <-time.After(10 * time.Second):
 		t.Error("peer3 did not connect", cfg3.UUID())
 	case <-c3:
 		if len(m3.peers) != 1 {
@@ -69,7 +69,7 @@ func TestManagerConnection(t *testing.T) {
 		}
 	}
 
-	time.Sleep(5 * time.Second)
+	time.Sleep(10 * time.Second)
 	if len(m1.peers) != 2 {
 		t.Error("Not all peers connected to peer 1, want 2 got", len(m1.peers))
 	}
