@@ -1,18 +1,20 @@
 package thingiverseio
 
 import (
+	"bytes"
 	"fmt"
 	"log"
 
-	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/eventual2go/typed_events"
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/service/connection"
 	"github.com/ThingiverseIO/thingiverseio/service/manager"
 	"github.com/ThingiverseIO/thingiverseio/service/messages"
+	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/eventual2go/typed_events"
+	"github.com/ugorji/go/codec"
 )
 
-// Input is a ThingiverseIO node which imports functionality from the ThingiverseIO network. 
+// Input is a ThingiverseIO node which imports functionality from the ThingiverseIO network.
 type Input struct {
 	cfg       *config.Config
 	connected bool
@@ -128,6 +130,15 @@ func (i *Input) CallBin(function string, parameter []byte) (uuid config.UUID, f 
 	f = i.call(req)
 	uuid = req.UUID
 	i.logger.Println("CallBin", function, uuid)
+	if i.cfg.Debug() {
+		t := map[interface{}]interface{}{}
+		buf := bytes.NewBuffer(parameter)
+		var mh codec.MsgpackHandle
+		dec := codec.NewDecoder(buf, &mh)
+		err := dec.Decode(&t)
+		i.logger.Printf("Calling with parameters of size %d: %v", len(parameter), parameter)
+		i.logger.Println(t,err)
+	}
 	return
 }
 
@@ -187,7 +198,7 @@ func (i *Input) TriggerAllBin(function string, parameter []byte) {
 	i.m.SendToAll(i.newRequestBin(function, parameter, messages.TRIGGERALL))
 }
 
-// Listen starts listening on the given function.
+// StartListen starts listening on the given function.
 func (i *Input) StartListen(function string) {
 	i.r.Fire(startListenEvent{}, function)
 }
