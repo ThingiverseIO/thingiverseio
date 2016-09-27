@@ -31,6 +31,10 @@ type PeerFuture struct {
 	*eventual2go.Future
 }
 
+func (f *PeerFuture) GetResult() *Peer {
+	return f.Future.GetResult().(*Peer)
+}
+
 type PeerCompletionHandler func(*Peer) *Peer
 
 func (ch PeerCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
@@ -91,14 +95,14 @@ type PeerStream struct {
 	*eventual2go.Stream
 }
 
-type PeerSuscriber func(*Peer)
+type PeerSubscriber func(*Peer)
 
-func (l PeerSuscriber) toSuscriber() eventual2go.Subscriber {
+func (l PeerSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(*Peer)) }
 }
 
-func (s *PeerStream) Listen(ss PeerSuscriber) *eventual2go.Subscription {
-	return s.Stream.Listen(ss.toSuscriber())
+func (s *PeerStream) Listen(ss PeerSubscriber) *eventual2go.Subscription {
+	return s.Stream.Listen(ss.toSubscriber())
 }
 
 type PeerFilter func(*Peer) bool
@@ -107,24 +111,37 @@ func (f PeerFilter) toFilter() eventual2go.Filter {
 	return func(d eventual2go.Data) bool { return f(d.(*Peer)) }
 }
 
-func (s *PeerStream) Where(f PeerFilter) *PeerStream {
-	return &PeerStream{s.Stream.Where(f.toFilter())}
+func toPeerFilterArray(f ...PeerFilter) (filter []eventual2go.Filter){
+
+	filter = make([]eventual2go.Filter, len(f))
+	for i, el := range f {
+		filter[i] = el.toFilter()
+	}
+	return
 }
 
-func (s *PeerStream) WhereNot(f PeerFilter) *PeerStream {
-	return &PeerStream{s.Stream.WhereNot(f.toFilter())}
+func (s *PeerStream) Where(f ...PeerFilter) *PeerStream {
+	return &PeerStream{s.Stream.Where(toPeerFilterArray(f...)...)}
+}
+
+func (s *PeerStream) WhereNot(f ...PeerFilter) *PeerStream {
+	return &PeerStream{s.Stream.WhereNot(toPeerFilterArray(f...)...)}
+}
+
+func (s *PeerStream) Split(f PeerFilter) (*PeerStream, *PeerStream)  {
+	return s.Where(f), s.WhereNot(f)
 }
 
 func (s *PeerStream) First() *PeerFuture {
 	return &PeerFuture{s.Stream.First()}
 }
 
-func (s *PeerStream) FirstWhere(f PeerFilter) *PeerFuture {
-	return &PeerFuture{s.Stream.FirstWhere(f.toFilter())}
+func (s *PeerStream) FirstWhere(f... PeerFilter) *PeerFuture {
+	return &PeerFuture{s.Stream.FirstWhere(toPeerFilterArray(f...)...)}
 }
 
-func (s *PeerStream) FirstWhereNot(f PeerFilter) *PeerFuture {
-	return &PeerFuture{s.Stream.FirstWhereNot(f.toFilter())}
+func (s *PeerStream) FirstWhereNot(f ...PeerFilter) *PeerFuture {
+	return &PeerFuture{s.Stream.FirstWhereNot(toPeerFilterArray(f...)...)}
 }
 
 func (s *PeerStream) AsChan() (c chan *Peer) {
@@ -133,7 +150,7 @@ func (s *PeerStream) AsChan() (c chan *Peer) {
 	return
 }
 
-func pipeToPeerChan(c chan *Peer) PeerSuscriber {
+func pipeToPeerChan(c chan *Peer) PeerSubscriber {
 	return func(d *Peer) {
 		c <- d
 	}
@@ -144,4 +161,32 @@ func closePeerChan(c chan *Peer) eventual2go.CompletionHandler {
 		close(c)
 		return nil
 	}
+}
+
+type PeerCollector struct {
+	*eventual2go.Collector
+}
+
+func NewPeerCollector() *PeerCollector {
+	return &PeerCollector{eventual2go.NewCollector()}
+}
+
+func (c *PeerCollector) Add(d *Peer) {
+	c.Collector.Add(d)
+}
+
+func (c *PeerCollector) AddFuture(f *PeerFuture) {
+	c.Collector.Add(f.Future)
+}
+
+func (c *PeerCollector) AddStream(s *PeerStream) {
+	c.Collector.AddStream(s.Stream)
+}
+
+func (c *PeerCollector) Get() *Peer {
+	return c.Collector.Get().(*Peer)
+}
+
+func (c *PeerCollector) Preview() *Peer {
+	return c.Collector.Preview().(*Peer)
 }

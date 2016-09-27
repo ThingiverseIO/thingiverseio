@@ -111,12 +111,21 @@ func (f UUIDFilter) toFilter() eventual2go.Filter {
 	return func(d eventual2go.Data) bool { return f(d.(UUID)) }
 }
 
-func (s *UUIDStream) Where(f UUIDFilter) *UUIDStream {
-	return &UUIDStream{s.Stream.Where(f.toFilter())}
+func toUUIDFilterArray(f ...UUIDFilter) (filter []eventual2go.Filter){
+
+	filter = make([]eventual2go.Filter, len(f))
+	for i, el := range f {
+		filter[i] = el.toFilter()
+	}
+	return
 }
 
-func (s *UUIDStream) WhereNot(f UUIDFilter) *UUIDStream {
-	return &UUIDStream{s.Stream.WhereNot(f.toFilter())}
+func (s *UUIDStream) Where(f ...UUIDFilter) *UUIDStream {
+	return &UUIDStream{s.Stream.Where(toUUIDFilterArray(f...)...)}
+}
+
+func (s *UUIDStream) WhereNot(f ...UUIDFilter) *UUIDStream {
+	return &UUIDStream{s.Stream.WhereNot(toUUIDFilterArray(f...)...)}
 }
 
 func (s *UUIDStream) Split(f UUIDFilter) (*UUIDStream, *UUIDStream)  {
@@ -127,12 +136,12 @@ func (s *UUIDStream) First() *UUIDFuture {
 	return &UUIDFuture{s.Stream.First()}
 }
 
-func (s *UUIDStream) FirstWhere(f UUIDFilter) *UUIDFuture {
-	return &UUIDFuture{s.Stream.FirstWhere(f.toFilter())}
+func (s *UUIDStream) FirstWhere(f... UUIDFilter) *UUIDFuture {
+	return &UUIDFuture{s.Stream.FirstWhere(toUUIDFilterArray(f...)...)}
 }
 
-func (s *UUIDStream) FirstWhereNot(f UUIDFilter) *UUIDFuture {
-	return &UUIDFuture{s.Stream.FirstWhereNot(f.toFilter())}
+func (s *UUIDStream) FirstWhereNot(f ...UUIDFilter) *UUIDFuture {
+	return &UUIDFuture{s.Stream.FirstWhereNot(toUUIDFilterArray(f...)...)}
 }
 
 func (s *UUIDStream) AsChan() (c chan UUID) {

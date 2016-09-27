@@ -31,6 +31,10 @@ type SignalFuture struct {
 	*eventual2go.Future
 }
 
+func (f *SignalFuture) GetResult() Signal {
+	return f.Future.GetResult().(Signal)
+}
+
 type SignalCompletionHandler func(Signal) Signal
 
 func (ch SignalCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
@@ -91,14 +95,14 @@ type SignalStream struct {
 	*eventual2go.Stream
 }
 
-type SignalSuscriber func(Signal)
+type SignalSubscriber func(Signal)
 
-func (l SignalSuscriber) toSuscriber() eventual2go.Subscriber {
+func (l SignalSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(Signal)) }
 }
 
-func (s *SignalStream) Listen(ss SignalSuscriber) *eventual2go.Subscription {
-	return s.Stream.Listen(ss.toSuscriber())
+func (s *SignalStream) Listen(ss SignalSubscriber) *eventual2go.Subscription {
+	return s.Stream.Listen(ss.toSubscriber())
 }
 
 type SignalFilter func(Signal) bool
@@ -107,24 +111,37 @@ func (f SignalFilter) toFilter() eventual2go.Filter {
 	return func(d eventual2go.Data) bool { return f(d.(Signal)) }
 }
 
-func (s *SignalStream) Where(f SignalFilter) *SignalStream {
-	return &SignalStream{s.Stream.Where(f.toFilter())}
+func toSignalFilterArray(f ...SignalFilter) (filter []eventual2go.Filter){
+
+	filter = make([]eventual2go.Filter, len(f))
+	for i, el := range f {
+		filter[i] = el.toFilter()
+	}
+	return
 }
 
-func (s *SignalStream) WhereNot(f SignalFilter) *SignalStream {
-	return &SignalStream{s.Stream.WhereNot(f.toFilter())}
+func (s *SignalStream) Where(f ...SignalFilter) *SignalStream {
+	return &SignalStream{s.Stream.Where(toSignalFilterArray(f...)...)}
+}
+
+func (s *SignalStream) WhereNot(f ...SignalFilter) *SignalStream {
+	return &SignalStream{s.Stream.WhereNot(toSignalFilterArray(f...)...)}
+}
+
+func (s *SignalStream) Split(f SignalFilter) (*SignalStream, *SignalStream)  {
+	return s.Where(f), s.WhereNot(f)
 }
 
 func (s *SignalStream) First() *SignalFuture {
 	return &SignalFuture{s.Stream.First()}
 }
 
-func (s *SignalStream) FirstWhere(f SignalFilter) *SignalFuture {
-	return &SignalFuture{s.Stream.FirstWhere(f.toFilter())}
+func (s *SignalStream) FirstWhere(f... SignalFilter) *SignalFuture {
+	return &SignalFuture{s.Stream.FirstWhere(toSignalFilterArray(f...)...)}
 }
 
-func (s *SignalStream) FirstWhereNot(f SignalFilter) *SignalFuture {
-	return &SignalFuture{s.Stream.FirstWhereNot(f.toFilter())}
+func (s *SignalStream) FirstWhereNot(f ...SignalFilter) *SignalFuture {
+	return &SignalFuture{s.Stream.FirstWhereNot(toSignalFilterArray(f...)...)}
 }
 
 func (s *SignalStream) AsChan() (c chan Signal) {
@@ -133,7 +150,7 @@ func (s *SignalStream) AsChan() (c chan Signal) {
 	return
 }
 
-func pipeToSignalChan(c chan Signal) SignalSuscriber {
+func pipeToSignalChan(c chan Signal) SignalSubscriber {
 	return func(d Signal) {
 		c <- d
 	}
@@ -144,4 +161,32 @@ func closeSignalChan(c chan Signal) eventual2go.CompletionHandler {
 		close(c)
 		return nil
 	}
+}
+
+type SignalCollector struct {
+	*eventual2go.Collector
+}
+
+func NewSignalCollector() *SignalCollector {
+	return &SignalCollector{eventual2go.NewCollector()}
+}
+
+func (c *SignalCollector) Add(d Signal) {
+	c.Collector.Add(d)
+}
+
+func (c *SignalCollector) AddFuture(f *SignalFuture) {
+	c.Collector.Add(f.Future)
+}
+
+func (c *SignalCollector) AddStream(s *SignalStream) {
+	c.Collector.AddStream(s.Stream)
+}
+
+func (c *SignalCollector) Get() Signal {
+	return c.Collector.Get().(Signal)
+}
+
+func (c *SignalCollector) Preview() Signal {
+	return c.Collector.Preview().(Signal)
 }
