@@ -31,6 +31,10 @@ type NodeFuture struct {
 	*eventual2go.Future
 }
 
+func (f *NodeFuture) GetResult() Node {
+	return f.Future.GetResult().(Node)
+}
+
 type NodeCompletionHandler func(Node) Node
 
 func (ch NodeCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
@@ -91,14 +95,14 @@ type NodeStream struct {
 	*eventual2go.Stream
 }
 
-type NodeSuscriber func(Node)
+type NodeSubscriber func(Node)
 
-func (l NodeSuscriber) toSuscriber() eventual2go.Subscriber {
+func (l NodeSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(Node)) }
 }
 
-func (s *NodeStream) Listen(ss NodeSuscriber) *eventual2go.Subscription {
-	return s.Stream.Listen(ss.toSuscriber())
+func (s *NodeStream) Listen(ss NodeSubscriber) *eventual2go.Completer {
+	return s.Stream.Listen(ss.toSubscriber())
 }
 
 type NodeFilter func(Node) bool
@@ -107,33 +111,47 @@ func (f NodeFilter) toFilter() eventual2go.Filter {
 	return func(d eventual2go.Data) bool { return f(d.(Node)) }
 }
 
-func (s *NodeStream) Where(f NodeFilter) *NodeStream {
-	return &NodeStream{s.Stream.Where(f.toFilter())}
+func toNodeFilterArray(f ...NodeFilter) (filter []eventual2go.Filter){
+
+	filter = make([]eventual2go.Filter, len(f))
+	for i, el := range f {
+		filter[i] = el.toFilter()
+	}
+	return
 }
 
-func (s *NodeStream) WhereNot(f NodeFilter) *NodeStream {
-	return &NodeStream{s.Stream.WhereNot(f.toFilter())}
+func (s *NodeStream) Where(f ...NodeFilter) *NodeStream {
+	return &NodeStream{s.Stream.Where(toNodeFilterArray(f...)...)}
+}
+
+func (s *NodeStream) WhereNot(f ...NodeFilter) *NodeStream {
+	return &NodeStream{s.Stream.WhereNot(toNodeFilterArray(f...)...)}
+}
+
+func (s *NodeStream) Split(f NodeFilter) (*NodeStream, *NodeStream)  {
+	return s.Where(f), s.WhereNot(f)
 }
 
 func (s *NodeStream) First() *NodeFuture {
 	return &NodeFuture{s.Stream.First()}
 }
 
-func (s *NodeStream) FirstWhere(f NodeFilter) *NodeFuture {
-	return &NodeFuture{s.Stream.FirstWhere(f.toFilter())}
+func (s *NodeStream) FirstWhere(f... NodeFilter) *NodeFuture {
+	return &NodeFuture{s.Stream.FirstWhere(toNodeFilterArray(f...)...)}
 }
 
-func (s *NodeStream) FirstWhereNot(f NodeFilter) *NodeFuture {
-	return &NodeFuture{s.Stream.FirstWhereNot(f.toFilter())}
+func (s *NodeStream) FirstWhereNot(f ...NodeFilter) *NodeFuture {
+	return &NodeFuture{s.Stream.FirstWhereNot(toNodeFilterArray(f...)...)}
 }
 
-func (s *NodeStream) AsChan() (c chan Node) {
+func (s *NodeStream) AsChan() (c chan Node, stop *eventual2go.Completer) {
 	c = make(chan Node)
-	s.Listen(pipeToNodeChan(c)).Closed().Then(closeNodeChan(c))
+	stop = s.Listen(pipeToNodeChan(c))
+	stop.Future().Then(closeNodeChan(c))
 	return
 }
 
-func pipeToNodeChan(c chan Node) NodeSuscriber {
+func pipeToNodeChan(c chan Node) NodeSubscriber {
 	return func(d Node) {
 		c <- d
 	}
@@ -144,4 +162,32 @@ func closeNodeChan(c chan Node) eventual2go.CompletionHandler {
 		close(c)
 		return nil
 	}
+}
+
+type NodeCollector struct {
+	*eventual2go.Collector
+}
+
+func NewNodeCollector() *NodeCollector {
+	return &NodeCollector{eventual2go.NewCollector()}
+}
+
+func (c *NodeCollector) Add(d Node) {
+	c.Collector.Add(d)
+}
+
+func (c *NodeCollector) AddFuture(f *NodeFuture) {
+	c.Collector.Add(f.Future)
+}
+
+func (c *NodeCollector) AddStream(s *NodeStream) {
+	c.Collector.AddStream(s.Stream)
+}
+
+func (c *NodeCollector) Get() Node {
+	return c.Collector.Get().(Node)
+}
+
+func (c *NodeCollector) Preview() Node {
+	return c.Collector.Preview().(Node)
 }

@@ -164,10 +164,8 @@ func (b *Beacon) getSignal(c chan struct{}) {
 	defer b.m.Unlock()
 	data := make([]byte, 1024)
 	b.incoming.SetReadDeadline(time.Now().Add(1 * time.Second))
-	read, remoteAddr, err := b.incoming.ReadFromUDP(data)
-	if !b.signals.Closed().Completed() && err == nil {
-		b.signals.Add(Signal{remoteAddr.IP[len(remoteAddr.IP)-4:], data[:read]})
-	}
+	read, remoteAddr, _ := b.incoming.ReadFromUDP(data)
+	b.signals.Add(Signal{remoteAddr.IP[len(remoteAddr.IP)-4:], data[:read]})
 	c <- struct{}{}
 }
 

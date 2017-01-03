@@ -2,7 +2,6 @@ package messages
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/ugorji/go/codec"
 )
@@ -11,14 +10,14 @@ type Mock struct {
 	Data interface{}
 }
 
-func (*Mock) New() Message{
+func (*Mock) New() Message {
 	return new(Mock)
 }
 
 func (*Mock) GetType() MessageType { return MOCK }
 
-func (m *Mock) Unflatten(d []string) {
-	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
+func (m *Mock) Unflatten(d [][]byte) {
+	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(&m)
 }
 

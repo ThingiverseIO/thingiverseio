@@ -1,11 +1,6 @@
 package messages
 
-import (
-	"strconv"
-
-	"github.com/ThingiverseIO/thingiverseio/service"
-	"github.com/ugorji/go/codec"
-)
+import "github.com/ugorji/go/codec"
 
 var (
 	mh codec.MsgpackHandle
@@ -21,26 +16,18 @@ type Message interface {
 	New() Message
 	GetType() MessageType
 	Flatten() [][]byte
-	Unflatten([]string)
+	Unflatten([][]byte)
 }
 
-func Flatten(m Message) [][]byte {
-	t := strconv.FormatInt(int64(m.GetType()), 10)
-	payload := [][]byte{[]byte{byte(service.PROTOCOLL_SIGNATURE)}, []byte(t)}
-	for _, p := range m.Flatten() {
-		payload = append(payload, p)
+func Flatten(m Message) *FlatMessage {
+	return &FlatMessage{
+		Type:    m.GetType(),
+		Payload: m.Flatten(),
 	}
-	return payload
 }
 
-func Unflatten(m []string) (msg Message) {
-	mtype := PeakType(m)
-	msg = Get(MessageType(mtype))
-	msg.Unflatten(m[2:])
+func Unflatten(m FlatMessage) (msg Message) {
+	msg = Get(MessageType(m.Type))
+	msg.Unflatten(m.Payload)
 	return
-}
-
-func PeakType(m []string) MessageType {
-	t, _ := strconv.ParseInt(m[1], 10, 8)
-	return MessageType(t)
 }

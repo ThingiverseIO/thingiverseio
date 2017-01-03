@@ -2,24 +2,23 @@ package messages
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/ugorji/go/codec"
 )
 
 type DoHave struct {
-	TagKey string
+	TagKey   string
 	TagValue string
 }
 
-func (*DoHave) New() Message{
+func (*DoHave) New() Message {
 	return new(DoHave)
 }
 
 func (*DoHave) GetType() MessageType { return DOHAVE }
 
-func (h *DoHave) Unflatten(d []string) {
-	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
+func (h *DoHave) Unflatten(d [][]byte) {
+	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(&h)
 }
 
@@ -30,6 +29,6 @@ func (h *DoHave) Flatten() [][]byte {
 	return [][]byte{payload.Bytes()}
 }
 
-func init(){
+func init() {
 	registerMessage(new(DoHave))
 }

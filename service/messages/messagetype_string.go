@@ -4,9 +4,9 @@ package messages
 
 import "fmt"
 
-const _MessageType_name = "HELLOHELLOOKDOHAVEHAVECONNECTREQUESTRESULTLISTENSTOPLISTENENDMOCK"
+const _MessageType_name = "HELLOHELLOOKDOHAVEHAVECONNECTREQUESTRESULTLISTENSTOPLISTENENDREJECTMOCK"
 
-var _MessageType_index = [...]uint8{0, 5, 12, 18, 22, 29, 36, 42, 48, 58, 61, 65}
+var _MessageType_index = [...]uint8{0, 5, 12, 18, 22, 29, 36, 42, 48, 58, 61, 67, 71}
 
 func (i MessageType) String() string {
 	if i < 0 || i >= MessageType(len(_MessageType_index)-1) {

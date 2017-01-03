@@ -28,9 +28,7 @@ func (eh *eventHandler) Join() *NodeStream {
 func (eh *eventHandler) NotifyJoin(n *memberlist.Node) {
 	eh.Lock()
 	defer eh.Unlock()
-	if !eh.join.Closed().Completed() {
-		eh.join.Add(Node{n})
-	}
+	eh.join.Add(Node{n})
 }
 
 func (eh *eventHandler) Leave() *NodeStream {
@@ -40,9 +38,7 @@ func (eh *eventHandler) Leave() *NodeStream {
 func (eh *eventHandler) NotifyLeave(n *memberlist.Node) {
 	eh.Lock()
 	defer eh.Unlock()
-	if !eh.leave.Closed().Completed() {
-		eh.leave.Add(Node{n})
-	}
+	eh.leave.Add(Node{n})
 }
 
 func (eh *eventHandler) NotifyUpdate(n *memberlist.Node) {
@@ -52,6 +48,4 @@ func (eh *eventHandler) NotifyUpdate(n *memberlist.Node) {
 func (eh *eventHandler) close() {
 	eh.Lock()
 	defer eh.Unlock()
-	eh.join.Close()
-	eh.leave.Close()
 }

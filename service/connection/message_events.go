@@ -31,6 +31,10 @@ type MessageFuture struct {
 	*eventual2go.Future
 }
 
+func (f *MessageFuture) GetResult() Message {
+	return f.Future.GetResult().(Message)
+}
+
 type MessageCompletionHandler func(Message) Message
 
 func (ch MessageCompletionHandler) toCompletionHandler() eventual2go.CompletionHandler {
@@ -91,14 +95,14 @@ type MessageStream struct {
 	*eventual2go.Stream
 }
 
-type MessageSuscriber func(Message)
+type MessageSubscriber func(Message)
 
-func (l MessageSuscriber) toSuscriber() eventual2go.Subscriber {
+func (l MessageSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(Message)) }
 }
 
-func (s *MessageStream) Listen(ss MessageSuscriber) *eventual2go.Subscription {
-	return s.Stream.Listen(ss.toSuscriber())
+func (s *MessageStream) Listen(ss MessageSubscriber) *eventual2go.Completer {
+	return s.Stream.Listen(ss.toSubscriber())
 }
 
 type MessageFilter func(Message) bool
@@ -107,33 +111,47 @@ func (f MessageFilter) toFilter() eventual2go.Filter {
 	return func(d eventual2go.Data) bool { return f(d.(Message)) }
 }
 
-func (s *MessageStream) Where(f MessageFilter) *MessageStream {
-	return &MessageStream{s.Stream.Where(f.toFilter())}
+func toMessageFilterArray(f ...MessageFilter) (filter []eventual2go.Filter){
+
+	filter = make([]eventual2go.Filter, len(f))
+	for i, el := range f {
+		filter[i] = el.toFilter()
+	}
+	return
 }
 
-func (s *MessageStream) WhereNot(f MessageFilter) *MessageStream {
-	return &MessageStream{s.Stream.WhereNot(f.toFilter())}
+func (s *MessageStream) Where(f ...MessageFilter) *MessageStream {
+	return &MessageStream{s.Stream.Where(toMessageFilterArray(f...)...)}
+}
+
+func (s *MessageStream) WhereNot(f ...MessageFilter) *MessageStream {
+	return &MessageStream{s.Stream.WhereNot(toMessageFilterArray(f...)...)}
+}
+
+func (s *MessageStream) Split(f MessageFilter) (*MessageStream, *MessageStream)  {
+	return s.Where(f), s.WhereNot(f)
 }
 
 func (s *MessageStream) First() *MessageFuture {
 	return &MessageFuture{s.Stream.First()}
 }
 
-func (s *MessageStream) FirstWhere(f MessageFilter) *MessageFuture {
-	return &MessageFuture{s.Stream.FirstWhere(f.toFilter())}
+func (s *MessageStream) FirstWhere(f... MessageFilter) *MessageFuture {
+	return &MessageFuture{s.Stream.FirstWhere(toMessageFilterArray(f...)...)}
 }
 
-func (s *MessageStream) FirstWhereNot(f MessageFilter) *MessageFuture {
-	return &MessageFuture{s.Stream.FirstWhereNot(f.toFilter())}
+func (s *MessageStream) FirstWhereNot(f ...MessageFilter) *MessageFuture {
+	return &MessageFuture{s.Stream.FirstWhereNot(toMessageFilterArray(f...)...)}
 }
 
-func (s *MessageStream) AsChan() (c chan Message) {
+func (s *MessageStream) AsChan() (c chan Message, stop *eventual2go.Completer) {
 	c = make(chan Message)
-	s.Listen(pipeToMessageChan(c)).Closed().Then(closeMessageChan(c))
+	stop = s.Listen(pipeToMessageChan(c))
+	stop.Future().Then(closeMessageChan(c))
 	return
 }
 
-func pipeToMessageChan(c chan Message) MessageSuscriber {
+func pipeToMessageChan(c chan Message) MessageSubscriber {
 	return func(d Message) {
 		c <- d
 	}
@@ -144,4 +162,32 @@ func closeMessageChan(c chan Message) eventual2go.CompletionHandler {
 		close(c)
 		return nil
 	}
+}
+
+type MessageCollector struct {
+	*eventual2go.Collector
+}
+
+func NewMessageCollector() *MessageCollector {
+	return &MessageCollector{eventual2go.NewCollector()}
+}
+
+func (c *MessageCollector) Add(d Message) {
+	c.Collector.Add(d)
+}
+
+func (c *MessageCollector) AddFuture(f *MessageFuture) {
+	c.Collector.Add(f.Future)
+}
+
+func (c *MessageCollector) AddStream(s *MessageStream) {
+	c.Collector.AddStream(s.Stream)
+}
+
+func (c *MessageCollector) Get() Message {
+	return c.Collector.Get().(Message)
+}
+
+func (c *MessageCollector) Preview() Message {
+	return c.Collector.Preview().(Message)
 }

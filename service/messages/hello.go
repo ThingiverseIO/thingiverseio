@@ -2,7 +2,6 @@ package messages
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/ugorji/go/codec"
 )
@@ -13,14 +12,14 @@ type Hello struct {
 	Port    int
 }
 
-func (*Hello) New() Message{
+func (*Hello) New() Message {
 	return new(Hello)
 }
 
 func (*Hello) GetType() MessageType { return HELLO }
 
-func (h *Hello) Unflatten(d []string) {
-	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
+func (h *Hello) Unflatten(d [][]byte) {
+	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(&h)
 }
 
@@ -31,6 +30,6 @@ func (h *Hello) Flatten() [][]byte {
 	return [][]byte{payload.Bytes()}
 }
 
-func init(){
+func init() {
 	registerMessage(new(Hello))
 }

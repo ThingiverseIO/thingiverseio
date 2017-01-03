@@ -4,15 +4,15 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/joernweissenborn/eventual2go"
-	"github.com/joernweissenborn/eventual2go/typed_events"
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/service/connection"
 	"github.com/ThingiverseIO/thingiverseio/service/manager"
 	"github.com/ThingiverseIO/thingiverseio/service/messages"
+	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/eventual2go/typed_events"
 )
 
-// Output is a ThingiverseIO node which exports functionality to the ThingiverseIO network. 
+// Output is a ThingiverseIO node which exports functionality to the ThingiverseIO network.
 type Output struct {
 	cfg       *config.Config
 	m         *manager.Manager
@@ -114,7 +114,7 @@ func (o *Output) EmitEncoded(function string, inparams []byte, outparams []byte)
 	o.ReplyEncoded(req, outparams)
 }
 
-// Requests returns a RequestStream, which delivers incoming requests. Although multiple listeners can be registered, multiple replies to one request can lead to undefined behaviour. 
+// Requests returns a RequestStream, which delivers incoming requests. Although multiple listeners can be registered, multiple replies to one request can lead to undefined behaviour.
 func (o *Output) Requests() *messages.RequestStream {
 	return o.requests
 }

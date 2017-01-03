@@ -101,7 +101,7 @@ func (l RequestSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(*Request)) }
 }
 
-func (s *RequestStream) Listen(ss RequestSubscriber) *eventual2go.Subscription {
+func (s *RequestStream) Listen(ss RequestSubscriber) *eventual2go.Completer {
 	return s.Stream.Listen(ss.toSubscriber())
 }
 
@@ -111,12 +111,21 @@ func (f RequestFilter) toFilter() eventual2go.Filter {
 	return func(d eventual2go.Data) bool { return f(d.(*Request)) }
 }
 
-func (s *RequestStream) Where(f RequestFilter) *RequestStream {
-	return &RequestStream{s.Stream.Where(f.toFilter())}
+func toRequestFilterArray(f ...RequestFilter) (filter []eventual2go.Filter){
+
+	filter = make([]eventual2go.Filter, len(f))
+	for i, el := range f {
+		filter[i] = el.toFilter()
+	}
+	return
 }
 
-func (s *RequestStream) WhereNot(f RequestFilter) *RequestStream {
-	return &RequestStream{s.Stream.WhereNot(f.toFilter())}
+func (s *RequestStream) Where(f ...RequestFilter) *RequestStream {
+	return &RequestStream{s.Stream.Where(toRequestFilterArray(f...)...)}
+}
+
+func (s *RequestStream) WhereNot(f ...RequestFilter) *RequestStream {
+	return &RequestStream{s.Stream.WhereNot(toRequestFilterArray(f...)...)}
 }
 
 func (s *RequestStream) Split(f RequestFilter) (*RequestStream, *RequestStream)  {
@@ -127,17 +136,18 @@ func (s *RequestStream) First() *RequestFuture {
 	return &RequestFuture{s.Stream.First()}
 }
 
-func (s *RequestStream) FirstWhere(f RequestFilter) *RequestFuture {
-	return &RequestFuture{s.Stream.FirstWhere(f.toFilter())}
+func (s *RequestStream) FirstWhere(f... RequestFilter) *RequestFuture {
+	return &RequestFuture{s.Stream.FirstWhere(toRequestFilterArray(f...)...)}
 }
 
-func (s *RequestStream) FirstWhereNot(f RequestFilter) *RequestFuture {
-	return &RequestFuture{s.Stream.FirstWhereNot(f.toFilter())}
+func (s *RequestStream) FirstWhereNot(f ...RequestFilter) *RequestFuture {
+	return &RequestFuture{s.Stream.FirstWhereNot(toRequestFilterArray(f...)...)}
 }
 
-func (s *RequestStream) AsChan() (c chan *Request) {
+func (s *RequestStream) AsChan() (c chan *Request, stop *eventual2go.Completer) {
 	c = make(chan *Request)
-	s.Listen(pipeToRequestChan(c)).Closed().Then(closeRequestChan(c))
+	stop = s.Listen(pipeToRequestChan(c))
+	stop.Future().Then(closeRequestChan(c))
 	return
 }
 

@@ -2,7 +2,6 @@ package messages
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/ugorji/go/codec"
 )
@@ -20,8 +19,8 @@ func (*Reject) New() Message {
 	return new(Reject)
 }
 
-func (h *Reject) Unflatten(d []string) {
-	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
+func (h *Reject) Unflatten(d [][]byte) {
+	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(&h)
 }
 
@@ -32,6 +31,6 @@ func (h *Reject) Flatten() [][]byte {
 	return [][]byte{payload.Bytes()}
 }
 
-func init(){
+func init() {
 	registerMessage(new(Reject))
 }

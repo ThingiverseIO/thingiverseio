@@ -4,30 +4,27 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/joernweissenborn/eventual2go"
 	"github.com/ThingiverseIO/thingiverseio/config"
-	"github.com/pebbe/zmq4"
+	"github.com/go-mangos/mangos"
+	"github.com/go-mangos/mangos/protocol/push"
+	"github.com/joernweissenborn/eventual2go"
 )
 
 type Outgoing struct {
 	m      *sync.Mutex
-	skt    *zmq4.Socket
+	skt    mangos.Socket
 	closed *eventual2go.Completer
+	uuid   config.UUID
 }
 
 func NewOutgoing(uuid config.UUID, targetAddress string, targetPort int) (out *Outgoing, err error) {
 
-	skt, err := zmq4.NewSocket(zmq4.DEALER)
+	skt, err := push.NewSocket()
 	if err != nil {
 		return
 	}
 
-	err = skt.SetIdentity(string(uuid))
-	if err != nil {
-		return
-	}
-
-	err = skt.Connect(fmt.Sprintf("tcp://%s:%d", targetAddress, targetPort))
+	err = skt.Dial(fmt.Sprintf("tcp://%s:%d", targetAddress, targetPort))
 	if err != nil {
 		return
 	}
@@ -36,12 +33,13 @@ func NewOutgoing(uuid config.UUID, targetAddress string, targetPort int) (out *O
 		m:      &sync.Mutex{},
 		skt:    skt,
 		closed: eventual2go.NewCompleter(),
+		uuid:   uuid,
 	}
 
 	return
 }
 
-func (o *Outgoing) Send(data [][]byte) error {
+func (o *Outgoing) Send(data []byte) error {
 	return o.send(data)
 }
 
@@ -56,10 +54,10 @@ func (o *Outgoing) Close() {
 	o.closed.Complete(nil)
 }
 
-func (o *Outgoing) send(d [][]byte) (err error) {
+func (o *Outgoing) send(d []byte) (err error) {
 	o.m.Lock()
 	defer o.m.Unlock()
-	_, err = o.skt.SendMessage(d)
+	err = o.skt.Send(d)
 	if err != nil {
 		if !o.closed.Completed() {
 			o.Close()

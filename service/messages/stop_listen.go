@@ -2,7 +2,6 @@ package messages
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/ugorji/go/codec"
 )
@@ -11,13 +10,13 @@ type StopListen struct {
 	Function string
 }
 
-func (*StopListen) New() Message{
+func (*StopListen) New() Message {
 	return new(StopListen)
 }
 func (*StopListen) GetType() MessageType { return STOPLISTEN }
 
-func (l *StopListen) Unflatten(d []string) {
-	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
+func (l *StopListen) Unflatten(d [][]byte) {
+	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(l)
 }
 
@@ -28,6 +27,6 @@ func (l *StopListen) Flatten() [][]byte {
 	return [][]byte{payload.Bytes()}
 }
 
-func init(){
+func init() {
 	registerMessage(new(StopListen))
 }

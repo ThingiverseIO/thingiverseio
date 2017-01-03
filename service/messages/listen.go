@@ -2,7 +2,6 @@ package messages
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/ugorji/go/codec"
 )
@@ -11,14 +10,14 @@ type Listen struct {
 	Function string
 }
 
-func (*Listen) New() Message{
+func (*Listen) New() Message {
 	return new(Listen)
 }
 
 func (*Listen) GetType() MessageType { return LISTEN }
 
-func (l *Listen) Unflatten(d []string) {
-	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
+func (l *Listen) Unflatten(d [][]byte) {
+	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(l)
 }
 
@@ -29,6 +28,6 @@ func (l *Listen) Flatten() [][]byte {
 	return [][]byte{payload.Bytes()}
 }
 
-func init(){
+func init() {
 	registerMessage(new(Listen))
 }

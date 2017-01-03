@@ -101,7 +101,7 @@ func (l MessageSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(Message)) }
 }
 
-func (s *MessageStream) Listen(ss MessageSubscriber) *eventual2go.Subscription {
+func (s *MessageStream) Listen(ss MessageSubscriber) *eventual2go.Completer {
 	return s.Stream.Listen(ss.toSubscriber())
 }
 
@@ -111,12 +111,21 @@ func (f MessageFilter) toFilter() eventual2go.Filter {
 	return func(d eventual2go.Data) bool { return f(d.(Message)) }
 }
 
-func (s *MessageStream) Where(f MessageFilter) *MessageStream {
-	return &MessageStream{s.Stream.Where(f.toFilter())}
+func toMessageFilterArray(f ...MessageFilter) (filter []eventual2go.Filter){
+
+	filter = make([]eventual2go.Filter, len(f))
+	for i, el := range f {
+		filter[i] = el.toFilter()
+	}
+	return
 }
 
-func (s *MessageStream) WhereNot(f MessageFilter) *MessageStream {
-	return &MessageStream{s.Stream.WhereNot(f.toFilter())}
+func (s *MessageStream) Where(f ...MessageFilter) *MessageStream {
+	return &MessageStream{s.Stream.Where(toMessageFilterArray(f...)...)}
+}
+
+func (s *MessageStream) WhereNot(f ...MessageFilter) *MessageStream {
+	return &MessageStream{s.Stream.WhereNot(toMessageFilterArray(f...)...)}
 }
 
 func (s *MessageStream) Split(f MessageFilter) (*MessageStream, *MessageStream)  {
@@ -127,17 +136,18 @@ func (s *MessageStream) First() *MessageFuture {
 	return &MessageFuture{s.Stream.First()}
 }
 
-func (s *MessageStream) FirstWhere(f MessageFilter) *MessageFuture {
-	return &MessageFuture{s.Stream.FirstWhere(f.toFilter())}
+func (s *MessageStream) FirstWhere(f... MessageFilter) *MessageFuture {
+	return &MessageFuture{s.Stream.FirstWhere(toMessageFilterArray(f...)...)}
 }
 
-func (s *MessageStream) FirstWhereNot(f MessageFilter) *MessageFuture {
-	return &MessageFuture{s.Stream.FirstWhereNot(f.toFilter())}
+func (s *MessageStream) FirstWhereNot(f ...MessageFilter) *MessageFuture {
+	return &MessageFuture{s.Stream.FirstWhereNot(toMessageFilterArray(f...)...)}
 }
 
-func (s *MessageStream) AsChan() (c chan Message) {
+func (s *MessageStream) AsChan() (c chan Message, stop *eventual2go.Completer) {
 	c = make(chan Message)
-	s.Listen(pipeToMessageChan(c)).Closed().Then(closeMessageChan(c))
+	stop = s.Listen(pipeToMessageChan(c))
+	stop.Future().Then(closeMessageChan(c))
 	return
 }
 

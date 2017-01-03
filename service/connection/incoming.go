@@ -3,21 +3,21 @@ package connection
 import (
 	"net"
 
-	"github.com/pebbe/zmq4"
+	"github.com/go-mangos/mangos"
+	"github.com/go-mangos/mangos/protocol/pull"
 
 	"fmt"
 	"time"
 
-	"github.com/joernweissenborn/eventual2go"
-	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/service/messages"
+	"github.com/joernweissenborn/eventual2go"
 )
 
 type Incoming struct {
 	addr   string
 	port   int
-	skt    *zmq4.Socket
-	in     *MessageStreamController
+	skt    mangos.Socket
+	in     *messages.FlatMessageStreamController
 	close  *eventual2go.Completer
 	closed *eventual2go.Completer
 }
@@ -25,7 +25,7 @@ type Incoming struct {
 func NewIncoming(addr string) (i *Incoming, err error) {
 	i = &Incoming{
 		addr:   addr,
-		in:     NewMessageStreamController(),
+		in:     messages.NewFlatMessageStreamController(),
 		close:  eventual2go.NewCompleter(),
 		closed: eventual2go.NewCompleter(),
 	}
@@ -36,16 +36,12 @@ func NewIncoming(addr string) (i *Incoming, err error) {
 	return
 }
 
-func (i *Incoming) In() *MessageStream {
-	return i.in.Stream().Where(validMsg)
+func (i *Incoming) In() *messages.FlatMessageStream {
+	return i.in.Stream()
 }
 
 func (i *Incoming) Messages() *messages.MessageStream {
 	return &messages.MessageStream{i.In().Transform(ToMessage)}
-}
-
-func (i *Incoming) MessagesFromSender(sender config.UUID) *messages.MessageStream {
-	return &messages.MessageStream{i.In().Where(validMsg).Where(isMsgFromSender(sender)).Transform(ToMessage)}
 }
 
 func (i *Incoming) Addr() (addr string) {
@@ -58,11 +54,13 @@ func (i *Incoming) Port() (port int) {
 
 func (i *Incoming) setupSocket() (err error) {
 	i.port = getRandomPort()
-	i.skt, err = zmq4.NewSocket(zmq4.ROUTER)
+	i.skt, err = pull.NewSocket()
 	if err != nil {
 		return
 	}
-	err = i.skt.Bind(fmt.Sprintf("tcp://%s:%d", i.addr, i.port))
+	i.skt.SetOption("RECV-DEADLINE", 100*time.Millisecond)
+
+	err = i.skt.Listen(fmt.Sprintf("tcp://%s:%d", i.addr, i.port))
 	return
 }
 
@@ -76,25 +74,19 @@ func getRandomPort() int {
 }
 
 func (i *Incoming) listen() {
-	poller := zmq4.NewPoller()
-	poller.Add(i.skt, zmq4.POLLIN)
 
 	for {
 		if i.close.Completed() {
 			err := i.skt.Close()
-			i.in.Close()
 			i.closed.Complete(err)
 			return
 		}
-		sockets, err := poller.Poll(100 * time.Millisecond)
+		msg, err := i.skt.Recv()
 		if err != nil {
 			continue
 		}
-		for range sockets {
-			msg, err := i.skt.RecvMessage(0)
-			if err == nil && !i.in.Closed().Completed() {
-				i.in.Add(Message{i.addr, config.UUID(msg[0]), msg[1:]})
-			}
+		if m, ok := messages.Decode(msg); ok {
+			i.in.Add(m)
 		}
 	}
 }

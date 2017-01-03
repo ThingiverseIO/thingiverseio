@@ -9,8 +9,7 @@ func (*HelloOk) New() Message{
 
 func (*HelloOk) GetType() MessageType { return HELLOOK }
 
-func (h *HelloOk) Unflatten(d []string) {
-}
+func (h *HelloOk) Unflatten(d [][]byte) {}
 
 func (h *HelloOk) Flatten() [][]byte {
 	return [][]byte{}

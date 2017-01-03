@@ -32,8 +32,8 @@ func TestJoin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c1 := t1.Join().AsChan()
-	c2 := t2.Join().AsChan()
+	c1, _ := t1.Join().AsChan()
+	c2, _ := t2.Join().AsChan()
 
 	t2.JoinCluster([]string{fmt.Sprintf("%s:%d", "127.0.0.1", t1.Port())})
 
@@ -82,8 +82,8 @@ func TestAutoJoin(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c1 := t1.Join().AsChan()
-	c2 := t2.Join().AsChan()
+	c1, _ := t1.Join().AsChan()
+	c2, _ := t2.Join().AsChan()
 
 	err = t1.StartAutoJoin()
 	if err != nil {
@@ -124,7 +124,7 @@ func TestLeaveAndReconnect(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	c1 := t1.Join().AsChan()
+	c1, _ := t1.Join().AsChan()
 	c2 := t1.Leave().First().AsChan()
 
 	err = t1.StartAutoJoin()

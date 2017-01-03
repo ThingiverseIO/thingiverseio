@@ -8,7 +8,7 @@ func (*Connect) New() Message{
 
 func (*Connect) GetType() MessageType { return CONNECT }
 
-func (*Connect) Unflatten(d []string) {}
+func (*Connect) Unflatten(d [][]byte) {}
 
 func (*Connect) Flatten() [][]byte {
 	return [][]byte{}

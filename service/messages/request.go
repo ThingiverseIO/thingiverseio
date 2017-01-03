@@ -2,7 +2,6 @@ package messages
 
 import (
 	"bytes"
-	"strings"
 
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ugorji/go/codec"
@@ -46,10 +45,10 @@ func (*Request) New() Message {
 	return new(Request)
 }
 
-func (r *Request) Unflatten(d []string) {
-	dec := codec.NewDecoder(strings.NewReader(d[0]), &mh)
+func (r *Request) Unflatten(d [][]byte) {
+	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(r)
-	r.params = []byte(d[1])
+	r.params = d[1]
 }
 
 func (r *Request) Flatten() [][]byte {

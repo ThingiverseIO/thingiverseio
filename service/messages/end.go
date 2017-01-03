@@ -8,7 +8,7 @@ func (*End) New() Message{
 
 func (*End) GetType() MessageType { return END }
 
-func (*End) Unflatten(d []string) {}
+func (*End) Unflatten(d [][]byte) {}
 
 func (*End) Flatten() [][]byte {
 	return [][]byte{}
