@@ -156,6 +156,7 @@ func (m *Manager) SendGuaranteed(msg messages.Message) (c *eventual2go.Completer
 			m.logger.Println("Sending guaranteed message to", p.UUID())
 			m.guaranteedMessages[msg] = p
 			p.Send(msg)
+			break
 		}
 	}
 	c = eventual2go.NewCompleter()
