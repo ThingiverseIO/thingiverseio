@@ -1,8 +1,8 @@
 package config
 
-func Configure(exporting bool, functionTags map[string]string) (cfg *Config) {
+func Configure() (cfg *UserConfig) {
 
-	cfg = New(exporting, functionTags)
+	cfg = &UserConfig{}
 
 	CheckCfgFile(cfg, CfgFileGlobal())
 

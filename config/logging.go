@@ -2,29 +2,30 @@ package config
 
 import (
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 )
 
-func setLoggerFromString(v string, cfg *Config) {
+func setLoggerFromString(v string, cfg *UserConfig) {
 	switch strings.ToLower(v) {
 	case "stdout":
-		cfg.logger = os.Stdout
+		cfg.Logger = os.Stdout
 	case "stderr":
-		cfg.logger = os.Stderr
+		cfg.Logger = os.Stderr
 	case "none", "":
-		cfg.logger = ioutil.Discard
+		cfg.Logger = ioutil.Discard
 	default:
 		_, err := os.Stat(v)
 		if err == nil {
-			cfg.logger, err = os.OpenFile(v, os.O_RDWR, 0666)
+			cfg.Logger, err = os.OpenFile(v, os.O_RDWR, 0666)
 			if err != nil {
-				panic(err)
+				log.Fatal("Could not initialize logfile", err)
 			}
 		} else if os.IsNotExist(err) {
-			cfg.logger, err = os.Create(v)
+			cfg.Logger, err = os.Create(v)
 			if err != nil {
-				panic(err)
+				log.Fatal("Could not initialize logfile", err)
 			}
 		}
 	}
