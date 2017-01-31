@@ -31,8 +31,8 @@ type ArrivalFuture struct {
 	*eventual2go.Future
 }
 
-func (f *ArrivalFuture) GetResult() Arrival {
-	return f.Future.GetResult().(Arrival)
+func (f *ArrivalFuture) Result() Arrival {
+	return f.Future.Result().(Arrival)
 }
 
 type ArrivalCompletionHandler func(Arrival) Arrival

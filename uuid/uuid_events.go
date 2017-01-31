@@ -31,8 +31,8 @@ type UUIDFuture struct {
 	*eventual2go.Future
 }
 
-func (f *UUIDFuture) GetResult() UUID {
-	return f.Future.GetResult().(UUID)
+func (f *UUIDFuture) Result() UUID {
+	return f.Future.Result().(UUID)
 }
 
 type UUIDCompletionHandler func(UUID) UUID

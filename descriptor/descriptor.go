@@ -40,18 +40,27 @@ type Parameter struct {
 //name(par:type,...)par:type
 
 func (p Parameter) String() string {
-	return fmt.Sprintf("%s%s", p.Name, p.Type)
+	return fmt.Sprintf("%s_%s", p.Name, p.Type)
 }
 
 // AsTagSet turns a Descriptor into a map, which is used for service discovery.
-func (a Descriptor) AsTagset() (tagset Tagset) {
-	if a.Tags != nil {
-		tagset = a.Tags
+func (d Descriptor) AsTagset() (tagset Tagset) {
+	if d.Tags != nil {
+		tagset = d.Tags
 	} else {
 		tagset = Tagset{}
 	}
-	for _, fn := range a.Functions {
+	for _, fn := range d.Functions {
 		tagset[fmt.Sprintf("%s", fn)] = "f"
+	}
+	return
+}
+
+func (d Descriptor) HasFunction(name string) (has bool) {
+	for _, fun := range d.Functions {
+		if has = fun.Name == name; has {
+			return
+		}
 	}
 	return
 }

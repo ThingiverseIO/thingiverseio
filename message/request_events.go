@@ -31,8 +31,8 @@ type RequestFuture struct {
 	*eventual2go.Future
 }
 
-func (f *RequestFuture) GetResult() *Request {
-	return f.Future.GetResult().(*Request)
+func (f *RequestFuture) Result() *Request {
+	return f.Future.Result().(*Request)
 }
 
 type RequestCompletionHandler func(*Request) *Request

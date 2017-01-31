@@ -31,8 +31,8 @@ type ResultFuture struct {
 	*eventual2go.Future
 }
 
-func (f *ResultFuture) GetResult() *Result {
-	return f.Future.GetResult().(*Result)
+func (f *ResultFuture) Result() *Result {
+	return f.Future.Result().(*Result)
 }
 
 type ResultCompletionHandler func(*Result) *Result

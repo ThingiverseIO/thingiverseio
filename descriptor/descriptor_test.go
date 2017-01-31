@@ -13,7 +13,7 @@ func fun2() (outp1 string, outp2 []bool)
 tag simple_tag
 tag key_tag: tag_value
 #define multiple tags in one line
-tags multisimple muiltikey:val
+tags multisimple, multikey:val
 `
 
 func TestParseDescriptor(t *testing.T) {
@@ -29,5 +29,9 @@ func TestParseDescriptor(t *testing.T) {
 	}
 	if len(desc.Functions[0].Output) != 2 {
 		t.Error("Wrong number of output parameters, want 2, got", len(desc.Functions[0].Output))
+	}
+
+	if len(desc.Tags) != 4 {
+		t.Error("Wrong Number of tags, want 4, got", len(desc.Tags))
 	}
 }

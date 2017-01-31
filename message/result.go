@@ -7,7 +7,7 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-//go:generate event_generator -t Result -n Result
+//go:generate event_generator -t *Result -n Result
 
 type Result struct {
 	Request *Request
@@ -15,17 +15,12 @@ type Result struct {
 	params  []byte
 }
 
-func NewResult(output uuid.UUID, request *Request, parameter interface{}) (r Result) {
-	var params bytes.Buffer
-	enc := codec.NewEncoder(&params, &mh)
-	enc.Encode(parameter)
-	return NewEncodedResult(output, request, params.Bytes())
-}
-
-func NewEncodedResult(output uuid.UUID, request *Request, parameter []byte) (r Result) {
-	r.Output = output
-	r.Request = request
-	r.params = parameter
+func NewResult(output uuid.UUID, request *Request, parameter []byte) (r *Result) {
+	r = &Result{
+		Output:  output,
+		Request: request,
+		params:  parameter,
+	}
 	return
 }
 
@@ -35,9 +30,9 @@ func (Result) New() Message {
 	return new(Result)
 }
 
-func (r Result) Unflatten(d [][]byte) {
+func (r *Result) Unflatten(d [][]byte) {
 	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
-	dec.Decode(r)
+	dec.Decode(&r)
 	r.params = d[1]
 }
 
@@ -60,5 +55,5 @@ func (r Result) Decode(t interface{}) {
 }
 
 func init() {
-	registerMessage(Result{})
+	registerMessage(new(Result))
 }

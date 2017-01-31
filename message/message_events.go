@@ -31,8 +31,8 @@ type MessageFuture struct {
 	*eventual2go.Future
 }
 
-func (f *MessageFuture) GetResult() Message {
-	return f.Future.GetResult().(Message)
+func (f *MessageFuture) Result() Message {
+	return f.Future.Result().(Message)
 }
 
 type MessageCompletionHandler func(Message) Message

@@ -11,18 +11,17 @@ import (
 	gologging "github.com/op/go-logging"
 )
 
-
 type Core struct {
 	*eventual2go.Reactor
 	config      *config.Config
 	connected   *eventual2go.Completer
 	connections map[uuid.UUID]network.Connection
-	log      *gologging.Logger
+	log         *gologging.Logger
 	provider    network.Providers
 	tracker     network.Tracker
 }
 
-func Initialize(cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c Core, err error) {
+func Initialize(cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c *Core, err error) {
 	logging.SetupLogger(cfg)
 
 	provider, err := network.NewProviders(cfg, providers)
@@ -35,7 +34,7 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 	}
 	logPrefix := fmt.Sprintf("CORE %s", cfg.Internal.UUID)
 
-	c = Core{
+	c = &Core{
 		Reactor:     eventual2go.NewReactor(),
 		config:      cfg,
 		connected:   eventual2go.NewCompleter(),
@@ -47,9 +46,14 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 
 	c.Reactor.React(connectEvent{}, c.onConnection)
 
+	c.Reactor.AddStream(leaveEvent{}, tracker.Leaving().Stream)
+	c.Reactor.React(leaveEvent{}, c.onLeave)
+
 	c.log.Info("Started")
 	return
 }
+
+func (c Core) afterConnected(){}
 
 func (c Core) Connected() (is bool) {
 	return c.ConnectedFuture().Completed()
@@ -66,6 +70,17 @@ func (c *Core) onConnection(d eventual2go.Data) {
 	if !c.connected.Completed() {
 		c.connected.Complete(nil)
 		c.log.Info("Connected")
+		c.afterConnected()
+	}
+}
+
+func (c *Core) onLeave(d eventual2go.Data) {
+	uuid := d.(uuid.UUID)
+	c.log.Info("Peer left", uuid)
+	delete(c.connections, uuid)
+	if len(c.connections) == 0 {
+		c.connected = eventual2go.NewCompleter()
+		c.log.Info("Disconnected")
 	}
 }
 

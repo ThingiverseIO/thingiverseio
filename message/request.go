@@ -17,23 +17,12 @@ type Request struct {
 	params   []byte
 }
 
-func NewRequest(input uuid.UUID, function string, call_type CallType, parameter interface{}) (r Request) {
-	var params bytes.Buffer
-	enc := codec.NewEncoder(&params, &mh)
-	enc.Encode(parameter)
-	return NewEncodedRequest(input, function, call_type, params.Bytes())
-}
-
-func NewEncodedRequest(input uuid.UUID, function string, call_type CallType, params []byte) (r Request) {
-	return NewEncodedRequestWithId(uuid.New(), input, function, call_type, params)
-}
-
-func NewEncodedRequestWithId(uuid, input uuid.UUID, function string, call_type CallType, params []byte) (r Request) {
-	r = Request{
-		UUID:     uuid,
+func NewRequest(input uuid.UUID, function string, callType CallType, params []byte) (r *Request) {
+	r = &Request{
+		UUID:     uuid.New(),
 		Input:    input,
 		Function: function,
-		CallType: call_type,
+		CallType: callType,
 		params:   params,
 	}
 	return
@@ -45,9 +34,9 @@ func (Request) New() Message {
 	return new(Request)
 }
 
-func (r Request) Unflatten(d [][]byte) {
+func (r *Request) Unflatten(d [][]byte) {
 	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
-	dec.Decode(r)
+	dec.Decode(&r)
 	r.params = d[1]
 }
 
@@ -62,12 +51,16 @@ func (r Request) Parameter() []byte {
 	return r.params
 }
 
-func (r Request) Decode(t interface{}) {
+func (r *Request) Decode(t interface{}) {
 	buf := bytes.NewBuffer(r.params)
 	dec := codec.NewDecoder(buf, &mh)
 	dec.Decode(t)
 
 	return
+}
+
+func (r Request) IsReply(res *Result) bool {
+	return res.Request.UUID == r.UUID
 }
 
 func init() {
