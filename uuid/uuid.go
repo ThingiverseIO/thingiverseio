@@ -11,6 +11,15 @@ func New() UUID {
 	return UUID(id.String())
 }
 
+
+func Empty() UUID {
+	return UUID("")
+}
+
+func (u UUID) IsEmpty() bool {
+	return u == Empty()
+}
+
 func (u UUID) String() (s string) {
 	if len(u) <= 5 {
 		return string(u)

@@ -6,22 +6,22 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-type Listen struct {
+type StartListen struct {
 	Function string
 }
 
-func (*Listen) New() Message {
-	return new(Listen)
+func (*StartListen) New() Message {
+	return new(StartListen)
 }
 
-func (*Listen) GetType() Type { return LISTEN }
+func (*StartListen) GetType() Type { return STARTLISTEN }
 
-func (l *Listen) Unflatten(d [][]byte) {
+func (l *StartListen) Unflatten(d [][]byte) {
 	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
 	dec.Decode(l)
 }
 
-func (l *Listen) Flatten() [][]byte {
+func (l *StartListen) Flatten() [][]byte {
 	var payload bytes.Buffer
 	enc := codec.NewEncoder(&payload, &mh)
 	enc.Encode(l)
@@ -29,5 +29,5 @@ func (l *Listen) Flatten() [][]byte {
 }
 
 func init() {
-	registerMessage(new(Listen))
+	registerMessage(new(StartListen))
 }

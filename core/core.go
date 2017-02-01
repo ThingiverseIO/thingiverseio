@@ -5,6 +5,7 @@ import (
 
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/logging"
+	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/network"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
 	"github.com/joernweissenborn/eventual2go"
@@ -49,11 +50,14 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 	c.Reactor.AddStream(leaveEvent{}, tracker.Leaving().Stream)
 	c.Reactor.React(leaveEvent{}, c.onLeave)
 
+	c.Reactor.AddStream(endEvent{}, c.provider.Messages().Where(network.OfType(message.END)).Stream)
+	c.Reactor.React(endEvent{}, c.onEnd)
+
+	c.Reactor.React(shutdownEvent{}, c.onShutdown)
+
 	c.log.Info("Started")
 	return
 }
-
-func (c Core) afterConnected(){}
 
 func (c Core) Connected() (is bool) {
 	return c.ConnectedFuture().Completed()
@@ -70,18 +74,44 @@ func (c *Core) onConnection(d eventual2go.Data) {
 	if !c.connected.Completed() {
 		c.connected.Complete(nil)
 		c.log.Info("Connected")
-		c.afterConnected()
 	}
+	c.Reactor.Fire(afterConnectedEvent{}, conn.UUID)
+}
+
+func (c *Core) onEnd(d eventual2go.Data) {
+	m := d.(network.Message)
+	c.log.Info("Received and from", m.Sender)
+	c.removePeer(m.Sender)
 }
 
 func (c *Core) onLeave(d eventual2go.Data) {
 	uuid := d.(uuid.UUID)
 	c.log.Info("Peer left", uuid)
+	c.removePeer(uuid)
+}
+
+func (c Core) onShutdown(d eventual2go.Data) {
+	c.log.Info("Shutting down")
+	c.SendToAll(&message.End{})
+}
+
+func (c *Core) removePeer(uuid uuid.UUID) {
 	delete(c.connections, uuid)
 	if len(c.connections) == 0 {
 		c.connected = eventual2go.NewCompleter()
 		c.log.Info("Disconnected")
 	}
+	c.Reactor.Fire(afterPeerRemovedEvent{}, uuid)
+}
+
+func (c Core) SendToAll(m message.Message) {
+	for _, conn := range c.connections {
+		conn.Send(m)
+	}
+}
+
+func (c Core) Shutdown() {
+	c.Reactor.Fire(shutdownEvent{}, nil)
 }
 
 func (c Core) UUID() uuid.UUID {

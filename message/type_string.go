@@ -4,9 +4,9 @@ package message
 
 import "fmt"
 
-const _Type_name = "HELLOHELLOOKDOHAVEHAVECONNECTREQUESTRESULTLISTENSTOPLISTENENDREJECTMOCK"
+const _Type_name = "HELLOHELLOOKDOHAVEHAVECONNECTREQUESTRESULTSTARTLISTENSTOPLISTENENDREJECTMOCK"
 
-var _Type_index = [...]uint8{0, 5, 12, 18, 22, 29, 36, 42, 48, 58, 61, 67, 71}
+var _Type_index = [...]uint8{0, 5, 12, 18, 22, 29, 36, 42, 53, 63, 66, 72, 76}
 
 func (i Type) String() string {
 	if i < 0 || i >= Type(len(_Type_index)-1) {

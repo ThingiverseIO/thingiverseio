@@ -12,15 +12,20 @@ import (
 	"github.com/joernweissenborn/eventual2go"
 )
 
+func isListenResult(r *message.Result) bool {
+	return r.Request.CallType == message.TRIGGER || r.Request.CallType == message.TRIGGERALL
+}
+
 type pendingRequest struct {
 	*message.ResultCompleter
-	output  uuid.UUID
-	request *message.Request
+	Output  uuid.UUID
+	Request *message.Request
 }
 
 type InputCore struct {
 	*Core
 	descriptor      descriptor.Descriptor
+	listenFunctions map[string]interface{}
 	pendingRequests map[uuid.UUID]*pendingRequest
 	results         *message.ResultStream
 }
@@ -41,6 +46,7 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	i = InputCore{
 		Core:            c,
 		descriptor:      desc,
+		listenFunctions: map[string]interface{}{},
 		pendingRequests: map[uuid.UUID]*pendingRequest{},
 	}
 
@@ -52,7 +58,17 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 	i.tracker.Arrivals().Where(i.isInterestingArrival).Listen(i.onArrival)
 
+	i.Reactor.React(afterConnectedEvent{}, i.onAfterConnected)
+
+	i.Reactor.React(afterPeerRemovedEvent{}, i.onAfterPeerRemoved)
+
+	i.Reactor.React(replyEvent{}, i.onReply)
+
 	i.Reactor.React(requestEvent{}, i.onRequest)
+
+	i.Reactor.React(startListenEvent{}, i.onStartListen)
+
+	i.Reactor.React(stopListenEvent{}, i.onStopListen)
 
 	return
 
@@ -65,8 +81,9 @@ func (i *InputCore) deliverRequest(req *message.Request) {
 	case message.CALL, message.TRIGGER:
 		for id, conn := range i.connections {
 			if req.CallType == message.CALL {
-				i.pendingRequests[req.UUID].output = id
+				i.pendingRequests[req.UUID].Output = id
 			}
+			i.log.Debugf("Delivering request to %s", id)
 			conn.Send(req)
 			return
 		}
@@ -74,41 +91,6 @@ func (i *InputCore) deliverRequest(req *message.Request) {
 	case message.TRIGGERALL, message.CALLALL:
 
 	}
-}
-
-func (i *InputCore) Request(function string, callType message.CallType,
-	params []byte) (result *message.ResultFuture, uuid uuid.UUID, err error) {
-
-	if !i.descriptor.HasFunction(function) {
-		err = fmt.Errorf("Function '%s' is not in descriptor", function)
-		return
-	}
-
-	req := message.NewRequest(i.UUID(), function, callType, params)
-
-	uuid = req.UUID
-
-	if callType == message.CALL {
-		preq := &pendingRequest{
-			ResultCompleter: message.NewResultCompleter(),
-			request:         req,
-		}
-
-		result = preq.Future()
-		reply := i.results.FirstWhere(req.IsReply).Future
-		preq.CompleteOnFuture(reply)
-
-		// TODO: Avoid Locking the reactor here
-		i.Reactor.Lock()
-		i.pendingRequests[req.UUID] = preq
-		i.Reactor.Unlock()
-		i.Reactor.AddFuture(replyEvent{}, reply)
-	}
-
-	i.Reactor.Fire(requestEvent{}, req)
-
-	return
-
 }
 
 func (i InputCore) isInterestingArrival(a network.Arrival) (is bool) {
@@ -123,6 +105,40 @@ func (i InputCore) isInterestingArrival(a network.Arrival) (is bool) {
 	}
 
 	return
+}
+
+func (i InputCore) ListenStream() *message.ResultStream {
+	return i.results.Where(isListenResult)
+}
+
+func (i *InputCore) onAfterConnected(d eventual2go.Data) {
+	uuid := d.(uuid.UUID)
+
+	for function := range i.listenFunctions {
+		i.connections[uuid].Send(&message.StartListen{
+			Function: function,
+		})
+	}
+
+	for id, pending := range i.Pending() {
+		if pending.Output.IsEmpty() {
+			i.log.Debugf("Trying to delivering request %s", id)
+			i.deliverRequest(pending.Request)
+		}
+	}
+}
+
+func (i *InputCore) onAfterPeerRemoved(d eventual2go.Data) {
+	id := d.(uuid.UUID)
+	for reqeuestId, pending := range i.Pending() {
+		if pending.Output == id {
+			i.log.Debug("Removed peer had pending request", reqeuestId)
+			pending.Output = uuid.Empty()
+			if i.Connected() {
+				i.deliverRequest(pending.Request)
+			}
+		}
+	}
 }
 
 func (i InputCore) onArrival(a network.Arrival) {
@@ -193,7 +209,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 func (i *InputCore) onRequest(d eventual2go.Data) {
 	req := d.(*message.Request)
 
-	i.log.Debugf("Trying to delivering result %s", req.UUID)
+	i.log.Debugf("Trying to delivering request %s", req.UUID)
 
 	if i.Connected() {
 		i.deliverRequest(req)
@@ -202,9 +218,85 @@ func (i *InputCore) onRequest(d eventual2go.Data) {
 
 func (i *InputCore) onReply(d eventual2go.Data) {
 	res := d.(*message.Result)
+	i.log.Debug("Got reply for", res.Request.UUID)
 	delete(i.pendingRequests, res.Request.UUID)
+}
+
+func (i *InputCore) onStartListen(d eventual2go.Data) {
+	function := d.(string)
+	i.log.Infof("Starting to listen to function '%s'", function)
+	i.listenFunctions[function] = nil
+	i.SendToAll(&message.StartListen{
+		Function: function,
+	})
+}
+
+func (i *InputCore) onStopListen(d eventual2go.Data) {
+	function := d.(string)
+	i.log.Infof("Stopping to listen to function '%s'", function)
+
+	if _, ok := i.listenFunctions[function]; ok {
+		delete(i.listenFunctions, function)
+		i.SendToAll(&message.StopListen{
+			Function: function,
+		})
+	}
 }
 
 func (i InputCore) Pending() map[uuid.UUID]*pendingRequest {
 	return i.pendingRequests
+}
+
+func (i *InputCore) Request(function string, callType message.CallType,
+	params []byte) (result *message.ResultFuture, uuid uuid.UUID, err error) {
+
+	if !i.descriptor.HasFunction(function) {
+		err = fmt.Errorf("Function '%s' is not in descriptor", function)
+		return
+	}
+
+	req := message.NewRequest(i.UUID(), function, callType, params)
+
+	uuid = req.UUID
+
+	if callType == message.CALL {
+		preq := &pendingRequest{
+			ResultCompleter: message.NewResultCompleter(),
+			Request:         req,
+		}
+
+		result = preq.Future()
+		reply := i.results.FirstWhere(req.IsReply).Future
+		preq.CompleteOnFuture(reply)
+
+		// TODO: Avoid Locking the reactor here
+		i.Reactor.Lock()
+		i.pendingRequests[req.UUID] = preq
+		i.Reactor.Unlock()
+		i.Reactor.AddFuture(replyEvent{}, reply)
+	}
+
+	i.Reactor.Fire(requestEvent{}, req)
+
+	return
+
+}
+
+func (i *InputCore) StartListen(function string) (err error) {
+
+	if !i.descriptor.HasFunction(function) {
+		err = fmt.Errorf("Function '%s' is not in descriptor", function)
+		return
+	}
+
+	i.Reactor.Fire(startListenEvent{}, function)
+
+	return
+}
+
+func (i *InputCore) StopListen(function string) {
+
+	i.Reactor.Fire(stopListenEvent{}, function)
+
+	return
 }

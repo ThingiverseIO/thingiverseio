@@ -13,7 +13,7 @@ import (
 
 type OutputCore struct {
 	*Core
-	listener map[string][]uuid.UUID
+	listener map[string]map[uuid.UUID]interface{}
 	requests *message.RequestStream
 }
 
@@ -31,7 +31,8 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	}, tracker, provider...)
 
 	o = OutputCore{
-		Core: c,
+		Core:     c,
+		listener: map[string]map[uuid.UUID]interface{}{},
 	}
 
 	o.requests = &message.RequestStream{
@@ -43,6 +44,12 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	o.provider.Messages().Where(network.OfType(message.HELLO)).Listen(o.onHello)
 
 	o.React(replyEvent{}, o.onReply)
+
+	o.AddStream(startListenEvent{}, o.provider.Messages().Where(network.OfType(message.STARTLISTEN)).Stream)
+	o.React(startListenEvent{}, o.onStartListen)
+
+	o.AddStream(stopListenEvent{}, o.provider.Messages().Where(network.OfType(message.STOPLISTEN)).Stream)
+	o.React(stopListenEvent{}, o.onStopListen)
 
 	return
 
@@ -112,19 +119,45 @@ func (o OutputCore) onReply(d eventual2go.Data) {
 	switch result.Request.CallType {
 	case message.CALL, message.CALLALL:
 		if conn, ok := o.connections[result.Request.Input]; ok {
-			o.log.Debug("Delivering to", result.Request.Input)
+			o.log.Debugf("Delivering reply for %s to %s", result.Request.UUID, result.Request.Input)
 			conn.Send(result)
 		} else {
-			o.log.Debug("Abborting delivery, peer does not exist anymore", result.Request.Input)
+			o.log.Debug("Aborting delivery, peer does not exist anymore", result.Request.Input)
 		}
 
 	case message.TRIGGER, message.TRIGGERALL:
 		if ls, ok := o.listener[result.Request.Function]; ok {
-			for _, uuid := range ls {
+			for uuid := range ls {
 				o.log.Debug("Delivering to", uuid)
 				o.connections[uuid].Send(result)
 			}
 		}
+	}
+}
+
+func (o *OutputCore) onStartListen(d eventual2go.Data) {
+	m := d.(network.Message)
+
+	function := m.Decode().(*message.StartListen).Function
+
+	o.log.Infof("Got new listener for function '%s': %s", function, m.Sender)
+
+	if _, ok := o.listener[function]; !ok {
+		o.listener[function] = map[uuid.UUID]interface{}{}
+	}
+
+	o.listener[function][m.Sender] = nil
+}
+
+func (o *OutputCore) onStopListen(d eventual2go.Data) {
+	m := d.(network.Message)
+
+	function := m.Decode().(*message.StopListen).Function
+
+	o.log.Infof("Listener stopped listening to function '%s': %s", function, m.Sender)
+
+	if _, ok := o.listener[function]; ok {
+		delete(o.listener[function], m.Sender)
 	}
 }
 
