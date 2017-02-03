@@ -283,3 +283,76 @@ func TestTrigger(t *testing.T) {
 		t.Fatal("Result did arrive")
 	}
 }
+
+func TestTriggerAll(t *testing.T) {
+
+	desc, _ := descriptor.Parse(Descriptor1)
+
+	cfg := config.DefaultLocalhost()
+
+	mt1 := &network.MockTracker{}
+	mt2 := &network.MockTracker{}
+	mt3 := &network.MockTracker{}
+	mps := network.NewMockProvider(3)
+
+	i, _ := core.NewInputCore(desc, cfg, mt1, mps[0])
+	o1, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])
+	o2, _ := core.NewOutputCore(desc, cfg, mt3, mps[2])
+
+	arr := network.Arrival{
+		IsOutput: true,
+		Details:  mt2.Dt,
+		UUID:     o1.UUID(),
+	}
+
+	mt1.Av.Add(arr)
+
+	arr = network.Arrival{
+		IsOutput: true,
+		Details:  mt3.Dt,
+		UUID:     o2.UUID(),
+	}
+
+	mt1.Av.Add(arr)
+
+	if !i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond) {
+		t.Fatal("Input did not connect.")
+	}
+	o1.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
+	o2.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
+
+	i.StartListen("testfun")
+
+	request1 := o1.RequestStream().First()
+	request2 := o2.RequestStream().First()
+	result := i.ListenStream().First()
+	data := []byte{1, 2, 3, 4}
+	_, _, err := i.Request("testfun", message.TRIGGERALL, data)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !request1.WaitUntilTimeout(100 * time.Millisecond) {
+		t.Fatal("Request1 did not arrive")
+	}
+
+	data2 := []byte{4, 5, 6, 7}
+	o1.Reply(request1.Result(), data2)
+
+	if !result.WaitUntilTimeout(100 * time.Millisecond) {
+		t.Fatal("Result 1 did not arrive")
+	}
+
+	result = i.ListenStream().First()
+
+	if !request2.WaitUntilTimeout(100 * time.Millisecond) {
+		t.Fatal("Request1 did not arrive")
+	}
+
+	o2.Reply(request2.Result(), data2)
+
+	if !result.WaitUntilTimeout(100 * time.Millisecond) {
+		t.Fatal("Result 2 did not arrive")
+	}
+
+}

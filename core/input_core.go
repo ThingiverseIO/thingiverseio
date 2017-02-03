@@ -76,19 +76,18 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 func (i *InputCore) deliverRequest(req *message.Request) {
 
-	switch req.CallType {
-
-	case message.CALL, message.TRIGGER:
-		for id, conn := range i.connections {
+	for id, conn := range i.connections {
+		i.log.Debugf("Delivering request to %s", id)
+		conn.Send(req)
+		switch req.CallType {
+		case message.CALL, message.TRIGGER:
 			if req.CallType == message.CALL {
 				i.pendingRequests[req.UUID].Output = id
 			}
-			i.log.Debugf("Delivering request to %s", id)
-			conn.Send(req)
 			return
-		}
 
-	case message.TRIGGERALL, message.CALLALL:
+		case message.TRIGGERALL, message.CALLALL:
+		}
 
 	}
 }
@@ -213,6 +212,8 @@ func (i *InputCore) onRequest(d eventual2go.Data) {
 
 	if i.Connected() {
 		i.deliverRequest(req)
+	} else {
+		i.log.Debug("Can't deliver, no connections.")
 	}
 }
 
