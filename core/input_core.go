@@ -249,7 +249,8 @@ func (i InputCore) Pending() map[uuid.UUID]*pendingRequest {
 }
 
 func (i *InputCore) Request(function string, callType message.CallType,
-	params []byte) (result *message.ResultFuture, uuid uuid.UUID, err error) {
+	params []byte) (result *message.ResultFuture, resultStream *message.ResultStream,
+	request_uuid uuid.UUID, err error) {
 
 	if !i.descriptor.HasFunction(function) {
 		err = fmt.Errorf("Function '%s' is not in descriptor", function)
@@ -258,7 +259,7 @@ func (i *InputCore) Request(function string, callType message.CallType,
 
 	req := message.NewRequest(i.UUID(), function, callType, params)
 
-	uuid = req.UUID
+	request_uuid = req.UUID
 
 	if callType == message.CALL {
 		preq := &pendingRequest{
@@ -275,6 +276,16 @@ func (i *InputCore) Request(function string, callType message.CallType,
 		i.pendingRequests[req.UUID] = preq
 		i.Reactor.Unlock()
 		i.Reactor.AddFuture(replyEvent{}, reply)
+	}
+
+	if callType == message.CALLALL {
+
+		hasUUID := func(uuid uuid.UUID) message.ResultFilter {
+			return func(r *message.Result) bool {
+				return r.Request.UUID == uuid
+			}
+		}
+		resultStream = i.results.Where(hasUUID(request_uuid))
 	}
 
 	i.Reactor.Fire(requestEvent{}, req)
