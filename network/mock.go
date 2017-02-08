@@ -69,15 +69,20 @@ func (m *MockConnection) OnMessage(d eventual2go.Data) {
 func (m *MockConnection) Shutdown(d eventual2go.Data) {}
 
 type MockTracker struct {
-	Av *ArrivalStreamController
-	Lv *uuid.UUIDStreamController
-	Dt [][]byte
+	Av      *ArrivalStreamController
+	Lv      *uuid.UUIDStreamController
+	Dt      [][]byte
+	Partner *ArrivalStreamController
+	UUID    uuid.UUID
 }
 
 func (m *MockTracker) Init(cfg *config.Config, dt [][]byte) error {
-	m.Av = NewArrivalStreamController()
+	if m.Av == nil {
+		m.Av = NewArrivalStreamController()
+	}
 	m.Lv = uuid.NewUUIDStreamController()
 	m.Dt = dt
+	m.UUID = cfg.Internal.UUID
 	return nil
 }
 
@@ -87,6 +92,15 @@ func (m *MockTracker) Arrivals() *ArrivalStream {
 
 func (m *MockTracker) Leaving() *uuid.UUIDStream {
 	return m.Lv.Stream()
+}
+
+func (m *MockTracker) Run() {
+	if m.Partner != nil {
+		m.Partner.Add(Arrival{
+			Details: m.Dt,
+			UUID:    m.UUID,
+		})
+	}
 }
 
 func (m *MockTracker) Shutdown(d eventual2go.Data) error { return nil }

@@ -9,12 +9,15 @@ import (
 type Tracker interface {
 	eventual2go.Shutdowner
 
-	// Init initializes a Tracker.
+	// Init initializes the tracker.
 	Init(cfg *config.Config, details [][]byte) error
 
-	// Arrivals return a stream of arrived peers
+	// Arrivals return a stream of arrived peers.
 	Arrivals() *ArrivalStream
 
-	// Leaving returns a stream of leaving peers
+	// Leaving returns a stream of leaving peers.
 	Leaving() *uuid.UUIDStream
+
+	// Run starts the tracker.
+	Run()
 }
