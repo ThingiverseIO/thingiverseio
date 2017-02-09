@@ -1,8 +1,8 @@
 package network
 
-type ProviderId int
+type ProviderID int
 
 const (
-	ZMQ ProviderId = iota
+	ZMQ ProviderID = iota
 	NANOMSG
 )

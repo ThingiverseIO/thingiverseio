@@ -14,13 +14,13 @@ var mh codec.MsgpackHandle
 type Providers struct {
 	Details        []Details
 	EncodedDetails [][]byte
-	Provider       map[ProviderId]Provider
+	Provider       map[ProviderID]Provider
 	messages       *MessageStreamController
 }
 
 func NewProviders(cfg *config.Config, provider []Provider) (ps Providers, err error) {
 	ps = Providers{
-		Provider: map[ProviderId]Provider{},
+		Provider: map[ProviderID]Provider{},
 		messages: NewMessageStreamController(),
 	}
 
