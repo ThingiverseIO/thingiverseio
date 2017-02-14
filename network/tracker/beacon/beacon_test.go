@@ -1,7 +1,6 @@
 package beacon
 
 import (
-	"os"
 	"testing"
 	"time"
 )
@@ -12,7 +11,6 @@ func testconf(payload []byte) *Config {
 		Port:         6660,
 		PingInterval: 1 * time.Millisecond,
 		Payload:      payload,
-		Logger:       os.Stderr,
 	}
 }
 

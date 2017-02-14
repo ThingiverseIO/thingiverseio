@@ -3,7 +3,6 @@ package beacon
 import (
 	"bytes"
 	"errors"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -22,8 +21,6 @@ type Beacon struct {
 
 	silence *eventual2go.Completer
 
-	logger *log.Logger
-
 	stop *eventual2go.Completer
 }
 
@@ -36,27 +33,17 @@ func New(conf *Config) (b *Beacon, err error) {
 		stop:    eventual2go.NewCompleter(),
 	}
 
-	b.init()
-
 	err = b.setup()
 
 	return
 }
 
 func (b *Beacon) Run() {
-	b.logger.Println("Running")
 	go b.listen()
 }
 
-func (b *Beacon) init() {
-	b.conf.init()
-	b.logger = log.New(b.conf.Logger, "BEACON ", 0)
-}
-
 func (b *Beacon) setup() (err error) {
-	b.logger.Println("Setting up")
-	err = b.setupListener()
-	if err != nil {
+	if err = b.setupListener(); err != nil {
 		return
 	}
 	err = b.setupSender()
@@ -64,10 +51,8 @@ func (b *Beacon) setup() (err error) {
 }
 
 func (b *Beacon) Stop() {
-	b.logger.Println("Stopping")
 	b.Silence()
 	b.stop.Complete(nil)
-	b.logger.Println("Stopped")
 }
 
 func (b *Beacon) setupSender() (err error) {
@@ -97,8 +82,6 @@ func (b *Beacon) closeListener(eventual2go.Data) eventual2go.Data {
 
 func (b *Beacon) setupListener() (err error) {
 	ip := net.IPv4(224, 0, 0, 165)
-
-	b.logger.Printf("Multicast Address is %s", ip)
 
 	ifis, err := net.Interfaces()
 	if err != nil {
@@ -149,7 +132,6 @@ func (b *Beacon) listen() {
 	for {
 		select {
 		case <-stop:
-			b.logger.Println("Stopped to listen")
 			return
 
 		case <-c:
@@ -164,8 +146,10 @@ func (b *Beacon) getSignal(c chan struct{}) {
 	defer b.m.Unlock()
 	data := make([]byte, 1024)
 	b.incoming.SetReadDeadline(time.Now().Add(1 * time.Second))
-	read, remoteAddr, _ := b.incoming.ReadFromUDP(data)
-	b.signals.Add(Signal{remoteAddr.IP[len(remoteAddr.IP)-4:], data[:read]})
+	read, remoteAddr, err := b.incoming.ReadFromUDP(data)
+	if err == nil {
+		b.signals.Add(Signal{remoteAddr.IP[len(remoteAddr.IP)-4:], data[:read]})
+	}
 	c <- struct{}{}
 }
 
@@ -177,7 +161,6 @@ func (b *Beacon) Silence() {
 	defer b.m.Unlock()
 	if !b.silence.Completed() {
 		b.silence.Complete(nil)
-		b.logger.Println("Silencing")
 	}
 }
 
@@ -195,14 +178,11 @@ func (b *Beacon) Ping() {
 }
 
 func (b *Beacon) ping() {
-	b.logger.Println("Started to ping")
-
 	t := time.NewTimer(b.conf.PingInterval)
 	silence := b.silence.Future().AsChan()
 	for {
 		select {
 		case <-silence:
-			b.logger.Println("Silenced")
 			return
 
 		case <-t.C:

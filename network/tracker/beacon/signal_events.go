@@ -31,8 +31,8 @@ type SignalFuture struct {
 	*eventual2go.Future
 }
 
-func (f *SignalFuture) GetResult() Signal {
-	return f.Future.GetResult().(Signal)
+func (f *SignalFuture) Result() Signal {
+	return f.Future.Result().(Signal)
 }
 
 type SignalCompletionHandler func(Signal) Signal

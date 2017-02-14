@@ -18,6 +18,9 @@ type Tracker interface {
 	// Leaving returns a stream of leaving peers.
 	Leaving() *uuid.UUIDStream
 
-	// Run starts the tracker.
-	Run()
+	// StartAdvertisment starts advertisment.
+	StartAdvertisment() error
+
+	// StopAdvertisment stops advertisment.
+	StopAdvertisment()
 }

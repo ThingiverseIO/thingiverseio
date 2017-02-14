@@ -111,10 +111,10 @@ func TrackerTestSuite(tracker1, tracker2 Tracker, t *testing.T) {
 
 	arr2 := tracker2.Arrivals().First()
 
-	tracker1.Run()
-	tracker2.Run()
+	tracker1.StartAdvertisment()
+	tracker2.StartAdvertisment()
 
-	if !arr1.WaitUntilTimeout(1*time.Second) || !arr2.WaitUntilTimeout(1*time.Second) {
+	if !arr1.WaitUntilTimeout(10*time.Second) || !arr2.WaitUntilTimeout(10*time.Second) {
 		t.Fatal("Trackers did not find each other.")
 	}
 

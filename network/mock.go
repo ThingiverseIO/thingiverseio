@@ -94,13 +94,16 @@ func (m *MockTracker) Leaving() *uuid.UUIDStream {
 	return m.Lv.Stream()
 }
 
-func (m *MockTracker) Run() {
+func (m *MockTracker) StartAdvertisment() error {
 	if m.Partner != nil {
 		m.Partner.Add(Arrival{
 			Details: m.Dt,
 			UUID:    m.UUID,
 		})
 	}
+	return nil
 }
+
+func (m *MockTracker) StopAdvertisment() {}
 
 func (m *MockTracker) Shutdown(d eventual2go.Data) error { return nil }

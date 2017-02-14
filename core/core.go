@@ -55,6 +55,8 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 
 	c.Reactor.React(shutdownEvent{}, c.onShutdown)
 
+	c.tracker.StartAdvertisment()
+
 	c.log.Info("Started")
 	return
 }
@@ -73,6 +75,7 @@ func (c *Core) onConnection(d eventual2go.Data) {
 	c.log.Infof("Connected to %s", conn.UUID)
 	if !c.connected.Completed() {
 		c.connected.Complete(nil)
+		c.tracker.StopAdvertisment()
 		c.log.Info("Connected")
 	}
 	c.Reactor.Fire(afterConnectedEvent{}, conn.UUID)
@@ -99,6 +102,7 @@ func (c *Core) removePeer(uuid uuid.UUID) {
 	delete(c.connections, uuid)
 	if len(c.connections) == 0 {
 		c.connected = eventual2go.NewCompleter()
+		c.tracker.StartAdvertisment()
 		c.log.Info("Disconnected")
 	}
 	c.Reactor.Fire(afterPeerRemovedEvent{}, uuid)
