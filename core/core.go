@@ -9,13 +9,14 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/network"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
 	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/eventual2go/typed_events"
 	gologging "github.com/op/go-logging"
 )
 
 type Core struct {
 	*eventual2go.Reactor
 	config      *config.Config
-	connected   *eventual2go.Completer
+	connected   *typed_events.BoolCompleter
 	connections map[uuid.UUID]network.Connection
 	log         *gologging.Logger
 	provider    network.Providers
@@ -38,7 +39,7 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 	c = &Core{
 		Reactor:     eventual2go.NewReactor(),
 		config:      cfg,
-		connected:   eventual2go.NewCompleter(),
+		connected:   typed_events.NewBoolCompleter(),
 		connections: map[uuid.UUID]network.Connection{},
 		log:         logging.CreateLogger(logPrefix, cfg),
 		provider:    provider,
@@ -65,7 +66,7 @@ func (c Core) Connected() (is bool) {
 	return c.ConnectedFuture().Completed()
 }
 
-func (c Core) ConnectedFuture() (is *eventual2go.Future) {
+func (c Core) ConnectedFuture() (is *typed_events.BoolFuture) {
 	return c.connected.Future()
 }
 
@@ -74,7 +75,7 @@ func (c *Core) onConnection(d eventual2go.Data) {
 	c.connections[conn.UUID] = conn
 	c.log.Infof("Connected to %s", conn.UUID)
 	if !c.connected.Completed() {
-		c.connected.Complete(nil)
+		c.connected.Complete(true)
 		c.tracker.StopAdvertisment()
 		c.log.Info("Connected")
 	}
@@ -101,7 +102,7 @@ func (c Core) onShutdown(d eventual2go.Data) {
 func (c *Core) removePeer(uuid uuid.UUID) {
 	delete(c.connections, uuid)
 	if len(c.connections) == 0 {
-		c.connected = eventual2go.NewCompleter()
+		c.connected = typed_events.NewBoolCompleter()
 		c.tracker.StartAdvertisment()
 		c.log.Info("Disconnected")
 	}

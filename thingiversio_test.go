@@ -7,7 +7,7 @@ import (
 
 	"github.com/ThingiverseIO/thingiverseio"
 	"github.com/ThingiverseIO/thingiverseio/config"
-	"github.com/ThingiverseIO/thingiverseio/service/messages"
+	"github.com/ThingiverseIO/thingiverseio/message"
 )
 
 func TestCall(t *testing.T) {
@@ -187,11 +187,10 @@ func testCallAll(t *testing.T) {
 	params := []byte{4, 5, 63, 4}
 	params1 := []byte{3}
 	params2 := []byte{6}
-	s := messages.NewResultStreamController()
-	s1, s2 := s.Stream().Split(func(d *messages.Result) bool { return d.Output == e1.UUID() })
+	s, _ := i.CallAll("SayHello", params, s)
+	s1, s2 := s.Stream().Split(func(d *message.Result) bool { return d.Output == e1.UUID() })
 	rc1 := s1.AsChan()
 	rc2 := s2.AsChan()
-	i.CallAll("SayHello", params, s)
 	select {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Didnt Got Request 1")

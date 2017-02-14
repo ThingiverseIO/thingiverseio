@@ -37,7 +37,11 @@ func Example_inputCall() {
 	p := SayHelloInput{"Greetings, this is a CALL example"}
 
 	// Do the call and get a channel for receiving the result
-	c := i.Call("SayHello", p).AsChan()
+	f, err := i.Call("SayHello", p)
+	if err != nil {
+		log.Fatal(err)
+	}
+	c := f.AsChan()
 
 	// Receive the result.
 	result := <-c
