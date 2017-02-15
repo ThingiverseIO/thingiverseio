@@ -114,6 +114,7 @@ func (i *InputCore) onAfterConnected(d eventual2go.Data) {
 	uuid := d.(uuid.UUID)
 
 	for function := range i.listenFunctions {
+		i.log.Debugf("Informing %s about function listeng to '%s'", uuid, function)
 		i.connections[uuid].Send(&message.StartListen{
 			Function: function,
 		})

@@ -6,6 +6,7 @@ import (
 
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/joernweissenborn/eventual2go"
 	"github.com/ugorji/go/codec"
 )
 
@@ -64,4 +65,10 @@ func (p Providers) Connect(details [][]byte, uuid uuid.UUID) (conn Connection, e
 
 func (p Providers) Messages() *MessageStream {
 	return p.messages.Stream()
+}
+
+func (p Providers) RegisterShutdown(s *eventual2go.Shutdown) {
+	for _, provider := range p.Provider {
+		s.Register(provider)
+	}
 }

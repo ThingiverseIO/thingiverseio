@@ -123,6 +123,7 @@ func (p *Provider) receive() {
 }
 
 func (p *Provider) Shutdown(eventual2go.Data) (err error) {
+	p.stop.Complete(nil)
 	err = p.socket.Close()
 	return
 }

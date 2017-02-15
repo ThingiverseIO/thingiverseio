@@ -38,13 +38,13 @@ func NewInputFromConfig(desc string, cfg *config.UserConfig) (i *Input, err erro
 }
 
 // Remove shuts down the Input.
-func (i *Input) Remove() (errs []error) {
-	return
+func (i *Input) Remove() {
+	i.core.Shutdown()
 }
 
-// Run starts the Input creating all connections and starting service discovery.
+// Run starts service discovery.
 func (i *Input) Run() {
-	// i.core.Run()
+	i.core.Run()
 }
 
 // UUID returns the UUID of an Input instance.
@@ -52,12 +52,12 @@ func (i *Input) UUID() uuid.UUID {
 	return i.core.UUID()
 }
 
-// HasConnection returns true if the Input instance is connected to suitable Output, otherwise false.
+// Connected returns true if the Input instance is connected to at least 1 suitable Output, otherwise false.
 func (i *Input) Connected() bool {
 	return i.core.Connected()
 }
 
-// Connected returns a eventual2go.Future which gets completed when a suitable Output is discovered.
+// ConnectedFuture returns a eventual2go.Future which gets completed when the first suitable Output is connected.
 func (i *Input) ConnectedFuture() *typed_events.BoolFuture {
 	return i.core.ConnectedFuture()
 }

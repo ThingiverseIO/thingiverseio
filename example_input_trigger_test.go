@@ -1,4 +1,4 @@
-// +build !test
+// +build examples
 
 package thingiverseio_test
 

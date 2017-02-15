@@ -42,16 +42,22 @@ func (o *Output) UUID() uuid.UUID {
 }
 
 // Remove shuts down the Output.
-func (o *Output) Remove() (errs []error) {
-	return
+func (o *Output) Remove() {
+	o.core.Shutdown()
 }
 
 // Run starts the Output creating all connections and starting service discovery.
 func (o *Output) Run() {
+	o.core.Run()
 }
 
-// Connected returns a eventual2go.Future which gets completed when a suitable Input is discovered.
+// Connected returns true if at least 1 Input is connected.
 func (o *Output) Connected() *typed_events.BoolFuture {
+	return o.core.ConnectedFuture()
+}
+
+// ConnectedFuture returns a eventual2go.Future which gets completed when a suitable Input is connected.
+func (o *Output) ConnectedFuture() *typed_events.BoolFuture {
 	return o.core.ConnectedFuture()
 }
 

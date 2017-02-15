@@ -114,15 +114,14 @@ func (p *Provider) receive() {
 
 	for !stop.Completed() {
 		msg, err := p.socket.RecvMsg()
-		if err != nil && err != mangos.ErrRecvTimeout {
-			panic(err)
-		} else if err == nil {
+		if err == nil {
 			p.messages.Add(msg)
 		}
 	}
 }
 
 func (p *Provider) Shutdown(eventual2go.Data) (err error) {
+	p.stop.Complete(nil)
 	err = p.socket.Close()
 	return
 }

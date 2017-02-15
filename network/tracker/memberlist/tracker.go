@@ -63,7 +63,7 @@ func (t *Tracker) Leaving() *uuid.UUIDStream {
 	return t.leaving.Stream()
 }
 
-func (t *Tracker) StartAdvertisment()(err error) {
+func (t *Tracker) StartAdvertisment() (err error) {
 	t.beacon.Ping()
 	return
 }
@@ -73,6 +73,7 @@ func (t *Tracker) StopAdvertisment() {
 }
 
 func (t *Tracker) Shutdown(eventual2go.Data) (err error) {
+	t.beacon.Silence()
 	t.beacon.Stop()
 	err = t.memberlist.Shutdown()
 	return
