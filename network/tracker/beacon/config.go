@@ -3,7 +3,7 @@ package beacon
 import "time"
 
 type Config struct {
-	Addr         string
+	Address      string
 	Port         int
 	Payload      []byte
 	PingInterval time.Duration

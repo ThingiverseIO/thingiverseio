@@ -7,7 +7,7 @@ import (
 
 func testconf(payload []byte) *Config {
 	return &Config{
-		Addr:         "127.0.0.1",
+		Address:      "127.0.0.1",
 		Port:         6660,
 		PingInterval: 1 * time.Millisecond,
 		Payload:      payload,
@@ -51,8 +51,8 @@ func TestBeacon(t *testing.T) {
 	case <-time.After(1000 * time.Millisecond):
 		t.Error("Didn't got network.beacon 1")
 	}
-
 }
+
 func TestBeaconstop(t *testing.T) {
 	p1 := []byte("1234")
 	b1, err := New(testconf(p1))
@@ -69,10 +69,11 @@ func TestBeaconstop(t *testing.T) {
 	b1.Run()
 	b1.Ping()
 	b2.Ping()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	b2.Stop()
+	time.Sleep(10 * time.Millisecond)
 	c1 := b1.Signals().First().AsChan()
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 	select {
 	case <-c1:
 		t.Error("Becaon didnt stop")
