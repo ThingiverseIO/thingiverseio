@@ -2,6 +2,7 @@ package thingiverseio_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
@@ -122,12 +123,15 @@ func TestTrigger(t *testing.T) {
 			t.Error("Wrong Import UUID", r.Input, i1.UUID())
 		}
 
+	fmt.Println("LOL")
 		var res []byte
 		r.Decode(&res)
 		if !bytes.Equal(res, params) {
 			t.Error("Wrong Params", r.Parameter(), params)
 		}
 		e.Reply(r, params)
+		
+	fmt.Println("ROFL")
 	}
 
 	select {
@@ -200,8 +204,8 @@ func testCallAll(t *testing.T) {
 	params2 := []byte{6}
 	s, _ := i.CallAll("SayHello", params)
 	s1, s2 := s.Split(func(d *message.Result) bool { return d.Output == e1.UUID() })
-	rc1,_ := s1.AsChan()
-	rc2,_ := s2.AsChan()
+	rc1, _ := s1.AsChan()
+	rc2, _ := s2.AsChan()
 	select {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Didnt Got Request 1")
@@ -275,7 +279,7 @@ func TestEmit(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer e.Remove()
-	c,_ := i.ListenResults().AsChan()
+	c, _ := i.ListenResults().AsChan()
 	i.StartListen("SayHello")
 	f1 := i.ConnectedFuture()
 	f2 := e.ConnectedFuture()

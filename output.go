@@ -6,7 +6,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
-	"github.com/joernweissenborn/eventual2go/typed_events"
+	"github.com/joernweissenborn/eventual2go"
 )
 
 // Output is a ThingiverseIO node which exports functionality to the ThingiverseIO network.
@@ -52,12 +52,12 @@ func (o *Output) Run() {
 }
 
 // Connected returns true if at least 1 Input is connected.
-func (o *Output) Connected() *typed_events.BoolFuture {
-	return o.core.ConnectedFuture()
+func (o *Output) Connected() bool {
+	return o.core.Connected()
 }
 
 // ConnectedFuture returns a eventual2go.Future which gets completed when a suitable Input is connected.
-func (o *Output) ConnectedFuture() *typed_events.BoolFuture {
+func (o *Output) ConnectedFuture() *eventual2go.Future {
 	return o.core.ConnectedFuture()
 }
 

@@ -127,7 +127,7 @@ func (t *Tracker) onSignal(s beacon.Signal) {
 func (t *Tracker) setupBeacon(iface string, port int) (err error) {
 
 	conf := &beacon.Config{
-		Addr:         iface,
+		Address:      iface,
 		Port:         5557,
 		PingInterval: 1 * time.Second,
 		Payload:      newSignalPayload(port),

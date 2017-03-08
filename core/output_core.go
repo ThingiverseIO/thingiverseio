@@ -103,8 +103,8 @@ func (o OutputCore) onHello(m network.Message) {
 					return
 				}
 			case message.CONNECT:
-				o.log.Debug("Got message CONNECT")
 				o.Fire(connectEvent{}, conn)
+				o.log.Debug("Got message CONNECT")
 				return
 			}
 		}
