@@ -19,22 +19,22 @@ func BenchmarkNilCall(b *testing.B) {
 	}
 	defer in.Remove()
 
-
 	o, err := thingiverseio.NewOutput(descriptor)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	defer o.Remove()
-	rc := o.Requests().AsChan()
+	rc, _ := o.Requests().AsChan()
 
 	in.Run()
 	o.Run()
 
 	// for i := 0; i < b.N; i++ {
-		c := in.Call("SayHello", struct{}{}).AsChan()
+	r, _ := in.Call("SayHello", struct{}{})
+	c := r.AsChan()
 
-		o.Reply(<-rc, struct{}{})
-		<-c
+	o.Reply(<-rc, struct{}{})
+	<-c
 	// }
 }

@@ -31,13 +31,8 @@ type SignalFuture struct {
 	*eventual2go.Future
 }
 
-<<<<<<< HEAD:network/tracker/beacon/signal_events.go
 func (f *SignalFuture) Result() Signal {
 	return f.Future.Result().(Signal)
-=======
-func (f *SignalFuture) GetResult() Signal {
-	return f.Future.GetResult().(Signal)
->>>>>>> master:service/tracker/beacon/signal_events.go
 }
 
 type SignalCompletionHandler func(Signal) Signal
@@ -106,11 +101,7 @@ func (l SignalSubscriber) toSubscriber() eventual2go.Subscriber {
 	return func(d eventual2go.Data) { l(d.(Signal)) }
 }
 
-<<<<<<< HEAD:network/tracker/beacon/signal_events.go
 func (s *SignalStream) Listen(ss SignalSubscriber) *eventual2go.Completer {
-=======
-func (s *SignalStream) Listen(ss SignalSubscriber) *eventual2go.Subscription {
->>>>>>> master:service/tracker/beacon/signal_events.go
 	return s.Stream.Listen(ss.toSubscriber())
 }
 
