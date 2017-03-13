@@ -37,4 +37,4 @@ install:
   - go get github.com/ugorji/go/codec
 
 script:
-  - go test -tags test -v ./service/tracker/beacon ./service/peer ./service/tracker ./service/manager .
+  - go test -v ./network/ ./network/provider/zmq ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/memberlist/beacon ./core .

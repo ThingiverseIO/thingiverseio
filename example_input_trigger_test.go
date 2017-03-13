@@ -1,4 +1,4 @@
-// +build !test
+// +build examples
 
 package thingiverseio_test
 
@@ -26,7 +26,7 @@ type SayHelloOutput struct {
 // ExampleInputTrigger demonstrates a simple input using the TRIGGER mechanism.
 func Example_inputTrigger() {
 	// Create and run the input.
-	i , err := thingiverseio.NewInput(descriptor)
+	i, err := thingiverseio.NewInput(descriptor)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -34,16 +34,16 @@ func Example_inputTrigger() {
 
 	// Start listen to the SyHello function and get a channel to receive results.
 	i.StartListen("SayHello")
-	c := i.ListenResults().AsChan()
+	c, _ := i.ListenResults().AsChan()
 
 	// Wait until an output connects.
-	i.Connected().WaitUntilComplete()
+	i.ConnectedFuture().WaitUntilComplete()
 
 	// Create the request parameter.
 	p := SayHelloInput{"Greetings, this is a CALL example"}
 
 	// Do the trigger.
-	c := i.Trigger("SayHello", p)
+	i.Trigger("SayHello", p)
 
 	// Receive the result.
 	result := <-c

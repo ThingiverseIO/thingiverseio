@@ -2,35 +2,46 @@ package thingiverseio_test
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
 	"time"
 
 	"github.com/ThingiverseIO/thingiverseio"
 	"github.com/ThingiverseIO/thingiverseio/config"
-	"github.com/ThingiverseIO/thingiverseio/service/messages"
+	"github.com/ThingiverseIO/thingiverseio/message"
 )
 
+var testDescriptor = `
+func SayHello(Greeting string) (Answer string)
+tag TAG_1
+`
+
+func testConfig() (cfg *config.UserConfig) {
+	cfg = config.DefaultLocalhost()
+	return
+}
+
 func TestCall(t *testing.T) {
-	i, err := thingiverseio.NewInputFromConfig(testConfig(false))
+	i, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer i.Remove()
-	e, err := thingiverseio.NewOutputFromConfig(testConfig(true))
+	e, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer e.Remove()
-	c := e.Requests().AsChan()
+	c, _ := e.Requests().AsChan()
 
-	f1 := i.Connected()
-	f2 := e.Connected()
+	f1 := i.ConnectedFuture()
+	f2 := e.ConnectedFuture()
 	e.Run()
 	i.Run()
 	f1.WaitUntilComplete()
 	f2.WaitUntilComplete()
 	params := []byte{4, 5, 63, 4}
-	f := i.Call("SayHello", params)
+	f, _ := i.Call("SayHello", params)
 
 	select {
 	case <-time.After(5 * time.Second):
@@ -64,40 +75,41 @@ func TestCall(t *testing.T) {
 }
 
 func TestTrigger(t *testing.T) {
-	i1, err := thingiverseio.NewInputFromConfig(testConfig(false))
+	i1, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer i1.Remove()
-	i2, err := thingiverseio.NewInputFromConfig(testConfig(false))
+	i2, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer i2.Remove()
-	e, err := thingiverseio.NewOutputFromConfig(testConfig(true))
+	e, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer e.Remove()
-	c := e.Requests().AsChan()
+	c, _ := e.Requests().AsChan()
 
-	c1 := i1.ListenResults().AsChan()
-	c2 := i2.ListenResults().AsChan()
+	c1, _ := i1.ListenResults().AsChan()
+	c2, _ := i2.ListenResults().AsChan()
 
-	f1 := i1.Connected()
-	f2 := i2.Connected()
-	f3 := e.Connected()
+	f1 := i1.ConnectedFuture()
+	f2 := i2.ConnectedFuture()
+	f3 := e.ConnectedFuture()
 
 	e.Run()
 	i2.Run()
 	i1.Run()
 
+	i1.StartListen("SayHello")
+	i2.StartListen("SayHello")
+
 	f1.WaitUntilComplete()
 	f2.WaitUntilComplete()
 	f3.WaitUntilComplete()
 
-	i1.StartListen("SayHello")
-	i2.StartListen("SayHello")
 	time.Sleep(1 * time.Second)
 
 	params := []byte{4, 5, 63, 4}
@@ -111,12 +123,15 @@ func TestTrigger(t *testing.T) {
 			t.Error("Wrong Import UUID", r.Input, i1.UUID())
 		}
 
+	fmt.Println("LOL")
 		var res []byte
 		r.Decode(&res)
 		if !bytes.Equal(res, params) {
 			t.Error("Wrong Params", r.Parameter(), params)
 		}
 		e.Reply(r, params)
+		
+	fmt.Println("ROFL")
 	}
 
 	select {
@@ -152,29 +167,29 @@ func TestTrigger(t *testing.T) {
 
 // deactivated due to bad implementation
 func testCallAll(t *testing.T) {
-	i, err := thingiverseio.NewInputFromConfig(testConfig(false))
+	i, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer i.Remove()
 
-	e1, err := thingiverseio.NewOutputFromConfig(testConfig(true))
+	e1, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer e1.Remove()
-	c1 := e1.Requests().AsChan()
+	c1, _ := e1.Requests().AsChan()
 
-	e2, err := thingiverseio.NewOutputFromConfig(testConfig(true))
+	e2, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer e2.Remove()
-	c2 := e2.Requests().AsChan()
+	c2, _ := e2.Requests().AsChan()
 
-	f1 := i.Connected()
-	f2 := e1.Connected()
-	f3 := e2.Connected()
+	f1 := i.ConnectedFuture()
+	f2 := e1.ConnectedFuture()
+	f3 := e2.ConnectedFuture()
 
 	i.Run()
 	e1.Run()
@@ -187,11 +202,10 @@ func testCallAll(t *testing.T) {
 	params := []byte{4, 5, 63, 4}
 	params1 := []byte{3}
 	params2 := []byte{6}
-	s := messages.NewResultStreamController()
-	s1, s2 := s.Stream().Split(func(d *messages.Result) bool { return d.Output == e1.UUID() })
-	rc1 := s1.AsChan()
-	rc2 := s2.AsChan()
-	i.CallAll("SayHello", params, s)
+	s, _ := i.CallAll("SayHello", params)
+	s1, s2 := s.Split(func(d *message.Result) bool { return d.Output == e1.UUID() })
+	rc1, _ := s1.AsChan()
+	rc2, _ := s2.AsChan()
 	select {
 	case <-time.After(5 * time.Second):
 		t.Fatal("Didnt Got Request 1")
@@ -256,19 +270,19 @@ func testCallAll(t *testing.T) {
 }
 
 func TestEmit(t *testing.T) {
-	i, err := thingiverseio.NewInputFromConfig(testConfig(false))
+	i, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
-	e, err := thingiverseio.NewOutputFromConfig(testConfig(true))
+	e, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer e.Remove()
-	c := i.ListenResults().AsChan()
+	c, _ := i.ListenResults().AsChan()
 	i.StartListen("SayHello")
-	f1 := i.Connected()
-	f2 := e.Connected()
+	f1 := i.ConnectedFuture()
+	f2 := e.ConnectedFuture()
 
 	i.Run()
 	e.Run()
@@ -306,26 +320,4 @@ func TestEmit(t *testing.T) {
 	time.Sleep(1 * time.Second)
 	//testing if it not crashes due to uncomplete removal
 	e.Emit("SayHello", nil, params)
-}
-
-var testDescriptor = &thingiverseio.Descriptor{
-	[]thingiverseio.Function{
-		thingiverseio.Function{
-			Name: "SayHello",
-			Input: []thingiverseio.Parameter{
-				thingiverseio.Parameter{
-					Name: "Greeting",
-					Type: "string"}},
-			Output: []thingiverseio.Parameter{
-				thingiverseio.Parameter{
-					Name: "Answer",
-					Type: "string"}},
-		},
-	},
-	map[string]string{"TAG_1": ""},
-}
-
-func testConfig(export bool) (cfg *config.Config) {
-	cfg = config.New(export, testDescriptor.AsTagSet())
-	return
 }

@@ -11,22 +11,22 @@ const (
 	ENV_DEBUG      = "THINGIVERSEIO_DEBUG"
 )
 
-func CheckEnviroment(cfg *Config) {
+func CheckEnviroment(cfg *UserConfig) {
 	CheckEnviromentLogger(cfg)
 	CheckEnviromentDebug(cfg)
 	CheckEnviromentInterfaces(cfg)
 }
 
-func CheckEnviromentInterfaces(cfg *Config) {
+func CheckEnviromentInterfaces(cfg *UserConfig) {
 
 	v, f := getVar(ENV_INTERFACE)
 	if f {
-		cfg.interfaces = strings.Split(v, ";")
+		cfg.Interfaces = strings.Split(v, ";")
 	}
 
 }
 
-func CheckEnviromentLogger(cfg *Config) {
+func CheckEnviromentLogger(cfg *UserConfig) {
 
 	v, f := getVar(ENV_LOGGING)
 
@@ -36,13 +36,13 @@ func CheckEnviromentLogger(cfg *Config) {
 
 }
 
-func CheckEnviromentDebug(cfg *Config) {
+func CheckEnviromentDebug(cfg *UserConfig) {
 	v, f := getVar(ENV_DEBUG)
 
 	if f {
 		switch v {
 		case "1", "true":
-			cfg.debug = true
+			cfg.Debug = true
 		default:
 		}
 	}

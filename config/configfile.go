@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 
+	"github.com/ThingiverseIO/thingiverseio/descriptor"
+
 	"gopkg.in/gcfg.v1"
 )
 
@@ -28,7 +30,7 @@ type CfgFileUserTags struct {
 	Tag []string
 }
 
-func CheckCfgFile(cfg *Config, path string) {
+func CheckCfgFile(cfg *UserConfig, path string) {
 
 	cfgf, err := ReadCfgFile(path)
 
@@ -37,7 +39,7 @@ func CheckCfgFile(cfg *Config, path string) {
 	}
 
 	if len(cfgf.Network.Interface) != 0 {
-		cfg.interfaces = cfgf.Network.Interface
+		cfg.Interfaces = cfgf.Network.Interface
 	}
 
 	setLoggerFromString(cfgf.Misc.Logging, cfg)
@@ -102,15 +104,10 @@ func WriteCfgFile(cfgf CfgFile, path string) (err error) {
 	return
 }
 
-func parseUserTags(t []string, cfg *Config) {
-	for _, ut := range t {
-		if !strings.Contains(ut, ":") {
-			continue
-		}
-		split := strings.Split(ut, ":")
-		if len(split) != 2 {
-			continue
-		}
-		cfg.userTags[split[0]] = split[1]
+func parseUserTags(tags []string, cfg *UserConfig) {
+	for _, t := range tags {
+		var tag descriptor.Tag
+		tag.Scan(t)
+		cfg.Tags.Add(tag)
 	}
 }
