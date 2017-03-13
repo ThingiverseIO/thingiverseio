@@ -134,7 +134,7 @@ func (i *InputCore) onAfterPeerRemoved(d eventual2go.Data) {
 		if pending.Output == id {
 			i.log.Debug("Removed peer had pending request", reqeuestId)
 			pending.Output = uuid.Empty()
-			if i.Connected() {
+			if i.connected.Completed() {
 				i.deliverRequest(pending.Request)
 			}
 		}
@@ -211,7 +211,7 @@ func (i *InputCore) onRequest(d eventual2go.Data) {
 
 	i.log.Debugf("Trying to delivering request %s", req.UUID)
 
-	if i.Connected() {
+	if i.connected.Completed() {
 		i.deliverRequest(req)
 	} else {
 		i.log.Debug("Can't deliver, no connections.")

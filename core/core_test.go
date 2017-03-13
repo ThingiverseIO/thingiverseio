@@ -55,6 +55,9 @@ func TestBasicConnection(t *testing.T) {
 	i, _ := core.NewInputCore(desc, cfg, mt1, mps[0])
 	o, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])
 
+	defer i.Shutdown()
+	defer o.Shutdown()
+
 	arr := network.Arrival{
 		IsOutput: true,
 		Details:  mt2.Dt,
@@ -68,12 +71,16 @@ func TestBasicConnection(t *testing.T) {
 		t.Fatal("Peers didn't connect.")
 	}
 
+	disconnect1 := i.DisconnectedFuture()
+	disconnect2 := i.DisconnectedFuture()
+
 	mt1.Lv.Add(o.UUID())
 	mt2.Lv.Add(i.UUID())
 
-	time.Sleep(10 * time.Millisecond)
+	//time.Sleep(10 * time.Millisecond)
 
-	if i.Connected() || o.Connected() {
+	if !disconnect1.WaitUntilTimeout(100*time.Millisecond) ||
+		!disconnect2.WaitUntilTimeout(100*time.Millisecond) {
 		t.Fatal("Peers didn't disconnect.", i.Connected())
 	}
 }
@@ -83,6 +90,8 @@ func TestNonMatchingDescriptor(t *testing.T) {
 	desc1, _ := descriptor.Parse(Descriptor1)
 	desc2, _ := descriptor.Parse(Descriptor2)
 	i, o := getInputOutput(desc1, desc2)
+	defer i.Shutdown()
+	defer o.Shutdown()
 
 	if i.Connected() || o.Connected() {
 		t.Fatal("Peers did connect.")
@@ -95,6 +104,8 @@ func TestCall(t *testing.T) {
 
 	i, o := getInputOutput(desc, desc)
 
+	defer i.Shutdown()
+	defer o.Shutdown()
 	request := o.RequestStream().First()
 	data := []byte{1, 2, 3, 4}
 	result, _, uuid, err := i.Request("testfun", message.CALL, data)
@@ -143,8 +154,8 @@ func TestCallGuarantee(t *testing.T) {
 	mps := network.NewMockProvider(3)
 
 	i, _ := core.NewInputCore(desc, cfg, mt1, mps[0])
+	defer i.Shutdown()
 	o, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])
-
 	arr := network.Arrival{
 		IsOutput: true,
 		Details:  mt2.Dt,
@@ -164,19 +175,24 @@ func TestCallGuarantee(t *testing.T) {
 
 	time.Sleep(1 * time.Millisecond)
 
+	i.Lock()
 	if i.Pending()[uuid].Output != o.UUID() {
 		t.Error("Request did not got registered with right output id:", i.Pending()[uuid].Output, o.UUID())
 	}
+	i.Unlock()
 
 	o.Shutdown()
 
 	time.Sleep(1 * time.Millisecond)
 
+	i.Lock()
 	if !i.Pending()[uuid].Output.IsEmpty() {
 		t.Error("Output did not got deregistered from pending")
 	}
+	i.Unlock()
 
 	o2, _ := core.NewOutputCore(desc, cfg, mt3, mps[2])
+	defer o2.Shutdown()
 
 	request := o2.RequestStream().First()
 	arr = network.Arrival{
@@ -191,21 +207,26 @@ func TestCallGuarantee(t *testing.T) {
 		t.Fatal("Request did not arrive")
 	}
 
+	i.Lock()
 	if i.Pending()[uuid].Output != o2.UUID() {
 		t.Error("Request did not got reregistered with right output id:", i.Pending()[uuid].Output, o.UUID())
 	}
-	data2 := []byte{4, 5, 6, 7}
-	o.Reply(request.Result(), data2)
+	i.Unlock()
 
-	if !result.WaitUntilTimeout(100 * time.Millisecond) {
+	data2 := []byte{4, 5, 6, 7}
+	o2.Reply(request.Result(), data2)
+
+	if !result.WaitUntilTimeout(1000 * time.Millisecond) {
 		t.Fatal("Result did not arrive")
 	}
 
 	time.Sleep(1 * time.Millisecond)
 
+	i.Lock()
 	if len(i.Pending()) != 0 {
 		t.Error("Request did not got deregistered from pending.")
 	}
+	i.Unlock()
 
 }
 
@@ -215,6 +236,8 @@ func TestTrigger(t *testing.T) {
 
 	i, o := getInputOutput(desc, desc)
 
+	defer i.Shutdown()
+	defer o.Shutdown()
 	request := o.RequestStream().First()
 	result := i.ListenStream().First()
 	data := []byte{1, 2, 3, 4}
@@ -299,6 +322,10 @@ func TestTriggerAll(t *testing.T) {
 	o1, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])
 	o2, _ := core.NewOutputCore(desc, cfg, mt3, mps[2])
 
+	defer i.Shutdown()
+	defer o1.Shutdown()
+	defer o2.Shutdown()
+
 	arr := network.Arrival{
 		IsOutput: true,
 		Details:  mt2.Dt,
@@ -372,6 +399,9 @@ func TestCallAll(t *testing.T) {
 	o1, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])
 	o2, _ := core.NewOutputCore(desc, cfg, mt3, mps[2])
 
+	defer i.Shutdown()
+	defer o1.Shutdown()
+	defer o2.Shutdown()
 	arr := network.Arrival{
 		IsOutput: true,
 		Details:  mt2.Dt,

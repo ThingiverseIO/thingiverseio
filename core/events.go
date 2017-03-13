@@ -14,8 +14,6 @@ type requestEvent struct{}
 
 type replyEvent struct{}
 
-type shutdownEvent struct{}
-
 type startListenEvent struct{}
 
 type stopListenEvent struct{}

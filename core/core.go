@@ -14,13 +14,14 @@ import (
 
 type Core struct {
 	*eventual2go.Reactor
-	config      *config.Config
-	connected   *eventual2go.Completer
-	connections map[uuid.UUID]network.Connection
-	log         *gologging.Logger
-	provider    network.Providers
-	tracker     network.Tracker
-	shutdown    *eventual2go.Shutdown
+	config       *config.Config
+	connected    *eventual2go.Completer
+	disconnected *eventual2go.Completer
+	connections  map[uuid.UUID]network.Connection
+	log          *gologging.Logger
+	provider     network.Providers
+	tracker      network.Tracker
+	shutdown     *eventual2go.Shutdown
 }
 
 func Initialize(cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c *Core, err error) {
@@ -42,14 +43,15 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 	logPrefix := fmt.Sprintf("CORE %s", cfg.Internal.UUID)
 
 	c = &Core{
-		Reactor:     eventual2go.NewReactor(),
-		config:      cfg,
-		connected:   eventual2go.NewCompleter(),
-		connections: map[uuid.UUID]network.Connection{},
-		log:         logging.CreateLogger(logPrefix, cfg),
-		provider:    provider,
-		tracker:     tracker,
-		shutdown:    shutdown,
+		Reactor:      eventual2go.NewReactor(),
+		config:       cfg,
+		connected:    eventual2go.NewCompleter(),
+		disconnected: eventual2go.NewCompleter(),
+		connections:  map[uuid.UUID]network.Connection{},
+		log:          logging.CreateLogger(logPrefix, cfg),
+		provider:     provider,
+		tracker:      tracker,
+		shutdown:     shutdown,
 	}
 
 	c.Reactor.React(connectEvent{}, c.onConnection)
@@ -60,18 +62,28 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 	c.Reactor.AddStream(endEvent{}, c.provider.Messages().Where(network.OfType(message.END)).Stream)
 	c.Reactor.React(endEvent{}, c.onEnd)
 
-	c.Reactor.React(shutdownEvent{}, c.onShutdown)
+	c.Reactor.OnShutdown(c.onShutdown)
 
 	c.log.Info("Started")
 	return
 }
 
 func (c Core) Connected() (is bool) {
-	return c.ConnectedFuture().Completed()
+	c.Reactor.Lock()
+	defer c.Reactor.Unlock()
+	return c.connected.Future().Completed()
 }
 
 func (c Core) ConnectedFuture() (is *eventual2go.Future) {
+	c.Lock()
+	defer c.Unlock()
 	return c.connected.Future()
+}
+
+func (c Core) DisconnectedFuture() (is *eventual2go.Future) {
+	c.Lock()
+	defer c.Unlock()
+	return c.disconnected.Future()
 }
 
 func (c *Core) onConnection(d eventual2go.Data) {
@@ -88,7 +100,7 @@ func (c *Core) onConnection(d eventual2go.Data) {
 
 func (c *Core) onEnd(d eventual2go.Data) {
 	m := d.(network.Message)
-	c.log.Info("Received and from", m.Sender)
+	c.log.Info("Received END from", m.Sender)
 	c.removePeer(m.Sender)
 }
 
@@ -107,17 +119,23 @@ func (c Core) onShutdown(d eventual2go.Data) {
 	}
 	c.shutdown.Do(nil)
 	d.(*eventual2go.Completer).Complete(nil)
-	c.log.Info("Shutdown complete")
 }
 
 func (c *Core) removePeer(uuid uuid.UUID) {
-	delete(c.connections, uuid)
-	if len(c.connections) == 0 {
-		c.connected = eventual2go.NewCompleter()
-		c.tracker.StartAdvertisment()
-		c.log.Info("Disconnected")
+
+	if conn, ok := c.connections[uuid]; ok {
+		c.log.Debug("Closing connections to peer", uuid)
+		conn.Close()
+		delete(c.connections, uuid)
+		if len(c.connections) == 0 {
+			c.connected = eventual2go.NewCompleter()
+			c.disconnected.Complete(true)
+			c.disconnected = eventual2go.NewCompleter()
+			c.tracker.StartAdvertisment()
+			c.log.Info("Disconnected")
+		}
+		c.Reactor.Fire(afterPeerRemovedEvent{}, uuid)
 	}
-	c.Reactor.Fire(afterPeerRemovedEvent{}, uuid)
 }
 
 func (c Core) Run() {
@@ -132,8 +150,9 @@ func (c Core) SendToAll(m message.Message) {
 
 func (c Core) Shutdown() {
 	cmp := eventual2go.NewCompleter()
-	c.Reactor.Fire(shutdownEvent{}, cmp)
+	c.Reactor.Shutdown(cmp)
 	cmp.Future().WaitUntilComplete()
+	c.log.Info("Shutdown complete")
 }
 
 func (c Core) UUID() uuid.UUID {
