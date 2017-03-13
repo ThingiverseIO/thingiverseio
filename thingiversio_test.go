@@ -2,7 +2,6 @@ package thingiverseio_test
 
 import (
 	"bytes"
-	"fmt"
 	"testing"
 	"time"
 
@@ -123,15 +122,13 @@ func TestTrigger(t *testing.T) {
 			t.Error("Wrong Import UUID", r.Input, i1.UUID())
 		}
 
-	fmt.Println("LOL")
 		var res []byte
 		r.Decode(&res)
 		if !bytes.Equal(res, params) {
 			t.Error("Wrong Params", r.Parameter(), params)
 		}
 		e.Reply(r, params)
-		
-	fmt.Println("ROFL")
+
 	}
 
 	select {

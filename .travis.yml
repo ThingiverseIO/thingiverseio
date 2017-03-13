@@ -1,8 +1,8 @@
 language: go
 
 go:
-  - 1.5
-  - 1.6
+  - 1.7
+  - 1.8
   - tip
 
 matrix:
@@ -35,6 +35,7 @@ install:
   - go get github.com/pebbe/zmq4
   - go get github.com/hashicorp/memberlist
   - go get github.com/ugorji/go/codec
+  - go get github.com/op/go-logging
 
 script:
-  - go test -v ./network/ ./network/provider/zeromq ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/memberlist/beacon ./core .
+  - go test -v ./network/ ./network/provider/zeromq ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/beacon ./core .
