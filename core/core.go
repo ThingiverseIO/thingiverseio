@@ -68,19 +68,19 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 	return
 }
 
-func (c Core) Connected() (is bool) {
+func (c *Core) Connected() (is bool) {
 	c.Reactor.Lock()
 	defer c.Reactor.Unlock()
 	return c.connected.Future().Completed()
 }
 
-func (c Core) ConnectedFuture() (is *eventual2go.Future) {
+func (c *Core) ConnectedFuture() (is *eventual2go.Future) {
 	c.Lock()
 	defer c.Unlock()
 	return c.connected.Future()
 }
 
-func (c Core) DisconnectedFuture() (is *eventual2go.Future) {
+func (c *Core) DisconnectedFuture() (is *eventual2go.Future) {
 	c.Lock()
 	defer c.Unlock()
 	return c.disconnected.Future()
@@ -110,7 +110,7 @@ func (c *Core) onLeave(d eventual2go.Data) {
 	c.removePeer(uuid)
 }
 
-func (c Core) onShutdown(d eventual2go.Data) {
+func (c *Core) onShutdown(d eventual2go.Data) {
 	c.log.Info("Shutting down")
 	m := &message.End{}
 	for _, conn := range c.connections {
@@ -138,23 +138,23 @@ func (c *Core) removePeer(uuid uuid.UUID) {
 	}
 }
 
-func (c Core) Run() {
+func (c *Core) Run() {
 	c.tracker.StartAdvertisment()
 }
 
-func (c Core) SendToAll(m message.Message) {
+func (c *Core) SendToAll(m message.Message) {
 	for _, conn := range c.connections {
 		conn.Send(m)
 	}
 }
 
-func (c Core) Shutdown() {
+func (c *Core) Shutdown() {
 	cmp := eventual2go.NewCompleter()
 	c.Reactor.Shutdown(cmp)
 	cmp.Future().WaitUntilComplete()
 	c.log.Info("Shutdown complete")
 }
 
-func (c Core) UUID() uuid.UUID {
+func (c *Core) UUID() uuid.UUID {
 	return c.config.Internal.UUID
 }

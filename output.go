@@ -77,7 +77,8 @@ func (o *Output) Emit(function string, inparams interface{}, outparams interface
 	if err != nil {
 		return
 	}
-	req := message.NewRequest(o.UUID(), function, message.TRIGGER, data)
+	uuid := o.UUID()
+	req := message.NewRequest(uuid, function, message.TRIGGER, data)
 	o.Reply(req, outparams)
 	return
 }
