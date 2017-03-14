@@ -202,6 +202,7 @@ func TestCallGuarantee(t *testing.T) {
 	}
 
 	mt1.Av.Add(arr)
+	o2.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
 
 	if !request.WaitUntilTimeout(100 * time.Millisecond) {
 		t.Fatal("Request did not arrive")
@@ -347,6 +348,7 @@ func TestTriggerAll(t *testing.T) {
 	if !i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond) {
 		t.Fatal("Input did not connect.")
 	}
+	i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
 	o1.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
 	o2.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
 	time.Sleep(10 * time.Millisecond)
