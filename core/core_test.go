@@ -173,7 +173,7 @@ func TestCallGuarantee(t *testing.T) {
 		t.Error("Request did not got registered as pending.")
 	}
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	i.Lock()
 	if i.Pending()[uuid].Output != o.UUID() {
@@ -183,7 +183,7 @@ func TestCallGuarantee(t *testing.T) {
 
 	o.Shutdown()
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	i.Lock()
 	if !i.Pending()[uuid].Output.IsEmpty() {
@@ -220,7 +220,7 @@ func TestCallGuarantee(t *testing.T) {
 		t.Fatal("Result did not arrive")
 	}
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(10 * time.Millisecond)
 
 	i.Lock()
 	if len(i.Pending()) != 0 {
