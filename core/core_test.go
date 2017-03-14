@@ -326,6 +326,8 @@ func TestTriggerAll(t *testing.T) {
 	defer o1.Shutdown()
 	defer o2.Shutdown()
 
+	i.StartListen("testfun")
+
 	arr := network.Arrival{
 		IsOutput: true,
 		Details:  mt2.Dt,
@@ -347,8 +349,7 @@ func TestTriggerAll(t *testing.T) {
 	}
 	o1.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
 	o2.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
-
-	i.StartListen("testfun")
+	time.Sleep(10 * time.Millisecond)
 
 	request1 := o1.RequestStream().First()
 	request2 := o2.RequestStream().First()
