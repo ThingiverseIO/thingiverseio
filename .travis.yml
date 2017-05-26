@@ -37,6 +37,7 @@ install:
   - go get github.com/ugorji/go/codec
   - go get github.com/op/go-logging
   - go get github.com/go-mangos/mangos
+  - go get github.com/spf13/viper
 
 script:
   - go test -v -race ./network/ ./network/provider/zeromq ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/beacon ./core .
