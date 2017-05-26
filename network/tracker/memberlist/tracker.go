@@ -45,11 +45,11 @@ func (t *Tracker) Init(cfg *config.Config, details [][]byte) (err error) {
 	t.meta = buf.Bytes()
 
 	var port int
-	if port, err = t.setupMemberlist(cfg.User.Interfaces[0], cfg.Internal.UUID); err != nil {
+	if port, err = t.setupMemberlist(cfg.User.Interface, cfg.Internal.UUID); err != nil {
 		return
 	}
 
-	err = t.setupBeacon(cfg.User.Interfaces[0], port)
+	err = t.setupBeacon(cfg.User.Interface, port)
 	return
 }
 

@@ -1,16 +1,36 @@
 package config
 
+import (
+	"os/user"
+
+	"github.com/spf13/viper"
+)
+
+var userCfg *UserConfig
+
+//Configure loads the configuration from either the disk or the enviroment.
 func Configure() (cfg *UserConfig) {
 
-	cfg = &UserConfig{}
+	if userCfg != nil {
+		return userCfg
+	}
 
-	CheckCfgFile(cfg, CfgFileGlobal())
+	viper.SetDefault("debug", false)
+	viper.SetDefault("logger", "none")
+	viper.SetDefault("interface", "127.0.0.1")
 
-	CheckEnviroment(cfg)
+	//Enviroment
+	viper.SetEnvPrefix("tvio")
+	viper.AutomaticEnv()
 
-	CheckCfgFile(cfg, CfgFileUser())
+	//Configfile
+	viper.SetConfigName(".tvio")
+	viper.AddConfigPath(".") // First look in CWD
 
-	CheckCfgFile(cfg, CfgFileCwd())
+	usr, err := user.Current()
+	if err != nil {
+		viper.AddConfigPath(usr.HomeDir) // Then in user home
+	}
 
 	return
 }

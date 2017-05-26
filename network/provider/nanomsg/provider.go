@@ -45,7 +45,7 @@ func (p *Provider) Init(cfg *config.Config) (err error) {
 		return
 	}
 
-	iface := cfg.User.Interfaces[0]
+	iface := cfg.User.Interface
 
 	port, err := network.GetFreePortOnInterface(iface)
 	if err != nil {

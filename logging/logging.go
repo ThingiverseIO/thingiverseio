@@ -9,19 +9,24 @@ var format = logging.MustStringFormatter(
 	`%{color}%{time:15:04:05.000} %{module} %{shortfunc} ▶ %{level} %{id:03x}%{color:reset} %{message}`,
 )
 
-func SetupLogger(cfg *config.Config) {
+func SetupLogger(cfg *config.Config) error {
 
 	lvl := logging.INFO
 	if cfg.User.Debug {
 		lvl = logging.DEBUG
 	}
 
+	logger, err := cfg.User.GetLogger()
+	if err != nil {
+		return err
+	}
 	backend := logging.AddModuleLevel(
 		logging.NewBackendFormatter(
-			logging.NewLogBackend(cfg.User.Logger, "", 0), format))
+			logging.NewLogBackend(logger, "", 0), format))
 	backend.SetLevel(lvl, "")
 
 	logging.SetBackend(backend)
+	return nil
 }
 
 func GetLogger(prefix string) *logging.Logger {
