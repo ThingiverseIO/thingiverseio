@@ -10,26 +10,23 @@ var userCfg *UserConfig
 
 //Configure loads the configuration from either the disk or the enviroment.
 func Configure() (cfg *UserConfig) {
+	v := viper.New()
 
-	if userCfg != nil {
-		return userCfg
-	}
-
-	viper.SetDefault("debug", false)
-	viper.SetDefault("logger", "none")
-	viper.SetDefault("interface", "127.0.0.1")
+	v.SetDefault("debug", false)
+	v.SetDefault("logger", "none")
+	v.SetDefault("interface", "127.0.0.1")
 
 	//Enviroment
-	viper.SetEnvPrefix("tvio")
-	viper.AutomaticEnv()
+	v.SetEnvPrefix("tvio")
+	v.AutomaticEnv()
 
 	//Configfile
-	viper.SetConfigName(".tvio")
-	viper.AddConfigPath(".") // First look in CWD
+	v.SetConfigName(".tvio")
+	v.AddConfigPath(".") // First look in CWD
 
 	usr, err := user.Current()
 	if err != nil {
-		viper.AddConfigPath(usr.HomeDir) // Then in user home
+		v.AddConfigPath(usr.HomeDir) // Then in user home
 	}
 
 	return

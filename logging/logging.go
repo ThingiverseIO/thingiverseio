@@ -29,10 +29,6 @@ func SetupLogger(cfg *config.Config) error {
 	return nil
 }
 
-func GetLogger(prefix string) *logging.Logger {
-	return logging.MustGetLogger(prefix)
-}
-
 func CreateLogger(prefix string, cfg *config.Config) (l *logging.Logger) {
 	l = logging.MustGetLogger(prefix)
 	SetupLogger(cfg)
