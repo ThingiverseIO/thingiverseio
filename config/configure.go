@@ -28,6 +28,6 @@ func Configure() (cfg *UserConfig) {
 	if err != nil {
 		v.AddConfigPath(usr.HomeDir) // Then in user home
 	}
-
+	v.Unmarshal(cfg)
 	return
 }
