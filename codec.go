@@ -10,6 +10,13 @@ var (
 	mh codec.MsgpackHandle
 )
 
+func decode(encoded []byte, t interface{}) (err error) {
+	buf := bytes.NewBuffer(encoded)
+	dec := codec.NewDecoder(buf, &mh)
+	err = dec.Decode(t)
+	return
+}
+
 func encode(data interface{}) (encoded []byte, err error) {
 	var buf bytes.Buffer
 	enc := codec.NewEncoder(&buf, &mh)

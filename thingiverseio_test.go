@@ -11,13 +11,104 @@ import (
 )
 
 var testDescriptor = `
-func SayHello(Greeting string) (Answer string)
+function SayHello(Greeting string) (Answer string)
+property Mood: Mood string
 tag TAG_1
 `
 
 func testConfig() (cfg *config.UserConfig) {
 	cfg = config.DefaultLocalhost()
 	return
+}
+
+func TestObserveProperty(t *testing.T) {
+	i, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer i.Remove()
+	o, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.Remove()
+
+	testprop := []byte{1, 9, 5}
+
+	if err := i.StartObservation("Mood"); err != nil {
+		t.Fatal(err)
+	}
+
+	f1 := i.ConnectedFuture()
+	f2 := o.ConnectedFuture()
+	o.Run()
+	i.Run()
+	f1.WaitUntilComplete()
+	f2.WaitUntilComplete()
+	if err := o.SetProperty("Mood", testprop); err != nil {
+		t.Fatal("Failed to set property", err)
+	}
+
+	time.Sleep(100 * time.Millisecond)
+	p, err := i.GetProperty("Mood")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var v []byte
+	err = p.Value(&v)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(v, testprop) {
+		t.Error("wrong property value", v, testprop)
+	}
+}
+
+func TestUpdateProperty(t *testing.T) {
+	i, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer i.Remove()
+	o, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer o.Remove()
+
+	testprop := []byte{4, 5, 63, 4}
+	if err := o.SetProperty("Mood", testprop); err != nil {
+		t.Fatal(err)
+	}
+
+	f1 := i.ConnectedFuture()
+	f2 := o.ConnectedFuture()
+	o.Run()
+	i.Run()
+	f1.WaitUntilComplete()
+	f2.WaitUntilComplete()
+
+	f, err := i.UpdateProperty("Mood")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case <-time.After(100 * time.Millisecond):
+		t.Error("didn't received property")
+	case p := <-f.AsChan():
+		if p.Name != "Mood" {
+			t.Error("Wrong name: Mood", p.Name)
+		}
+		var v []byte
+		if err = p.Value(&v); err != nil {
+			t.Error(err)
+		}
+		if !bytes.Equal(v, testprop) {
+			t.Error("wrong property value", v, testprop)
+		}
+	}
 }
 
 func TestCall(t *testing.T) {
@@ -162,8 +253,7 @@ func TestTrigger(t *testing.T) {
 
 }
 
-// deactivated due to bad implementation
-func testCallAll(t *testing.T) {
+func TestCallAll(t *testing.T) {
 	i, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
 	if err != nil {
 		t.Fatal(err)

@@ -6,7 +6,7 @@ import (
 )
 
 var format = logging.MustStringFormatter(
-	`%{color}%{time:15:04:05.000} %{module} %{shortfunc} ▶ %{level} %{id:03x}%{color:reset} %{message}`,
+	`%{color}%{time:15:04:05.000} %{module} ▶ %{level} %{id:03x} %{shortfunc}%{color:reset} %{message}`,
 )
 
 func SetupLogger(cfg *config.Config) error {

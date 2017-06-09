@@ -7,9 +7,11 @@ import (
 )
 
 var testdesc = `
-func funcname(param1 string, param2 []int) (outp1 string, outp2 []bool)
-func fun1(param1 string, param2 []int) ()
-func fun2() (outp1 string, outp2 []bool)
+function funcname(param1 string, param2 []int) (outp1 string, outp2 []bool)
+function fun1(param1 string, param2 []int) ()
+function fun2() (outp1 string, outp2 []bool)
+function emptyfun()()
+property p2: bla string
 tag simple_tag
 tag key_tag: tag_value
 #define multiple tags in one line
@@ -21,7 +23,7 @@ func TestParseDescriptor(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	if len(desc.Functions) != 3 {
+	if len(desc.Functions) != 4 {
 		t.Error("Wrong number of functions, want 3, got", len(desc.Functions))
 	}
 	if len(desc.Functions[0].Input) != 2 {

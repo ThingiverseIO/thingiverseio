@@ -72,7 +72,7 @@ func (i *Input) Call(function string, parameter interface{}) (result *message.Re
 	return
 }
 
-// CallAll executes a ThingiverseIO CallAll and returns the Requests UUID. A ResultStreamController must be provided by the user, who must also handle it's lifetime. The current implementation is incomplete. If you close the StreamController and a response is received after, the library might crash. Use with care.
+// CallAll executes a ThingiverseIO CallAll and returns the Requests UUID. A ResultStreamController must be provided by the user, who must alsos handle it's lifetime. The current implementation is incomplete. If you close the StreamController and a response is received after, the library might crash. Use with care.
 func (i *Input) CallAll(function string, parameter interface{}) (results *message.ResultStream, err error) {
 	data, err := encode(parameter)
 	if err != nil {
@@ -103,13 +103,48 @@ func (i *Input) TriggerAll(function string, parameter interface{}) (err error) {
 }
 
 // StartListen starts listening on the given function.
-func (i *Input) StartListen(function string) {
-	i.core.StartListen(function)
+func (i *Input) StartListen(function string) (err error) {
+	err = i.core.StartListen(function)
+	return
 }
 
 // StopListen stops listening on the given function.
 func (i *Input) StopListen(function string) {
 	i.core.StopListen(function)
+}
+
+// StartObservation starts observation of the given property.
+func (i *Input) StartObservation(property string) (err error) {
+	err = i.core.StartObservation(property)
+	return
+}
+
+// GetProperty gets the current value of the property.
+func (i *Input) GetProperty(property string) (p Property, err error) {
+	v, err := i.core.GetProperty(property)
+	if err != nil {
+		return
+	}
+	p = Property{
+		Name:  property,
+		value: v,
+	}
+	return
+}
+
+// UpdateProperty updates the value of the property. Returns a Future which gets completed when the update has been arrived.
+func (i *Input) UpdateProperty(property string) (p PropertyFuture, err error) {
+	v, err := i.core.UpdateProperty(property)
+	if err != nil {
+		return
+	}
+	p = PropertyFuture{v.Then(propertyFromFuture(property))}
+	return
+}
+
+// StopObservation stops observation of the given property.
+func (i *Input) StopObservation(property string) {
+	i.core.StopObservation(property)
 }
 
 // ListenResults returns a ResultStream to receive results of Trigger or TriggerAll function calls.

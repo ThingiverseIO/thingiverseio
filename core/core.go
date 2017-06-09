@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/ThingiverseIO/thingiverseio/config"
+	"github.com/ThingiverseIO/thingiverseio/descriptor"
 	"github.com/ThingiverseIO/thingiverseio/logging"
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/network"
@@ -12,19 +13,22 @@ import (
 	gologging "github.com/op/go-logging"
 )
 
-type Core struct {
+type core struct {
 	*eventual2go.Reactor
-	config       *config.Config
-	connected    *eventual2go.Completer
-	disconnected *eventual2go.Completer
-	connections  map[uuid.UUID]network.Connection
-	log          *gologging.Logger
-	provider     network.Providers
-	tracker      network.Tracker
-	shutdown     *eventual2go.Shutdown
+	config           *config.Config
+	connected        *eventual2go.Completer
+	descriptor       descriptor.Descriptor
+	disconnected     *eventual2go.Completer
+	connections      map[uuid.UUID]network.Connection
+	log              *gologging.Logger
+	mustSendRegister map[message.Message]uuid.UUID
+	provider         network.Providers
+	tracker          network.Tracker
+	shutdown         *eventual2go.Shutdown
+	properties       properties
 }
 
-func Initialize(cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c *Core, err error) {
+func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c *core, err error) {
 	logging.SetupLogger(cfg)
 
 	shutdown := eventual2go.NewShutdown()
@@ -42,22 +46,27 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 
 	logPrefix := fmt.Sprintf("CORE %s", cfg.Internal.UUID)
 
-	c = &Core{
-		Reactor:      eventual2go.NewReactor(),
-		config:       cfg,
-		connected:    eventual2go.NewCompleter(),
-		disconnected: eventual2go.NewCompleter(),
-		connections:  map[uuid.UUID]network.Connection{},
-		log:          logging.CreateLogger(logPrefix, cfg),
-		provider:     provider,
-		tracker:      tracker,
-		shutdown:     shutdown,
+	c = &core{
+		Reactor:          eventual2go.NewReactor(),
+		config:           cfg,
+		connected:        eventual2go.NewCompleter(),
+		descriptor:       desc,
+		disconnected:     eventual2go.NewCompleter(),
+		connections:      map[uuid.UUID]network.Connection{},
+		log:              logging.CreateLogger(logPrefix, cfg),
+		mustSendRegister: map[message.Message]uuid.UUID{},
+		provider:         provider,
+		tracker:          tracker,
+		shutdown:         shutdown,
+		properties:       newProperties(desc),
 	}
 
+	c.Reactor.React(connectEvent{}, c.onConnection)
 	c.Reactor.React(connectEvent{}, c.onConnection)
 
 	c.Reactor.AddStream(leaveEvent{}, tracker.Leaving().Stream)
 	c.Reactor.React(leaveEvent{}, c.onLeave)
+	c.Reactor.React(mustSendEvent{}, c.onMustSend)
 
 	c.Reactor.AddStream(endEvent{}, c.provider.Messages().Where(network.OfType(message.END)).Stream)
 	c.Reactor.React(endEvent{}, c.onEnd)
@@ -68,25 +77,25 @@ func Initialize(cfg *config.Config, tracker network.Tracker, providers ...networ
 	return
 }
 
-func (c *Core) Connected() (is bool) {
+func (c *core) Connected() (is bool) {
 	c.Reactor.Lock()
 	defer c.Reactor.Unlock()
 	return c.connected.Future().Completed()
 }
 
-func (c *Core) ConnectedFuture() (is *eventual2go.Future) {
+func (c *core) ConnectedFuture() (is *eventual2go.Future) {
 	c.Lock()
 	defer c.Unlock()
 	return c.connected.Future()
 }
 
-func (c *Core) DisconnectedFuture() (is *eventual2go.Future) {
+func (c *core) DisconnectedFuture() (is *eventual2go.Future) {
 	c.Lock()
 	defer c.Unlock()
 	return c.disconnected.Future()
 }
 
-func (c *Core) onConnection(d eventual2go.Data) {
+func (c *core) onConnection(d eventual2go.Data) {
 	conn := d.(network.Connection)
 	c.connections[conn.UUID] = conn
 	c.log.Infof("Connected to %s", conn.UUID)
@@ -94,23 +103,29 @@ func (c *Core) onConnection(d eventual2go.Data) {
 		c.connected.Complete(true)
 		c.tracker.StopAdvertisment()
 		c.log.Info("Connected")
+		for m, id := range c.mustSendRegister {
+			if id.IsEmpty() {
+				c.mustSendRegister[m] = conn.UUID
+				conn.Send(m)
+			}
+		}
 	}
 	c.Reactor.Fire(afterConnectedEvent{}, conn.UUID)
 }
 
-func (c *Core) onEnd(d eventual2go.Data) {
+func (c *core) onEnd(d eventual2go.Data) {
 	m := d.(network.Message)
 	c.log.Info("Received END from", m.Sender)
 	c.removePeer(m.Sender)
 }
 
-func (c *Core) onLeave(d eventual2go.Data) {
+func (c *core) onLeave(d eventual2go.Data) {
 	uuid := d.(uuid.UUID)
 	c.log.Info("Peer left", uuid)
 	c.removePeer(uuid)
 }
 
-func (c *Core) onShutdown(d eventual2go.Data) {
+func (c *core) onShutdown(d eventual2go.Data) {
 	c.log.Info("Shutting down")
 	m := &message.End{}
 	for _, conn := range c.connections {
@@ -121,7 +136,7 @@ func (c *Core) onShutdown(d eventual2go.Data) {
 	d.(*eventual2go.Completer).Complete(nil)
 }
 
-func (c *Core) removePeer(uuid uuid.UUID) {
+func (c *core) removePeer(uuid uuid.UUID) {
 
 	if conn, ok := c.connections[uuid]; ok {
 		c.log.Debug("Closing connections to peer", uuid)
@@ -134,27 +149,69 @@ func (c *Core) removePeer(uuid uuid.UUID) {
 			c.tracker.StartAdvertisment()
 			c.log.Info("Disconnected")
 		}
-		c.Reactor.Fire(afterPeerRemovedEvent{}, uuid)
+		for m, id := range c.mustSendRegister {
+			if id == uuid {
+				c.log.Debug("Removed peer had pending message")
+				c.Fire(mustSendEvent{}, m)
+			}
+		}
+		c.Fire(afterPeerRemovedEvent{}, uuid)
 	}
 }
 
-func (c *Core) Run() {
+func (c *core) Run() {
 	c.tracker.StartAdvertisment()
 }
 
-func (c *Core) SendToAll(m message.Message) {
-	for _, conn := range c.connections {
+func (c *core) sendToOne(m message.Message) {
+	c.log.Debug("Trying to send message to one peer:", m.GetType())
+	for id, conn := range c.connections {
+		c.log.Debug("Sending message to ", id)
+		conn.Send(m)
+		return
+	}
+	c.log.Debug("Cant send, no connections")
+}
+
+func (c *core) sendToAll(m message.Message) {
+	c.log.Debug("Trying to send message to all peers:", m.GetType())
+	for id, conn := range c.connections {
+		c.log.Debug("Sending message to ", id)
 		conn.Send(m)
 	}
 }
 
-func (c *Core) Shutdown() {
+func (c *core) Shutdown() {
 	cmp := eventual2go.NewCompleter()
 	c.Reactor.Shutdown(cmp)
 	cmp.Future().WaitUntilComplete()
 	c.log.Info("Shutdown complete")
 }
 
-func (c *Core) UUID() uuid.UUID {
+func (c *core) UUID() uuid.UUID {
 	return c.config.Internal.UUID
+}
+
+func (c *core) mustSend(m message.Message, recv *eventual2go.Future) {
+	recv.Then(c.onRecv(m))
+	c.Fire(mustSendEvent{}, m)
+}
+
+func (c *core) onMustSend(d eventual2go.Data) {
+	m := d.(message.Message)
+	c.mustSendRegister[m] = uuid.Empty()
+	c.log.Debug("Trying to send must message", m.GetType())
+	for id, conn := range c.connections {
+		c.mustSendRegister[m] = id
+		c.log.Debug("Sending must message to", id)
+		conn.Send(m)
+		return
+	}
+}
+
+func (c *core) onRecv(m message.Message) eventual2go.CompletionHandler {
+	return func(eventual2go.Data) eventual2go.Data {
+		delete(c.mustSendRegister, m)
+		return nil
+	}
 }

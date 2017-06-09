@@ -13,7 +13,8 @@ import (
 )
 
 var Descriptor1 = `
-func testfun()()
+function testfun()()
+property testprop: data bin
 tags TAG1, TEST:2
 `
 
@@ -98,6 +99,67 @@ func TestNonMatchingDescriptor(t *testing.T) {
 	}
 }
 
+func TestObserveProperty(t *testing.T) {
+
+	desc, _ := descriptor.Parse(Descriptor1)
+
+	i, o := getInputOutput(desc, desc)
+
+	testprop := []byte{1, 9, 5}
+
+	i.StartObservation("testprop")
+
+	time.Sleep(1 * time.Millisecond)
+
+	if err := o.SetProperty("testprop", testprop); err != nil {
+		t.Fatal("Failed to set property", err)
+	}
+
+
+	time.Sleep(1 * time.Millisecond)
+	v, err := i.GetProperty("testprop")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if !bytes.Equal(v, testprop) {
+		t.Error("wrong property value", v, testprop)
+	}
+	defer i.Shutdown()
+	defer o.Shutdown()
+}
+
+func TestUpdateProperty(t *testing.T) {
+
+	desc, _ := descriptor.Parse(Descriptor1)
+
+	i, o := getInputOutput(desc, desc)
+
+	testprop := []byte{1, 9, 5}
+
+	if err := o.SetProperty("testprop", testprop); err != nil {
+		t.Fatal("Failed to set property", err)
+	}
+
+	time.Sleep(1 * time.Millisecond)
+	f, err := i.UpdateProperty("testprop")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	select {
+	case <-time.After(100 * time.Millisecond):
+		t.Error("didn't received property")
+	case v := <-f.AsChan():
+		if !bytes.Equal(v.([]byte), testprop) {
+			t.Error("wrong property value", v, testprop)
+		}
+	}
+
+	defer i.Shutdown()
+	defer o.Shutdown()
+}
+
 func TestCall(t *testing.T) {
 
 	desc, _ := descriptor.Parse(Descriptor1)
@@ -167,29 +229,13 @@ func TestCallGuarantee(t *testing.T) {
 	o.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
 
 	data := []byte{1, 2, 3, 4}
-	result, _, uuid, _ := i.Request("testfun", message.CALL, data)
-
-	if len(i.Pending()) != 1 {
-		t.Error("Request did not got registered as pending.")
-	}
+	result, _, _, _ := i.Request("testfun", message.CALL, data)
 
 	time.Sleep(10 * time.Millisecond)
-
-	i.Lock()
-	if i.Pending()[uuid].Output != o.UUID() {
-		t.Error("Request did not got registered with right output id:", i.Pending()[uuid].Output, o.UUID())
-	}
-	i.Unlock()
 
 	o.Shutdown()
 
 	time.Sleep(100 * time.Millisecond)
-
-	i.Lock()
-	if !i.Pending()[uuid].Output.IsEmpty() {
-		t.Fatal("Output did not got deregistered from pending")
-	}
-	i.Unlock()
 
 	o2, _ := core.NewOutputCore(desc, cfg, mt3, mps[2])
 	defer o2.Shutdown()
@@ -208,26 +254,12 @@ func TestCallGuarantee(t *testing.T) {
 		t.Fatal("Request did not arrive")
 	}
 
-	i.Lock()
-	if i.Pending()[uuid].Output != o2.UUID() {
-		t.Error("Request did not got reregistered with right output id:", i.Pending()[uuid].Output, o.UUID())
-	}
-	i.Unlock()
-
 	data2 := []byte{4, 5, 6, 7}
 	o2.Reply(request.Result(), data2)
 
 	if !result.WaitUntilTimeout(1000 * time.Millisecond) {
 		t.Fatal("Result did not arrive")
 	}
-
-	time.Sleep(10 * time.Millisecond)
-
-	i.Lock()
-	if len(i.Pending()) != 0 {
-		t.Error("Request did not got deregistered from pending.")
-	}
-	i.Unlock()
 
 }
 

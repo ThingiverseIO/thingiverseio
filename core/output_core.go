@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/ThingiverseIO/thingiverseio/config"
@@ -12,8 +13,9 @@ import (
 )
 
 type OutputCore struct {
-	*Core
-	listener map[string]map[uuid.UUID]interface{}
+	*core
+	listener map[string]map[uuid.UUID]network.Connection
+	observer map[string]map[uuid.UUID]network.Connection
 	requests *message.RequestStream
 }
 
@@ -25,14 +27,16 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 	intCfg := config.NewInternalConfig(true, tags)
 
-	c, err := Initialize(&config.Config{
-		Internal: intCfg,
-		User:     usrCfg,
-	}, tracker, provider...)
+	c, err := initCore(desc,
+		&config.Config{
+			Internal: intCfg,
+			User:     usrCfg,
+		}, tracker, provider...)
 
 	o = OutputCore{
-		Core:     c,
-		listener: map[string]map[uuid.UUID]interface{}{},
+		core:     c,
+		listener: map[string]map[uuid.UUID]network.Connection{},
+		observer: map[string]map[uuid.UUID]network.Connection{},
 	}
 
 	o.requests = &message.RequestStream{
@@ -50,6 +54,20 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 	o.AddStream(stopListenEvent{}, o.provider.Messages().Where(network.OfType(message.STOPLISTEN)).Stream)
 	o.React(stopListenEvent{}, o.onStopListen)
+
+	o.AddStream(startObserveEvent{}, o.provider.Messages().Where(network.OfType(message.STARTOBSERVE)).Stream)
+	o.React(startObserveEvent{}, o.onStartObserve)
+
+	o.AddStream(stopObserveEvent{}, o.provider.Messages().Where(network.OfType(message.STOPOBSERVE)).Stream)
+	o.React(stopObserveEvent{}, o.onStopObserve)
+
+	o.AddStream(getPropertyEvent{}, o.provider.Messages().Where(network.OfType(message.GETPROPERTY)).Stream)
+	o.React(getPropertyEvent{}, o.onGetProperty)
+
+	for p, obs := range o.properties {
+		o.React(setPropertyEvent{p}, o.onSetProperty(p))
+		o.AddObservable(setPropertyEvent{p}, obs)
+	}
 
 	return
 
@@ -143,10 +161,10 @@ func (o *OutputCore) onStartListen(d eventual2go.Data) {
 	o.log.Infof("Got new listener for function '%s': %s", function, m.Sender)
 
 	if _, ok := o.listener[function]; !ok {
-		o.listener[function] = map[uuid.UUID]interface{}{}
+		o.listener[function] = map[uuid.UUID]network.Connection{}
 	}
 
-	o.listener[function][m.Sender] = nil
+	o.listener[function][m.Sender] = o.connections[m.Sender]
 }
 
 func (o *OutputCore) onStopListen(d eventual2go.Data) {
@@ -161,6 +179,67 @@ func (o *OutputCore) onStopListen(d eventual2go.Data) {
 	}
 }
 
+func (o *OutputCore) onSetProperty(property string) eventual2go.Subscriber {
+	return func(d eventual2go.Data) {
+		v := d.([]byte)
+
+		o.log.Debugf("Updating property '%s'", property)
+
+		m := &message.SetProperty{
+			Name:  property,
+			Value: v,
+		}
+		for peer, conn := range o.observer[property] {
+			o.log.Debugf("Sending property update of '%s' to %s", property, peer)
+			conn.Send(m)
+		}
+	}
+}
+
+func (o *OutputCore) onGetProperty(d eventual2go.Data) {
+	m := d.(network.Message)
+
+	property := m.Decode().(*message.GetProperty).Name
+
+	o.log.Debugf("Got request for property '%s' from %s", property, m.Sender)
+
+	o.sendProperty(m.Sender, property)
+}
+
+func (o *OutputCore) onStartObserve(d eventual2go.Data) {
+	m := d.(network.Message)
+
+	property := m.Decode().(*message.StartObserve).Property
+
+	o.log.Infof("Got new observer for property '%s': %s", property, m.Sender)
+
+	if _, ok := o.listener[property]; !ok {
+		o.observer[property] = map[uuid.UUID]network.Connection{}
+	}
+	o.observer[property][m.Sender] = o.connections[m.Sender]
+	o.sendProperty(m.Sender, property)
+}
+
+func (o *OutputCore) sendProperty(peer uuid.UUID, property string) {
+	o.log.Debugf("Sending Value of property '%s' to %s", property, peer)
+	o.connections[peer].Send(&message.SetProperty{
+		Name:  property,
+		Value: o.properties[property].Value().([]byte),
+	})
+}
+
+func (o *OutputCore) onStopObserve(d eventual2go.Data) {
+	m := d.(network.Message)
+
+	property := m.Decode().(*message.StopObserve).Property
+
+	o.log.Infof("Observer stopped observing property '%s': %s", property, m.Sender)
+
+	if _, ok := o.observer[property]; ok {
+		delete(o.listener[property], m.Sender)
+	}
+}
+
 // Reply reponds the given output parameter to all interested Inputs of a given request.
 func (o OutputCore) Reply(r *message.Request, params []byte) (err error) {
 	res := message.NewResult(o.UUID(), r, params)
@@ -170,4 +249,14 @@ func (o OutputCore) Reply(r *message.Request, params []byte) (err error) {
 
 func (o OutputCore) RequestStream() *message.RequestStream {
 	return o.requests
+}
+
+func (o OutputCore) SetProperty(property string, value []byte) (err error) {
+	obs, ok := o.properties[property]
+	if !ok {
+		err = fmt.Errorf("Can't set unknown property '%s'", property)
+		return
+	}
+	obs.Change(value)
+	return
 }

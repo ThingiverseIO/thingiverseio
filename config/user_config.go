@@ -21,7 +21,7 @@ type UserConfig struct {
 func DefaultLocalhost() (cfg *UserConfig) {
 	cfg = &UserConfig{
 		Debug:     true,
-		Logger:    "stderr",
+		Logger:    "stdout",
 		Interface: "127.0.0.1",
 	}
 	return

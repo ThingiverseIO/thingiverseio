@@ -46,6 +46,6 @@ func (c *Connection) OnMessage(d eventual2go.Data) {
 	c.socket.SendMsg(m)
 }
 
-func (c *Connection) Shutdown(d eventual2go.Data) {
-	c.socket.Close()
+func (c *Connection) Shutdown(d eventual2go.Data) error {
+	return c.socket.Close()
 }

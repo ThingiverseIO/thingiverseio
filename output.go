@@ -87,3 +87,12 @@ func (o *Output) Emit(function string, inparams interface{}, outparams interface
 func (o *Output) Requests() *message.RequestStream {
 	return o.core.RequestStream()
 }
+
+func (o *Output) SetProperty(property string, value interface{}) (err error) {
+	v, err := encode(value)
+	if err != nil {
+		return
+	}
+	err = o.core.SetProperty(property, v)
+	return
+}

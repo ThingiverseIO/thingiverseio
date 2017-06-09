@@ -17,3 +17,15 @@ type replyEvent struct{}
 type startListenEvent struct{}
 
 type stopListenEvent struct{}
+
+type startObserveEvent struct{}
+
+type stopObserveEvent struct{}
+
+type getPropertyEvent struct {}
+
+type setPropertyEvent struct {
+	name string
+}
+
+type mustSendEvent struct{}

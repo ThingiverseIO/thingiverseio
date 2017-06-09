@@ -66,7 +66,7 @@ func (m *MockConnection) OnMessage(d eventual2go.Data) {
 	m.messageBox.Add(msg)
 }
 
-func (m *MockConnection) Shutdown(d eventual2go.Data) {}
+func (m *MockConnection) Shutdown(d eventual2go.Data) error { return nil }
 
 type MockTracker struct {
 	Av      *ArrivalStreamController

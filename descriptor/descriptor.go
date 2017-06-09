@@ -8,8 +8,9 @@ import (
 
 // Descriptor represents a ThingiverseIO service descriptor.
 type Descriptor struct {
-	Functions []Function
-	Tags      Tagset
+	Functions  []Function
+	Properties []Property
+	Tags       Tagset
 }
 
 // Function represents a ThingiverseIO function, consisting of a name and in-/output parameters.
@@ -29,6 +30,16 @@ func (f Function) String() string {
 		outpar = fmt.Sprintf("%s%s", outpar, p)
 	}
 	return fmt.Sprintf("%s%s%s", f.Name, inpar, outpar)
+}
+
+// Function represents a ThingiverseIO function, consisting of a name and in-/output parameters.
+type Property struct {
+	Name      string
+	Parameter []Parameter
+}
+
+func (p Property) String() string {
+	return fmt.Sprintf("%s%s", p.Name, p.Parameter)
 }
 
 // Parameter consists of a name and a type.
@@ -65,6 +76,15 @@ func (d Descriptor) HasFunction(name string) (has bool) {
 	return
 }
 
+func (d Descriptor) HasProperty(name string) (has bool) {
+	for _, p := range d.Properties {
+		if has = p.Name == name; has {
+			return
+		}
+	}
+	return
+}
+
 // Parse takes a string representation of a descriptor and returns a Descriptor struct. If the descriptor is malformed, and error is returned, which is intended to be displayed to user.
 func Parse(desc string) (d Descriptor, err error) {
 	scanner := bufio.NewScanner(strings.NewReader(desc))
@@ -76,13 +96,20 @@ func Parse(desc string) (d Descriptor, err error) {
 		switch {
 		case line == "", strings.HasPrefix(line, "#"):
 		//ignore empty lines and comments
-		case strings.HasPrefix(line, "func"):
+		case strings.HasPrefix(line, "function"):
 			var f Function
 			f, err = parseFunction(linecounter, line)
 			if err != nil {
 				return
 			}
 			d.Functions = append(d.Functions, f)
+		case strings.HasPrefix(line, "property"):
+			var p Property
+			p, err = parseProperty(linecounter, line)
+			if err != nil {
+				return
+			}
+			d.Properties = append(d.Properties, p)
 		case strings.HasPrefix(line, "tags"):
 			var tags map[string]string
 			tags, err = parseTagsLine(linecounter, line)
@@ -107,8 +134,41 @@ func Parse(desc string) (d Descriptor, err error) {
 	return
 }
 
+func parseProperty(line int, s string) (p Property, err error) {
+	s = strings.TrimLeft(s, "property")
+	s = strings.TrimLeft(s, " ")
+	split1 := strings.Split(s, ":")
+	p.Name = strings.TrimRight(split1[0], " ")
+
+	if len(split1) == 1 {
+		err = newLineError(line, "invalid property")
+		return
+	}
+
+	split2 := strings.Split(split1[1], ",")
+
+	for _, par := range split2 {
+		par = strings.TrimLeft(par, " ")
+		par = strings.TrimRight(par, " ")
+		spl := strings.Split(par, " ")
+		if len(spl) != 2 {
+			err = newLineError(line, fmt.Sprint("malformed property parameter", par))
+			return
+		}
+		n := spl[0]
+		t := spl[1]
+
+		if !containsAny(t, "string", "bool", "bin", "int", "float") {
+			err = newLineError(line, fmt.Sprint("malformed parameter, unknown type", t))
+			return
+		}
+		p.Parameter = append(p.Parameter, Parameter{n, t})
+	}
+	return
+}
+
 func parseFunction(line int, s string) (f Function, err error) {
-	s = strings.TrimLeft(s, "func")
+	s = strings.TrimLeft(s, "function")
 	s = strings.TrimLeft(s, " ")
 	split1 := strings.Split(s, "(")
 	f.Name = strings.TrimRight(split1[0], " ")

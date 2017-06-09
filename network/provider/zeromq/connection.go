@@ -42,6 +42,6 @@ func (c *Connection) OnMessage(d eventual2go.Data) {
 	c.socket.SendMessage(append([][]byte{msgType}, msg.Payload...))
 }
 
-func (c *Connection) Shutdown(d eventual2go.Data) {
-	c.socket.Close()
+func (c *Connection) Shutdown(d eventual2go.Data) error {
+	return c.socket.Close()
 }
