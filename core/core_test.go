@@ -122,7 +122,7 @@ func TestObserveProperty(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !bytes.Equal(v, testprop) {
+	if !bytes.Equal(testprop, v.Value().([]byte)) {
 		t.Error("wrong property value", v, testprop)
 	}
 	defer i.Shutdown()
