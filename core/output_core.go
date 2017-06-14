@@ -260,3 +260,17 @@ func (o OutputCore) SetProperty(property string, value []byte) (err error) {
 	obs.Change(value)
 	return
 }
+
+// Emit acts like a ThingiverseIO Trigger, which is initiated by the Output.
+func (o *OutputCore) Emit(function string, inparams []byte, outparams []byte) (err error) {
+	if !o.descriptor.HasFunction(function) {
+		err = fmt.Errorf("Function '%s' is not in descriptor", function)
+		return
+	}
+
+
+	uuid := o.UUID()
+	req := message.NewRequest(uuid, function, message.TRIGGER, inparams)
+	o.Reply(req, outparams)
+	return
+}

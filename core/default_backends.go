@@ -1,4 +1,4 @@
-package thingiverseio
+package core
 
 import (
 	"github.com/ThingiverseIO/thingiverseio/network"
@@ -6,7 +6,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/network/tracker/memberlist"
 )
 
-func getDefaultBackends() (tracker network.Tracker, provider []network.Provider) {
+func DefaultBackends() (tracker network.Tracker, provider []network.Provider) {
 	tracker = &memberlist.Tracker{}
 	provider = []network.Provider{&nanomsg.Provider{}}
 	return

@@ -27,7 +27,7 @@ func NewOutputFromConfig(desc string, cfg *config.UserConfig) (o *Output, err er
 		return
 	}
 
-	tracker, provider := getDefaultBackends()
+	tracker, provider := core.DefaultBackends()
 
 	core, err := core.NewOutputCore(d, cfg, tracker, provider...)
 	o = &Output{
@@ -73,13 +73,15 @@ func (o *Output) Reply(request *message.Request, parameter interface{}) (err err
 
 // Emit acts like a ThingiverseIO Trigger, which is initiated by the Output.
 func (o *Output) Emit(function string, inparams interface{}, outparams interface{}) (err error) {
-	data, err := encode(inparams)
+	inp, err := encode(inparams)
 	if err != nil {
 		return
 	}
-	uuid := o.UUID()
-	req := message.NewRequest(uuid, function, message.TRIGGER, data)
-	o.Reply(req, outparams)
+	outp, err := encode(outparams)
+	if err != nil {
+		return
+	}
+	err = o.core.Emit(function, inp, outp)
 	return
 }
 

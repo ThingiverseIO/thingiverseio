@@ -85,6 +85,11 @@ func (d Descriptor) HasProperty(name string) (has bool) {
 	return
 }
 
+func Check(desc string) (err error) {
+	_, err = Parse(desc)
+	return
+}
+
 // Parse takes a string representation of a descriptor and returns a Descriptor struct. If the descriptor is malformed, and error is returned, which is intended to be displayed to user.
 func Parse(desc string) (d Descriptor, err error) {
 	scanner := bufio.NewScanner(strings.NewReader(desc))

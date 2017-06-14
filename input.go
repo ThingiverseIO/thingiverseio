@@ -27,7 +27,7 @@ func NewInputFromConfig(desc string, cfg *config.UserConfig) (i *Input, err erro
 		return
 	}
 
-	tracker, provider := getDefaultBackends()
+	tracker, provider := core.DefaultBackends()
 
 	core, err := core.NewInputCore(d, cfg, tracker, provider...)
 	i = &Input{
@@ -72,7 +72,7 @@ func (i *Input) Call(function string, parameter interface{}) (result *message.Re
 	return
 }
 
-// CallAll executes a ThingiverseIO CallAll and returns the Requests UUID. A ResultStreamController must be provided by the user, who must alsos handle it's lifetime. The current implementation is incomplete. If you close the StreamController and a response is received after, the library might crash. Use with care.
+// CallAll executes a ThingiverseIO CallAll and returns the Requests UUID and stream on which results are delivered. The stream must be closed manually!
 func (i *Input) CallAll(function string, parameter interface{}) (results *message.ResultStream, err error) {
 	data, err := encode(parameter)
 	if err != nil {
@@ -120,14 +120,24 @@ func (i *Input) StartObservation(property string) (err error) {
 }
 
 // GetProperty gets the current value of the property.
+func (i *Input) OnPropertyChange(property string, subscriber PropertySubscriber) (cancel *eventual2go.Completer, err error) {
+	o, err := i.core.GetProperty(property)
+	if err != nil {
+		return
+	}
+	cancel = o.OnChange(propertyFromChange(property, subscriber))
+	return
+}
+
+// GetProperty gets the current value of the property.
 func (i *Input) GetProperty(property string) (p Property, err error) {
-	v, err := i.core.GetProperty(property)
+	o, err := i.core.GetProperty(property)
 	if err != nil {
 		return
 	}
 	p = Property{
 		Name:  property,
-		value: v,
+		value: o.Value().([]byte),
 	}
 	return
 }

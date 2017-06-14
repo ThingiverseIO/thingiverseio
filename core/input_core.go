@@ -61,7 +61,7 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 	i.Reactor.React(stopObserveEvent{}, i.onStopObserve)
 
-	i.AddStream(setPropertyEvent{}, i.provider.Messages().Where(network.OfType(message.SETPROPERTY)).Transform(network.ToMessage))
+	i.AddStream(setPropertyEvent{}, i.provider.Messages().TransformWhere(network.ToMessage, network.OfType(message.SETPROPERTY)))
 	i.React(setPropertyEvent{}, i.onSetProperty)
 	return
 
@@ -217,27 +217,18 @@ func (i *InputCore) onSetProperty(d eventual2go.Data) {
 	}
 }
 
-func (i *InputCore) GetProperty(property string) (value []byte, err error) {
-
+func (i *InputCore) GetProperty(property string) (o *eventual2go.Observable, err error) {
 	o, ok := i.properties[property]
 	if !ok {
 		err = fmt.Errorf("Can't get unknown property '%s'", property)
 		return
 	}
-
-	value = o.Value().([]byte)
 	return
 }
 
 func (i *InputCore) UpdateProperty(property string) (f *eventual2go.Future, err error) {
-	o, ok := i.properties[property]
-	if !ok {
-		err = fmt.Errorf("Can't get unknown property '%s'", property)
-		return
-	}
-	m := message.MessageStream{i.provider.Messages().Transform(network.ToMessage)}
+	o, err := i.GetProperty(property)
 	f = o.NextChange()
-	m.CloseOnFuture(f)
 	i.mustSend(&message.GetProperty{property}, f)
 	return
 }
@@ -305,7 +296,12 @@ func (i *InputCore) StartListen(function string) (err error) {
 	return
 }
 
-func (i *InputCore) StopListen(function string) {
+func (i *InputCore) StopListen(function string) (err error) {
+
+	if !i.descriptor.HasFunction(function) {
+		err = fmt.Errorf("Function '%s' is not in descriptor", function)
+		return
+	}
 
 	i.Reactor.Fire(stopListenEvent{}, function)
 
@@ -324,7 +320,12 @@ func (i *InputCore) StartObservation(property string) (err error) {
 	return
 }
 
-func (i *InputCore) StopObservation(property string) {
+func (i *InputCore) StopObservation(property string) (err error) {
+
+	if !i.descriptor.HasProperty(property) {
+		err = fmt.Errorf("Property '%s' is not in descriptor", property)
+		return
+	}
 
 	i.Reactor.Fire(stopObserveEvent{}, property)
 

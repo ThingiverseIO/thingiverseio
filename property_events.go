@@ -128,6 +128,10 @@ func (s *PropertyStream) WhereNot(f ...PropertyFilter) *PropertyStream {
 	return &PropertyStream{s.Stream.WhereNot(toPropertyFilterArray(f...)...)}
 }
 
+func (s *PropertyStream) TransformWhere(t eventual2go.Transformer, f ...PropertyFilter) *PropertyStream {
+	return &PropertyStream{s.Stream.TransformWhere(t, toPropertyFilterArray(f...)...)}
+}
+
 func (s *PropertyStream) Split(f PropertyFilter) (*PropertyStream, *PropertyStream)  {
 	return s.Where(f), s.WhereNot(f)
 }

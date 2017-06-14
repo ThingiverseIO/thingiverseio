@@ -95,6 +95,17 @@ func (c *core) DisconnectedFuture() (is *eventual2go.Future) {
 	return c.disconnected.Future()
 }
 
+func (c *core) Interface() string {
+	return c.config.User.Interface
+}
+
+func (c *core) Properties() (properties []string) {
+	for p, _ := range c.properties {
+		properties = append(properties, p)
+	}
+	return
+}
+
 func (c *core) onConnection(d eventual2go.Data) {
 	conn := d.(network.Connection)
 	c.connections[conn.UUID] = conn

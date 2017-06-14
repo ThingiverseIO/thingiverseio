@@ -22,3 +22,13 @@ func propertyFromFuture(property string) eventual2go.CompletionHandler {
 		}
 	}
 }
+
+func propertyFromChange(property string, s PropertySubscriber) eventual2go.Subscriber{
+	return func(d eventual2go.Data) {
+		p := Property{
+			Name:  property,
+			value: d.([]byte),
+		}
+		s(p)
+	}
+}

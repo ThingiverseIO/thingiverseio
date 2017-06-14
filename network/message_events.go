@@ -128,6 +128,10 @@ func (s *MessageStream) WhereNot(f ...MessageFilter) *MessageStream {
 	return &MessageStream{s.Stream.WhereNot(toMessageFilterArray(f...)...)}
 }
 
+func (s *MessageStream) TransformWhere(t eventual2go.Transformer, f ...MessageFilter) *eventual2go.Stream {
+	return s.Stream.TransformWhere(t, toMessageFilterArray(f...)...)
+}
+
 func (s *MessageStream) Split(f MessageFilter) (*MessageStream, *MessageStream)  {
 	return s.Where(f), s.WhereNot(f)
 }
