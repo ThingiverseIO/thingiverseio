@@ -29,7 +29,6 @@ type core struct {
 }
 
 func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c *core, err error) {
-	logging.SetupLogger(cfg)
 
 	shutdown := eventual2go.NewShutdown()
 

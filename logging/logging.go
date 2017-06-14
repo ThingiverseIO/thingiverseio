@@ -1,6 +1,8 @@
 package logging
 
 import (
+	"sync"
+
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/op/go-logging"
 )
@@ -9,7 +11,9 @@ var format = logging.MustStringFormatter(
 	`%{color}%{time:15:04:05.000} %{module} ▶ %{level} %{id:03x} %{shortfunc}%{color:reset} %{message}`,
 )
 
-func SetupLogger(cfg *config.Config) error {
+var m = &sync.Mutex{}
+
+func setupLogger(cfg *config.Config) error {
 
 	lvl := logging.INFO
 	if cfg.User.Debug {
@@ -30,7 +34,9 @@ func SetupLogger(cfg *config.Config) error {
 }
 
 func CreateLogger(prefix string, cfg *config.Config) (l *logging.Logger) {
+	m.Lock()
+	defer m.Unlock()
 	l = logging.MustGetLogger(prefix)
-	SetupLogger(cfg)
+	setupLogger(cfg)
 	return
 }
