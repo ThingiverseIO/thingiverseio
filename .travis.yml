@@ -27,4 +27,4 @@ install:
   - go get github.com/spf13/viper
 
 script:
-  - go test -v -race ./network/ ./network/provider/zeromq ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/beacon ./core .
+  - go test -v -race ./network/ ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/beacon ./core .
