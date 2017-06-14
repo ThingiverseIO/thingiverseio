@@ -222,6 +222,8 @@ func (c *core) onMustSend(d eventual2go.Data) {
 
 func (c *core) onRecv(m message.Message) eventual2go.CompletionHandler {
 	return func(eventual2go.Data) eventual2go.Data {
+		c.Lock()
+		defer c.Unlock()
 		delete(c.mustSendRegister, m)
 		return nil
 	}

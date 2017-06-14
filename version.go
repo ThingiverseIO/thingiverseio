@@ -12,4 +12,4 @@ func (v Version) String() string {
 }
 
 // CurrentVersion is the current version of the library.
-var CurrentVersion = Version{0, 0, 1}
+var CurrentVersion = Version{0, 1, 0}

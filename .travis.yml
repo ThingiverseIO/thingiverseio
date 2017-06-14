@@ -10,29 +10,16 @@ matrix:
     - go: tip
 
 env:
-  - THINGIVERSEIO_LOGGING: stdout
-  - THINGIVERSEIO_DEBUG: true
+  - TVIO_LOGGER: stdout
+    TVIO_DEBUG: true
 
 before_install:
-  - sudo apt-get update -y
-  - sudo apt-get install -y make git libtool build-essential dh-autoreconf pkg-config mercurial dh-autoreconf
 
 install:
-  - wget https://github.com/zeromq/zeromq4-1/releases/download/v4.1.5/zeromq-4.1.5.tar.gz
-  - tar -xf zeromq-4.1.5.tar.gz
-  - cd zeromq-4.1.5
-  - ./autogen.sh
-  - ./configure
-  - make
-  - sudo make install
-  - sudo ldconfig
-  - cd ..
-  - sudo ifconfig
   - go get github.com/nu7hatch/gouuid
   - go get gopkg.in/gcfg.v1
   - go get github.com/joernweissenborn/eventual2go
   - go get gopkg.in/yaml.v2
-  - go get github.com/pebbe/zmq4
   - go get github.com/hashicorp/memberlist
   - go get github.com/ugorji/go/codec
   - go get github.com/op/go-logging
