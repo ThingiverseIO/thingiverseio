@@ -1,6 +1,4 @@
-// +build example
-
-package thingiverseio_test
+package main
 
 import (
 	"fmt"
@@ -24,8 +22,7 @@ type SayHelloOutput struct {
 	Answer string
 }
 
-// ExampleOutput demonstrates a simple loop based output.
-func Example_output() {
+func main() {
 
 	// Create the output.
 	o, err := thingiverseio.NewOutput(descriptor)

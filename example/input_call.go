@@ -1,6 +1,5 @@
-// +build example
 
-package thingiverseio_test
+package main
 
 import (
 	"log"
@@ -23,8 +22,7 @@ type SayHelloOutput struct {
 	Answer string
 }
 
-// ExampleInputCall demonstrates a simple input using the CALL mechanism.
-func Example_inputCall() {
+func main() {
 	// Create and run the input.
 	i, err := thingiverseio.NewInput(descriptor)
 	if err != nil {

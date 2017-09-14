@@ -9,7 +9,7 @@ import (
 )
 
 const descriptor = `
-func SayHello(Greeting string) (Answer string)
+function SayHello(Greeting string) (Answer string)
 tag example_tag
 `
 
