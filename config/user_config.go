@@ -10,6 +10,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
 )
 
+// UserConfig stores user configurable parameters
 type UserConfig struct {
 	Debug     bool   // debugging switch [false]
 	Interface string // the network interface to use [1.27.0.0.1]
@@ -17,7 +18,7 @@ type UserConfig struct {
 	Tags      descriptor.Tagset
 }
 
-// DefaultLocalhost provides a standart config for testing purposes. Debug is true, logging set to stderr and the interface is set to '127.0.0.1'
+// DefaultLocalhost provides a standart config for testing purposes. Debug is true, logging set to stdout and the interface is set to '127.0.0.1'
 func DefaultLocalhost() (cfg *UserConfig) {
 	cfg = &UserConfig{
 		Debug:     true,
@@ -27,21 +28,25 @@ func DefaultLocalhost() (cfg *UserConfig) {
 	return
 }
 
-func (cfg *UserConfig) GetLogger() (logger io.Writer, err error) {
+// GetLogger returns the configured writer for logging as io.Writer
+func (cfg *UserConfig) GetLogger() (logger io.Writer) {
 
 	switch strings.ToLower(cfg.Logger) {
 	case "stdout":
-		return os.Stdout, nil
+		logger = os.Stdout
 	case "stderr":
-		return os.Stderr, nil
+		logger = os.Stderr
 	case "none", "":
-		return ioutil.Discard, nil
+		logger = ioutil.Discard
 	default:
-		_, err = os.Stat(cfg.Logger)
+		_, err := os.Stat(cfg.Logger)
 		if err == nil {
 			logger, err = os.OpenFile(cfg.Logger, os.O_RDWR, 0666)
 		} else if os.IsNotExist(err) {
 			logger, err = os.Create(cfg.Logger)
+			if err != nil {
+				panic(fmt.Sprint("Error opening logfile: ", err))
+			}
 		}
 	}
 	return

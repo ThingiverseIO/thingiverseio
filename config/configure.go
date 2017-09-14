@@ -6,9 +6,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-var userCfg *UserConfig
-
-//Configure loads the configuration from either the disk or the enviroment.
+//Configure loads the configuration from enviroment, 'CWD/.tvio' and ''/home/USER/.tvio'. 
 func Configure() (cfg *UserConfig) {
 	v := viper.New()
 
