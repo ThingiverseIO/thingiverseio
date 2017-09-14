@@ -103,9 +103,10 @@ func (i *InputCore) onAfterConnected(d eventual2go.Data) {
 }
 
 func (i InputCore) onArrival(a network.Arrival) {
-	i.log.Debug("Peer arrived")
+	i.log.Debug("Peer arrived: ", a.UUID)
 	conn, err := i.provider.Connect(a.Details, a.UUID)
 	if err != nil {
+		i.log.Error("Error connecting to peer ", conn.UUID, err)
 		return
 	}
 
@@ -122,12 +123,12 @@ func (i InputCore) onArrival(a network.Arrival) {
 	})
 
 	if next.WaitUntilTimeout(connectionTimeout) {
-		i.log.Debug("Received HELLOOK")
+		i.log.Debug("Received HELLOOK from ", conn.UUID)
 		if next.Result().Decode().(*message.HelloOk).Have {
-			i.log.Debug("First Tag is supported, checking all tags")
+			i.log.Debugf("First Tag is supported by %s, checking all tags", conn.UUID)
 			for _, tag := range i.config.Internal.Tags.AsArray() {
 
-				i.log.Debug("Checking for tag", tag)
+				i.log.Debugf("Checking peer %s for tag '%s'",conn.UUID, tag)
 				next = in.FirstWhere(network.OfType(message.HAVE))
 
 				// Send DoHave
@@ -140,13 +141,14 @@ func (i InputCore) onArrival(a network.Arrival) {
 					if !next.Result().Decode().(*message.Have).Have {
 						// Send End
 
-						i.log.Debug("Peer not supported, aborting")
+						i.log.Debugf("Peer %s does not support tag '%s', aborting", conn.UUID, tag)
 						conn.Send(&message.End{})
 						conn.Close()
 						return
 					}
 				} else {
 					conn.Close()
+					i.log.Debug("Timeout", conn.UUID)
 					return
 				}
 			}
@@ -156,13 +158,13 @@ func (i InputCore) onArrival(a network.Arrival) {
 			// Await Confirmation
 			next = in.FirstWhere(network.OfType(message.CONNECT))
 			if next.WaitUntilTimeout(connectionTimeout) {
+				i.log.Debug("Received CONNECT from", conn.UUID)
 				i.Fire(connectEvent{}, conn)
+				return
 			}
-			return
 		}
-	} else {
-		i.log.Debug("Timeout")
 	}
+	i.log.Debug("Timeout", conn.UUID)
 
 	conn.Close()
 

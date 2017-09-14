@@ -129,7 +129,7 @@ func (t *Tracker) setupBeacon(iface string, port int) (err error) {
 	conf := &beacon.Config{
 		Address:      iface,
 		Port:         5557,
-		PingInterval: 1 * time.Second,
+		PingInterval: 500 * time.Millisecond,
 		Payload:      newSignalPayload(port),
 	}
 

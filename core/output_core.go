@@ -105,10 +105,11 @@ func (o OutputCore) onHello(m network.Message) {
 
 			switch nmsg := next.Result(); nmsg.Type {
 			case message.DOHAVE:
-				o.log.Debug("Got message DOHAVE")
+				o.log.Debug("Got message DOHAVE from ", conn.UUID)
 				tag := nmsg.Decode().(*message.DoHave).Tag
 				have = o.config.Internal.Tags.Has(tag)
 				if have {
+					o.log.Debugf("Tag '%s' is supported", tag)
 					next = in.First()
 				}
 				conn.Send(
@@ -119,12 +120,13 @@ func (o OutputCore) onHello(m network.Message) {
 				)
 
 				if !have {
+					o.log.Debugf("Tag '%s' is not supported aborting",tag)
 					conn.Close()
 					return
 				}
 			case message.CONNECT:
 				o.Fire(connectEvent{}, conn)
-				o.log.Debug("Got message CONNECT")
+				o.log.Debug("Got message CONNECT from ", conn.UUID)
 				return
 			}
 		}

@@ -71,7 +71,7 @@ func (l listener) listen() {
 
 func (l listener) read() {
 
-	l.socket.SetReadDeadline(time.Now().Add(1 * time.Second))
+	l.socket.SetReadDeadline(time.Now().Add(100 * time.Millisecond))
 	read, remoteAddr, err := l.socket.ReadFromUDP(l.buffer)
 	if err == nil {
 		data := make([]byte, read)

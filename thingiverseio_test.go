@@ -41,10 +41,17 @@ func TestObserveProperty(t *testing.T) {
 
 	f1 := i.ConnectedFuture()
 	f2 := o.ConnectedFuture()
+
 	o.Run()
 	i.Run()
-	f1.WaitUntilComplete()
-	f2.WaitUntilComplete()
+
+	if !f1.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect",f1.Completed())
+	}
+	if !f2.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+
 	if err := o.SetProperty("Mood", testprop); err != nil {
 		t.Fatal("Failed to set property", err)
 	}
@@ -86,8 +93,12 @@ func TestUpdateProperty(t *testing.T) {
 	f2 := o.ConnectedFuture()
 	o.Run()
 	i.Run()
-	f1.WaitUntilComplete()
-	f2.WaitUntilComplete()
+	if !f1.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f2.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
 
 	f, err := i.UpdateProperty("Mood")
 	if err != nil {
@@ -126,10 +137,17 @@ func TestCall(t *testing.T) {
 
 	f1 := i.ConnectedFuture()
 	f2 := e.ConnectedFuture()
+
 	e.Run()
 	i.Run()
-	f1.WaitUntilComplete()
-	f2.WaitUntilComplete()
+
+	if !f1.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f2.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+
 	params := []byte{4, 5, 63, 4}
 	f, _ := i.Call("SayHello", params)
 
@@ -196,10 +214,15 @@ func TestTrigger(t *testing.T) {
 	i1.StartListen("SayHello")
 	i2.StartListen("SayHello")
 
-	f1.WaitUntilComplete()
-	f2.WaitUntilComplete()
-	f3.WaitUntilComplete()
-
+	if !f1.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f2.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f3.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
 	time.Sleep(1 * time.Second)
 
 	params := []byte{4, 5, 63, 4}
@@ -282,9 +305,15 @@ func TestCallAll(t *testing.T) {
 	e1.Run()
 	e2.Run()
 
-	f1.WaitUntilComplete()
-	f2.WaitUntilComplete()
-	f3.WaitUntilComplete()
+	if !f1.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f2.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f3.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
 
 	time.Sleep(1 * time.Second)
 
@@ -375,8 +404,12 @@ func TestEmit(t *testing.T) {
 
 	i.Run()
 	e.Run()
-	f1.WaitUntilComplete()
-	f2.WaitUntilComplete()
+	if !f1.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f2.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
 	time.Sleep(500 * time.Millisecond)
 
 	params := []byte{4, 5, 63, 4}
