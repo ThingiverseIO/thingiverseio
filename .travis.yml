@@ -17,14 +17,13 @@ before_install:
 
 install:
   - go get github.com/nu7hatch/gouuid
-  - go get gopkg.in/gcfg.v1
   - go get github.com/joernweissenborn/eventual2go
   - go get gopkg.in/yaml.v2
   - go get github.com/hashicorp/memberlist
   - go get github.com/ugorji/go/codec
-  - go get github.com/op/go-logging
   - go get github.com/go-mangos/mangos
   - go get github.com/spf13/viper
+  - go get github.com/ThingiverseIO/logging
 
 script:
   - go test -v -race ./network/ ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/beacon ./core .

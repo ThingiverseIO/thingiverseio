@@ -5,12 +5,11 @@ import (
 
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
-	"github.com/ThingiverseIO/thingiverseio/logging"
+	"github.com/ThingiverseIO/logger"
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/network"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
 	"github.com/joernweissenborn/eventual2go"
-	gologging "github.com/op/go-logging"
 )
 
 type core struct {
@@ -20,7 +19,7 @@ type core struct {
 	descriptor       descriptor.Descriptor
 	disconnected     *eventual2go.Completer
 	connections      map[uuid.UUID]network.Connection
-	log              *gologging.Logger
+	log              *logger.Logger
 	mustSendRegister map[message.Message]uuid.UUID
 	provider         network.Providers
 	tracker          network.Tracker
@@ -42,8 +41,12 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		return
 	}
 	shutdown.Register(tracker)
-
-	logPrefix := fmt.Sprintf("CORE %s", cfg.Internal.UUID)
+	writer := cfg.User.GetLogger()
+	if err !=nil{
+		return
+	}
+	logger.SetDefaultBackend(logger.NewMultiWriteBackend(writer))
+	logPrefix := fmt.Sprintf("TVIO %s", cfg.Internal.UUID)
 
 	c = &core{
 		Reactor:          eventual2go.NewReactor(),
@@ -52,7 +55,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		descriptor:       desc,
 		disconnected:     eventual2go.NewCompleter(),
 		connections:      map[uuid.UUID]network.Connection{},
-		log:              logging.CreateLogger(logPrefix, cfg),
+		log:              logger.New(logPrefix),
 		mustSendRegister: map[message.Message]uuid.UUID{},
 		provider:         provider,
 		tracker:          tracker,
