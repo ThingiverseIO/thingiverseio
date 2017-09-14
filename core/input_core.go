@@ -2,7 +2,6 @@ package core
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
@@ -86,18 +85,18 @@ func (i InputCore) ListenStream() *message.ResultStream {
 }
 
 func (i *InputCore) onAfterConnected(d eventual2go.Data) {
-	uuid := d.(uuid.UUID)
+	conn := d.(network.Connection)
 
 	for function := range i.listenFunctions {
-		i.log.Debugf("Informing %s about function listenig to '%s'", uuid, function)
-		i.connections[uuid].Send(&message.StartListen{
+		i.log.Debugf("Informing %s about function listenig to '%s'", conn.UUID, function)
+		conn.Send(&message.StartListen{
 			Function: function,
 		})
 	}
 
 	for property := range i.observedProperties {
-		i.log.Debugf("Informing %s about observing property '%s'", uuid, property)
-		i.connections[uuid].Send(&message.StartObserve{
+		i.log.Debugf("Informing %s about observing property '%s'", conn.UUID, property)
+		conn.Send(&message.StartObserve{
 			Property: property,
 		})
 	}
@@ -122,7 +121,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 		Tag:            i.config.Internal.Tags.GetFirst(),
 	})
 
-	if next.WaitUntilTimeout(1 * time.Second) {
+	if next.WaitUntilTimeout(connectionTimeout) {
 		i.log.Debug("Received HELLOOK")
 		if next.Result().Decode().(*message.HelloOk).Have {
 			i.log.Debug("First Tag is supported, checking all tags")
@@ -136,7 +135,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 					Tag: tag,
 				})
 
-				if next.WaitUntilTimeout(1 * time.Second) {
+				if next.WaitUntilTimeout(connectionTimeout) {
 					i.log.Debug("Got message HAVE")
 					if !next.Result().Decode().(*message.Have).Have {
 						// Send End
@@ -153,13 +152,14 @@ func (i InputCore) onArrival(a network.Arrival) {
 			}
 
 			// Send Connect
-
 			conn.Send(&message.Connect{})
-			i.Fire(connectEvent{}, conn)
+			// Await Confirmation
+			next = in.FirstWhere(network.OfType(message.CONNECT))
+			if next.WaitUntilTimeout(connectionTimeout) {
+				i.Fire(connectEvent{}, conn)
+			}
 			return
 		}
-		i.log.Debug("Peer not supported, aborting")
-
 	} else {
 		i.log.Debug("Timeout")
 	}

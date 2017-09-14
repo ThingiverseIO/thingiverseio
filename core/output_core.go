@@ -47,6 +47,8 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 	o.provider.Messages().Where(network.OfType(message.HELLO)).Listen(o.onHello)
 
+	o.Reactor.React(afterConnectedEvent{}, o.onAfterConnected)
+
 	o.React(replyEvent{}, o.onReply)
 
 	o.AddStream(startListenEvent{}, o.provider.Messages().Where(network.OfType(message.STARTLISTEN)).Stream)
@@ -128,6 +130,13 @@ func (o OutputCore) onHello(m network.Message) {
 		}
 
 	}
+}
+
+func (o *OutputCore) onAfterConnected(d eventual2go.Data) {
+	conn := d.(network.Connection)
+	o.log.Debug("Sending CONNECT to",conn.UUID)
+	conn.Send(&message.Connect{})
+
 }
 
 func (o OutputCore) onReply(d eventual2go.Data) {

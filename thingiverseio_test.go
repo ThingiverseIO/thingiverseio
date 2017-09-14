@@ -286,6 +286,8 @@ func TestCallAll(t *testing.T) {
 	f2.WaitUntilComplete()
 	f3.WaitUntilComplete()
 
+	time.Sleep(1 * time.Second)
+
 	params := []byte{4, 5, 63, 4}
 	params1 := []byte{3}
 	params2 := []byte{6}

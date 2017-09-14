@@ -1,8 +1,8 @@
 language: go
 
 go:
-  - 1.7
   - 1.8
+  - 1.9
   - tip
 
 matrix:
@@ -16,13 +16,6 @@ env:
 before_install:
 
 install:
-  - go get github.com/nu7hatch/gouuid
-  - go get github.com/joernweissenborn/eventual2go
-  - go get gopkg.in/yaml.v2
-  - go get github.com/hashicorp/memberlist
-  - go get github.com/ugorji/go/codec
-  - go get github.com/go-mangos/mangos
-  - go get github.com/spf13/viper
   - go get github.com/ThingiverseIO/logging
 
 script:

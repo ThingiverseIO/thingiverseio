@@ -2,14 +2,19 @@ package core
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/ThingiverseIO/logger"
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
-	"github.com/ThingiverseIO/logger"
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/network"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
 	"github.com/joernweissenborn/eventual2go"
+)
+
+var (
+	connectionTimeout = 1 * time.Second
 )
 
 type core struct {
@@ -42,7 +47,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	}
 	shutdown.Register(tracker)
 	writer := cfg.User.GetLogger()
-	if err !=nil{
+	if err != nil {
 		return
 	}
 	logger.SetDefaultBackend(logger.NewMultiWriteBackend(writer))
@@ -63,7 +68,6 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		properties:       newProperties(desc),
 	}
 
-	c.Reactor.React(connectEvent{}, c.onConnection)
 	c.Reactor.React(connectEvent{}, c.onConnection)
 
 	c.Reactor.AddStream(leaveEvent{}, tracker.Leaving().Stream)
@@ -102,7 +106,7 @@ func (c *core) Interface() string {
 }
 
 func (c *core) Properties() (properties []string) {
-	for p, _ := range c.properties {
+	for p := range c.properties {
 		properties = append(properties, p)
 	}
 	return
@@ -123,7 +127,7 @@ func (c *core) onConnection(d eventual2go.Data) {
 			}
 		}
 	}
-	c.Reactor.Fire(afterConnectedEvent{}, conn.UUID)
+	c.Reactor.Fire(afterConnectedEvent{}, conn)
 }
 
 func (c *core) onEnd(d eventual2go.Data) {
