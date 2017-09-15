@@ -45,7 +45,7 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 			Transform(network.ToMessage),
 	}
 
-	o.provider.Messages().Where(network.OfType(message.HELLO)).Listen(o.onHello)
+	o.provider.Messages().Where(network.OfType(message.HELLO)).ListenNonBlocking(o.onHello)
 
 	o.Reactor.React(afterConnectedEvent{}, o.onAfterConnected)
 
@@ -158,12 +158,14 @@ func (o OutputCore) onReply(d eventual2go.Data) {
 		if ls, ok := o.listener[result.Request.Function]; ok {
 			for uuid := range ls {
 				o.log.Debug("Delivering to", uuid)
-				o.connections[uuid].Send(result)
+				if conn, ok := o.connections[uuid];ok{
+					conn.Send(result)
+				}
+			// if something is wrong and client 	
 			}
-		}
 	}
 }
-
+}
 func (o *OutputCore) onStartListen(d eventual2go.Data) {
 	m := d.(network.Message)
 

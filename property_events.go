@@ -105,6 +105,10 @@ func (s *PropertyStream) Listen(ss PropertySubscriber) *eventual2go.Completer {
 	return s.Stream.Listen(ss.toSubscriber())
 }
 
+func (s *PropertyStream) ListenNonBlocking(ss PropertySubscriber) *eventual2go.Completer {
+	return s.Stream.ListenNonBlocking(ss.toSubscriber())
+}
+
 type PropertyFilter func(Property) bool
 
 func (f PropertyFilter) toFilter() eventual2go.Filter {
@@ -128,8 +132,8 @@ func (s *PropertyStream) WhereNot(f ...PropertyFilter) *PropertyStream {
 	return &PropertyStream{s.Stream.WhereNot(toPropertyFilterArray(f...)...)}
 }
 
-func (s *PropertyStream) TransformWhere(t eventual2go.Transformer, f ...PropertyFilter) *PropertyStream {
-	return &PropertyStream{s.Stream.TransformWhere(t, toPropertyFilterArray(f...)...)}
+func (s *PropertyStream) TransformWhere(t eventual2go.Transformer, f ...PropertyFilter) *eventual2go.Stream {
+	return s.Stream.TransformWhere(t, toPropertyFilterArray(f...)...)
 }
 
 func (s *PropertyStream) Split(f PropertyFilter) (*PropertyStream, *PropertyStream)  {

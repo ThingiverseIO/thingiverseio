@@ -38,8 +38,8 @@ func getInputOutput(descIn, descOut descriptor.Descriptor) (i core.InputCore, o 
 	}
 
 	mt1.Av.Add(arr)
-	i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
-	o.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
+	i.ConnectedObservable().Stream().First().WaitUntilTimeout(500 * time.Millisecond)
+	o.ConnectedObservable().Stream().First().WaitUntilTimeout(500 * time.Millisecond)
 
 	return
 }
@@ -64,24 +64,24 @@ func TestBasicConnection(t *testing.T) {
 		Details:  mt2.Dt,
 		UUID:     o.UUID(),
 	}
-
+	f1 := i.ConnectedObservable().Stream().First()
+	f2 := o.ConnectedObservable().Stream().First()
 	mt1.Av.Add(arr)
 
-	if !i.ConnectedFuture().WaitUntilTimeout(100*time.Millisecond) ||
-		!o.ConnectedFuture().WaitUntilTimeout(100*time.Millisecond) {
+	if !f1.WaitUntilTimeout(100*time.Millisecond) ||
+		!f2.WaitUntilTimeout(100*time.Millisecond) {
 		t.Fatal("Peers didn't connect.")
 	}
 
-	disconnect1 := i.DisconnectedFuture()
-	disconnect2 := i.DisconnectedFuture()
-
+	f1 = i.ConnectedObservable().Stream().First()
+	f2 = o.ConnectedObservable().Stream().First()
 	mt1.Lv.Add(o.UUID())
 	mt2.Lv.Add(i.UUID())
 
 	//time.Sleep(10 * time.Millisecond)
 
-	if !disconnect1.WaitUntilTimeout(100*time.Millisecond) ||
-		!disconnect2.WaitUntilTimeout(100*time.Millisecond) {
+	if !f1.WaitUntilTimeout(100*time.Millisecond) ||
+		!f2.WaitUntilTimeout(100*time.Millisecond) {
 		t.Fatal("Peers didn't disconnect.", i.Connected())
 	}
 }
@@ -114,7 +114,6 @@ func TestObserveProperty(t *testing.T) {
 	if err := o.SetProperty("testprop", testprop); err != nil {
 		t.Fatal("Failed to set property", err)
 	}
-
 
 	time.Sleep(1 * time.Millisecond)
 	v, err := i.GetProperty("testprop")
@@ -225,8 +224,8 @@ func TestCallGuarantee(t *testing.T) {
 	}
 
 	mt1.Av.Add(arr)
-	i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
-	o.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
+	i.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
+	o.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
 
 	data := []byte{1, 2, 3, 4}
 	result, _, _, _ := i.Request("testfun", message.CALL, data)
@@ -248,7 +247,7 @@ func TestCallGuarantee(t *testing.T) {
 	}
 
 	mt1.Av.Add(arr)
-	o2.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
+	o2.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
 
 	if !request.WaitUntilTimeout(100 * time.Millisecond) {
 		t.Fatal("Request did not arrive")
@@ -299,7 +298,7 @@ func TestTrigger(t *testing.T) {
 	}
 
 	i.StartListen("testfun")
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	request = o.RequestStream().First()
 	_, _, uuid, _ = i.Request("testfun", message.TRIGGER, data)
@@ -377,12 +376,12 @@ func TestTriggerAll(t *testing.T) {
 
 	mt1.Av.Add(arr)
 
-	if !i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond) {
+	if !i.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond) {
 		t.Fatal("Input did not connect.")
 	}
-	i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
-	o1.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
-	o2.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
+	i.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
+	o1.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
+	o2.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
 	time.Sleep(10 * time.Millisecond)
 
 	request1 := o1.RequestStream().First()
@@ -453,11 +452,11 @@ func TestCallAll(t *testing.T) {
 
 	mt1.Av.Add(arr)
 
-	if !i.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond) {
+	if !i.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond) {
 		t.Fatal("Input did not connect.")
 	}
-	o1.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
-	o2.ConnectedFuture().WaitUntilTimeout(100 * time.Millisecond)
+	o1.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
+	o2.ConnectedObservable().Stream().First().WaitUntilTimeout(100 * time.Millisecond)
 
 	request1 := o1.RequestStream().First()
 	request2 := o2.RequestStream().First()

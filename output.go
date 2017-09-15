@@ -6,7 +6,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
-	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/eventual2go/typedevents"
 )
 
 // Output is a ThingiverseIO node which exports functionality to the ThingiverseIO network.
@@ -56,9 +56,18 @@ func (o *Output) Connected() bool {
 	return o.core.Connected()
 }
 
-// ConnectedFuture returns a eventual2go.Future which gets completed when a suitable Input is connected.
-func (o *Output) ConnectedFuture() *eventual2go.Future {
-	return o.core.ConnectedFuture()
+// ConnectedObservable returns a eventual2go/typedevents.BoolObservable which represents the connection state.
+func (o *Output) ConnectedObservable() *typedevents.BoolObservable {
+	return o.core.ConnectedObservable()
+}
+
+// WaitUntilConnected waits until the output is connected.
+func (o *Output) WaitUntilConnected() {
+	f := o.ConnectedObservable().Stream().First()
+	if o.Connected() {
+		return
+	}
+	f.WaitUntilComplete()
 }
 
 // Reply reponds the given output parameter to all interested Inputs of a given request.

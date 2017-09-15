@@ -105,6 +105,10 @@ func (s *RequestStream) Listen(ss RequestSubscriber) *eventual2go.Completer {
 	return s.Stream.Listen(ss.toSubscriber())
 }
 
+func (s *RequestStream) ListenNonBlocking(ss RequestSubscriber) *eventual2go.Completer {
+	return s.Stream.ListenNonBlocking(ss.toSubscriber())
+}
+
 type RequestFilter func(*Request) bool
 
 func (f RequestFilter) toFilter() eventual2go.Filter {
@@ -126,6 +130,10 @@ func (s *RequestStream) Where(f ...RequestFilter) *RequestStream {
 
 func (s *RequestStream) WhereNot(f ...RequestFilter) *RequestStream {
 	return &RequestStream{s.Stream.WhereNot(toRequestFilterArray(f...)...)}
+}
+
+func (s *RequestStream) TransformWhere(t eventual2go.Transformer, f ...RequestFilter) *eventual2go.Stream {
+	return s.Stream.TransformWhere(t, toRequestFilterArray(f...)...)
 }
 
 func (s *RequestStream) Split(f RequestFilter) (*RequestStream, *RequestStream)  {

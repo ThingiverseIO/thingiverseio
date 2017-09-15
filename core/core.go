@@ -11,6 +11,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/network"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
 	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/eventual2go/typedevents"
 )
 
 var (
@@ -20,9 +21,8 @@ var (
 type core struct {
 	*eventual2go.Reactor
 	config           *config.Config
-	connected        *eventual2go.Completer
+	connected        *typedevents.BoolObservable
 	descriptor       descriptor.Descriptor
-	disconnected     *eventual2go.Completer
 	connections      map[uuid.UUID]network.Connection
 	log              *logger.Logger
 	mustSendRegister map[message.Message]uuid.UUID
@@ -56,9 +56,8 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	c = &core{
 		Reactor:          eventual2go.NewReactor(),
 		config:           cfg,
-		connected:        eventual2go.NewCompleter(),
+		connected:        typedevents.NewBoolObservable(false),
 		descriptor:       desc,
-		disconnected:     eventual2go.NewCompleter(),
 		connections:      map[uuid.UUID]network.Connection{},
 		log:              logger.New(logPrefix),
 		mustSendRegister: map[message.Message]uuid.UUID{},
@@ -84,25 +83,11 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 }
 
 func (c *core) Connected() (is bool) {
-	c.Reactor.Lock()
-	defer c.Reactor.Unlock()
-	return c.connected.Future().Completed()
+	return c.connected.Value()
 }
 
-func (c *core) ConnectedFuture() (is *eventual2go.Future) {
-	c.Lock()
-	defer c.Unlock()
-	return c.connected.Future()
-}
-
-func (c *core) DisconnectedFuture() (is *eventual2go.Future) {
-	c.Lock()
-	defer c.Unlock()
-	return c.disconnected.Future()
-}
-
-func (c *core) Interface() string {
-	return c.config.User.Interface
+func (c *core) ConnectedObservable() (is *typedevents.BoolObservable) {
+	return c.connected
 }
 
 func (c *core) Properties() (properties []string) {
@@ -116,8 +101,8 @@ func (c *core) onConnection(d eventual2go.Data) {
 	conn := d.(network.Connection)
 	c.connections[conn.UUID] = conn
 	c.log.Infof("Connected to %s", conn.UUID)
-	if !c.connected.Completed() {
-		c.connected.Complete(true)
+	if !c.connected.Value() {
+		c.connected.Change(true)
 		c.tracker.StopAdvertisment()
 		c.log.Info("Connected")
 		for m, id := range c.mustSendRegister {
@@ -160,9 +145,7 @@ func (c *core) removePeer(uuid uuid.UUID) {
 		conn.Close()
 		delete(c.connections, uuid)
 		if len(c.connections) == 0 {
-			c.connected = eventual2go.NewCompleter()
-			c.disconnected.Complete(true)
-			c.disconnected = eventual2go.NewCompleter()
+			c.connected.Change(false)
 			c.tracker.StartAdvertisment()
 			c.log.Info("Disconnected")
 		}

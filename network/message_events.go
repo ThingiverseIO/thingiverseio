@@ -105,6 +105,10 @@ func (s *MessageStream) Listen(ss MessageSubscriber) *eventual2go.Completer {
 	return s.Stream.Listen(ss.toSubscriber())
 }
 
+func (s *MessageStream) ListenNonBlocking(ss MessageSubscriber) *eventual2go.Completer {
+	return s.Stream.ListenNonBlocking(ss.toSubscriber())
+}
+
 type MessageFilter func(Message) bool
 
 func (f MessageFilter) toFilter() eventual2go.Filter {

@@ -105,6 +105,10 @@ func (s *MessageStream) Listen(ss MessageSubscriber) *eventual2go.Completer {
 	return s.Stream.Listen(ss.toSubscriber())
 }
 
+func (s *MessageStream) ListenNonBlocking(ss MessageSubscriber) *eventual2go.Completer {
+	return s.Stream.ListenNonBlocking(ss.toSubscriber())
+}
+
 type MessageFilter func(Message) bool
 
 func (f MessageFilter) toFilter() eventual2go.Filter {
@@ -126,6 +130,10 @@ func (s *MessageStream) Where(f ...MessageFilter) *MessageStream {
 
 func (s *MessageStream) WhereNot(f ...MessageFilter) *MessageStream {
 	return &MessageStream{s.Stream.WhereNot(toMessageFilterArray(f...)...)}
+}
+
+func (s *MessageStream) TransformWhere(t eventual2go.Transformer, f ...MessageFilter) *eventual2go.Stream {
+	return s.Stream.TransformWhere(t, toMessageFilterArray(f...)...)
 }
 
 func (s *MessageStream) Split(f MessageFilter) (*MessageStream, *MessageStream)  {

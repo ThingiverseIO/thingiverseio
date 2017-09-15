@@ -7,6 +7,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
 	"github.com/joernweissenborn/eventual2go"
+	"github.com/joernweissenborn/eventual2go/typedevents"
 )
 
 // Input is a ThingiverseIO node which imports functionality from the ThingiverseIO network.
@@ -57,9 +58,18 @@ func (i *Input) Connected() bool {
 	return i.core.Connected()
 }
 
-// ConnectedFuture returns a eventual2go.Future which gets completed when the first suitable Output is connected.
-func (i *Input) ConnectedFuture() *eventual2go.Future {
-	return i.core.ConnectedFuture()
+// ConnectedObservable returns a eventual2go/typedevents.BoolObservable which represents the connection state.
+func (i *Input) ConnectedObservable() *typedevents.BoolObservable {
+	return i.core.ConnectedObservable()
+}
+
+// WaitUntilConnected waits until the input is connected.
+func (i *Input) WaitUntilConnected() {
+	f := i.ConnectedObservable().Stream().First()
+	if i.Connected() {
+		return
+	}
+	f.WaitUntilComplete()
 }
 
 // Call executes a ThingiverseIO Call and returns a ResultFuture, which gets completed if a suitable output reponds.
@@ -119,7 +129,7 @@ func (i *Input) StartObservation(property string) (err error) {
 	return
 }
 
-// GetProperty gets the current value of the property.
+// OnPropertyChange registers a PropertySubscriber to change events of the given property.
 func (i *Input) OnPropertyChange(property string, subscriber PropertySubscriber) (cancel *eventual2go.Completer, err error) {
 	o, err := i.core.GetProperty(property)
 	if err != nil {

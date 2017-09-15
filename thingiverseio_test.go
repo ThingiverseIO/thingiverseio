@@ -39,8 +39,8 @@ func TestObserveProperty(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f1 := i.ConnectedFuture()
-	f2 := o.ConnectedFuture()
+	f1 := i.ConnectedObservable().Stream().First()
+	f2 := o.ConnectedObservable().Stream().First()
 
 	o.Run()
 	i.Run()
@@ -89,8 +89,8 @@ func TestUpdateProperty(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f1 := i.ConnectedFuture()
-	f2 := o.ConnectedFuture()
+	f1 := i.ConnectedObservable().Stream().First()
+	f2 := o.ConnectedObservable().Stream().First()
 	o.Run()
 	i.Run()
 	if !f1.WaitUntilTimeout(1 * time.Second) {
@@ -135,8 +135,8 @@ func TestCall(t *testing.T) {
 	defer e.Remove()
 	c, _ := e.Requests().AsChan()
 
-	f1 := i.ConnectedFuture()
-	f2 := e.ConnectedFuture()
+	f1 := i.ConnectedObservable().Stream().First()
+	f2 := e.ConnectedObservable().Stream().First()
 
 	e.Run()
 	i.Run()
@@ -203,9 +203,9 @@ func TestTrigger(t *testing.T) {
 	c1, _ := i1.ListenResults().AsChan()
 	c2, _ := i2.ListenResults().AsChan()
 
-	f1 := i1.ConnectedFuture()
-	f2 := i2.ConnectedFuture()
-	f3 := e.ConnectedFuture()
+	f1 := i1.ConnectedObservable().Stream().First()
+	f2 := i2.ConnectedObservable().Stream().First()
+	f3 := e.ConnectedObservable().Stream().First()
 
 	e.Run()
 	i2.Run()
@@ -297,9 +297,9 @@ func TestCallAll(t *testing.T) {
 	defer e2.Remove()
 	c2, _ := e2.Requests().AsChan()
 
-	f1 := i.ConnectedFuture()
-	f2 := e1.ConnectedFuture()
-	f3 := e2.ConnectedFuture()
+	f1 := i.ConnectedObservable().Stream().First()
+	f2 := e1.ConnectedObservable().Stream().First()
+	f3 := e2.ConnectedObservable().Stream().First()
 
 	i.Run()
 	e1.Run()
@@ -399,8 +399,8 @@ func TestEmit(t *testing.T) {
 	defer e.Remove()
 	c, _ := i.ListenResults().AsChan()
 	i.StartListen("SayHello")
-	f1 := i.ConnectedFuture()
-	f2 := e.ConnectedFuture()
+	f1 := i.ConnectedObservable().Stream().First()
+	f2 := e.ConnectedObservable().Stream().First()
 
 	i.Run()
 	e.Run()

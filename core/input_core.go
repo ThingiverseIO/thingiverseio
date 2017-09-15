@@ -48,7 +48,7 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 			Transform(network.ToMessage),
 	}
 
-	i.tracker.Arrivals().Where(i.isInterestingArrival).Listen(i.onArrival)
+	i.tracker.Arrivals().Where(i.isInterestingArrival).ListenNonBlocking(i.onArrival)
 
 	i.Reactor.React(afterConnectedEvent{}, i.onAfterConnected)
 
@@ -76,7 +76,7 @@ func (i InputCore) isInterestingArrival(a network.Arrival) (is bool) {
 	if is = a.Supported(i.provider.Details); !is {
 		i.log.Debug("Peer network is not supported")
 	}
-
+	i.log.Debug("Peer is interesting")
 	return
 }
 
@@ -128,7 +128,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 			i.log.Debugf("First Tag is supported by %s, checking all tags", conn.UUID)
 			for _, tag := range i.config.Internal.Tags.AsArray() {
 
-				i.log.Debugf("Checking peer %s for tag '%s'",conn.UUID, tag)
+				i.log.Debugf("Checking peer %s for tag '%s'", conn.UUID, tag)
 				next = in.FirstWhere(network.OfType(message.HAVE))
 
 				// Send DoHave
@@ -162,6 +162,11 @@ func (i InputCore) onArrival(a network.Arrival) {
 				i.Fire(connectEvent{}, conn)
 				return
 			}
+		} else {
+			i.log.Debugf("Peer %s does not support first tag , aborting", conn.UUID)
+			conn.Send(&message.End{})
+			conn.Close()
+			return
 		}
 	}
 	i.log.Debug("Timeout", conn.UUID)

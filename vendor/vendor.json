@@ -136,12 +136,6 @@
 			"revisionTime": "2017-08-15T22:46:17Z"
 		},
 		{
-			"checksumSHA1": "vGjNbjOj3P8c5s1w+biBHHzYb+k=",
-			"path": "github.com/joernweissenborn/eventual2go",
-			"revision": "9a537fd721bf9a978f45c0ee3ed72246af1795f1",
-			"revisionTime": "2017-06-16T23:37:14Z"
-		},
-		{
 			"checksumSHA1": "up35HgA0/UxlprRI0fUSpiGhZvg=",
 			"path": "github.com/magiconair/properties",
 			"revision": "be5ece7dd465ab0765a9682137865547526d1dfb",
