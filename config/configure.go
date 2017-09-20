@@ -6,7 +6,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-//Configure loads the configuration from enviroment, 'CWD/.tvio' and ''/home/USER/.tvio'. 
+var (
+	overrides = map[string]interface{}{}
+)
+
+func SetOverride(key string, value interface{}) { overrides[key] = value }
+
+//Configure loads the configuration from enviroment, 'CWD/.tvio' and ''/home/USER/.tvio'.
 func Configure() (cfg *UserConfig) {
 	v := viper.New()
 
@@ -25,6 +31,9 @@ func Configure() (cfg *UserConfig) {
 	usr, err := user.Current()
 	if err != nil {
 		v.AddConfigPath(usr.HomeDir) // Then in user home
+	}
+	for k, val := range overrides {
+		v.Set(k, val)
 	}
 	cfg = &UserConfig{}
 	v.Unmarshal(cfg)

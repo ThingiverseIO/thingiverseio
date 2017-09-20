@@ -77,8 +77,8 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	c.Reactor.React(endEvent{}, c.onEnd)
 
 	c.Reactor.OnShutdown(c.onShutdown)
-
-	c.log.Info("Started")
+	c.log.Initf("Tagset is: %s", cfg.Internal.Tags)
+	c.log.Init("Core initialized")
 	return
 }
 
@@ -88,6 +88,10 @@ func (c *core) Connected() (is bool) {
 
 func (c *core) ConnectedObservable() (is *typedevents.BoolObservable) {
 	return c.connected
+}
+
+func (c *core) Interface() string {
+	return c.config.User.Interface
 }
 
 func (c *core) Properties() (properties []string) {
@@ -160,6 +164,7 @@ func (c *core) removePeer(uuid uuid.UUID) {
 }
 
 func (c *core) Run() {
+	c.log.Info("Core starting")
 	c.tracker.StartAdvertisment()
 }
 

@@ -9,6 +9,7 @@ import (
 
 const descriptor = `
 function SayHello(Greeting string) (Answer string)
+property Mood: Feeling string
 tag example_tag
 `
 
@@ -20,6 +21,10 @@ type SayHelloInput struct {
 // SayHelloOutput represents the output parameters for the  SayHello function.
 type SayHelloOutput struct {
 	Answer string
+}
+
+type Mood struct {
+	Feeling string
 }
 
 func main() {
@@ -35,6 +40,8 @@ func main() {
 
 	// Run the output.
 	o.Run()
+
+	o.SetProperty("Mood", Mood{"Great"})
 
 	// Answer the requests.
 	for request := range rc {

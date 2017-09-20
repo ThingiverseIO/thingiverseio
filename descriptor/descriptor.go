@@ -32,7 +32,7 @@ func (f Function) String() string {
 	return fmt.Sprintf("%s%s%s", f.Name, inpar, outpar)
 }
 
-// Function represents a ThingiverseIO function, consisting of a name and in-/output parameters.
+// Property represents a ThingiverseIO property, consisting of a name and parameters.
 type Property struct {
 	Name      string
 	Parameter []Parameter
@@ -54,7 +54,7 @@ func (p Parameter) String() string {
 	return fmt.Sprintf("%s_%s", p.Name, p.Type)
 }
 
-// AsTagSet turns a Descriptor into a map, which is used for service discovery.
+// AsTagset turns a Descriptor into a map, which is used for service discovery.
 func (d Descriptor) AsTagset() (tagset Tagset) {
 	if d.Tags != nil {
 		tagset = d.Tags
@@ -64,9 +64,13 @@ func (d Descriptor) AsTagset() (tagset Tagset) {
 	for _, fn := range d.Functions {
 		tagset[fmt.Sprintf("%s", fn)] = "f"
 	}
+	for _, prop := range d.Properties {
+		tagset[fmt.Sprintf("%s", prop)] = "f"
+	}
 	return
 }
 
+// HasFunction returns true if the descriptor has the given function.
 func (d Descriptor) HasFunction(name string) (has bool) {
 	for _, fun := range d.Functions {
 		if has = fun.Name == name; has {
@@ -76,6 +80,7 @@ func (d Descriptor) HasFunction(name string) (has bool) {
 	return
 }
 
+// HasProperty returns true if the descriptor has the given property.
 func (d Descriptor) HasProperty(name string) (has bool) {
 	for _, p := range d.Properties {
 		if has = p.Name == name; has {
@@ -85,6 +90,7 @@ func (d Descriptor) HasProperty(name string) (has bool) {
 	return
 }
 
+// Check parses a descriptor string returns an error if the descriptor is not valid.
 func Check(desc string) (err error) {
 	_, err = Parse(desc)
 	return
