@@ -29,7 +29,7 @@ func Configure() (cfg *UserConfig) {
 	v.AddConfigPath(".") // First look in CWD
 
 	usr, err := user.Current()
-	if err != nil {
+	if err == nil {
 		v.AddConfigPath(usr.HomeDir) // Then in user home
 	}
 	v.ReadInConfig() // Ignore Errors
