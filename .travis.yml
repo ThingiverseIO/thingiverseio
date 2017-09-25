@@ -16,7 +16,7 @@ env:
 before_install:
 
 install:
-  - go get github.com/ThingiverseIO/logging
+  - go get github.com/ThingiverseIO/logger
 
 script:
   - go test -v -race ./network/ ./network/provider/nanomsg ./network/tracker/memberlist ./network/tracker/beacon ./core .

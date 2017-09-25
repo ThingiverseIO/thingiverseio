@@ -66,7 +66,8 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		shutdown:         shutdown,
 		properties:       newProperties(desc),
 	}
-
+	c.log.Init("Core staring up")
+	c.log.Init("Configuration \n", c.config.User)
 	c.Reactor.React(connectEvent{}, c.onConnection)
 
 	c.Reactor.AddStream(leaveEvent{}, tracker.Leaving().Stream)

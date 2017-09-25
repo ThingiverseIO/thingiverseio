@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/hex"
 	"fmt"
 	"time"
 
@@ -80,9 +81,11 @@ func (o OutputCore) onHello(m network.Message) {
 	o.log.Debugf("Received HELLO message from %s", m.Sender)
 
 	msg := m.Decode().(*message.Hello)
+	o.log.Debug("Peer Details:\n", hex.Dump(msg.NetworkDetails[0]))
 
 	conn, err := o.provider.Connect(msg.NetworkDetails, m.Sender)
 	if err != nil {
+		o.log.Errorf("Error connecting to %s: %s", m.Sender, err)
 		return
 	}
 
@@ -120,7 +123,7 @@ func (o OutputCore) onHello(m network.Message) {
 				)
 
 				if !have {
-					o.log.Debugf("Tag '%s' is not supported aborting",tag)
+					o.log.Debugf("Tag '%s' is not supported aborting", tag)
 					conn.Close()
 					return
 				}
@@ -136,7 +139,7 @@ func (o OutputCore) onHello(m network.Message) {
 
 func (o *OutputCore) onAfterConnected(d eventual2go.Data) {
 	conn := d.(network.Connection)
-	o.log.Debug("Sending CONNECT to",conn.UUID)
+	o.log.Debug("Sending CONNECT to", conn.UUID)
 	conn.Send(&message.Connect{})
 
 }
@@ -158,13 +161,13 @@ func (o OutputCore) onReply(d eventual2go.Data) {
 		if ls, ok := o.listener[result.Request.Function]; ok {
 			for uuid := range ls {
 				o.log.Debug("Delivering to", uuid)
-				if conn, ok := o.connections[uuid];ok{
+				if conn, ok := o.connections[uuid]; ok {
 					conn.Send(result)
 				}
-			// if something is wrong and client 	
+				// if something is wrong and client
 			}
+		}
 	}
-}
 }
 func (o *OutputCore) onStartListen(d eventual2go.Data) {
 	m := d.(network.Message)
@@ -280,7 +283,6 @@ func (o *OutputCore) Emit(function string, inparams []byte, outparams []byte) (e
 		err = fmt.Errorf("Function '%s' is not in descriptor", function)
 		return
 	}
-
 
 	uuid := o.UUID()
 	req := message.NewRequest(uuid, function, message.TRIGGER, inparams)

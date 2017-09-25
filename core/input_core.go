@@ -1,6 +1,7 @@
 package core
 
 import (
+	"encoding/hex"
 	"fmt"
 
 	"github.com/ThingiverseIO/thingiverseio/config"
@@ -104,6 +105,7 @@ func (i *InputCore) onAfterConnected(d eventual2go.Data) {
 
 func (i InputCore) onArrival(a network.Arrival) {
 	i.log.Debug("Peer arrived: ", a.UUID)
+	i.log.Debug("Peer Details:\n", hex.Dump(a.Details[0]))
 	conn, err := i.provider.Connect(a.Details, a.UUID)
 	if err != nil {
 		i.log.Error("Error connecting to peer ", conn.UUID, err)
