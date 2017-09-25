@@ -229,7 +229,7 @@ func (o *OutputCore) onStartObserve(d eventual2go.Data) {
 
 	o.log.Infof("Got new observer for property '%s': %s", property, m.Sender)
 
-	if _, ok := o.listener[property]; !ok {
+	if _, ok := o.observer[property]; !ok {
 		o.observer[property] = map[uuid.UUID]network.Connection{}
 	}
 	o.observer[property][m.Sender] = o.connections[m.Sender]
@@ -252,7 +252,7 @@ func (o *OutputCore) onStopObserve(d eventual2go.Data) {
 	o.log.Infof("Observer stopped observing property '%s': %s", property, m.Sender)
 
 	if _, ok := o.observer[property]; ok {
-		delete(o.listener[property], m.Sender)
+		delete(o.observer[property], m.Sender)
 	}
 }
 

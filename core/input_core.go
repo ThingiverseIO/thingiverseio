@@ -221,6 +221,7 @@ func (i *InputCore) onStopObserve(d eventual2go.Data) {
 
 func (i *InputCore) onSetProperty(d eventual2go.Data) {
 	m := d.(*message.SetProperty)
+	i.log.Debugf("Got update for property '%s'", m.Name)
 	if o, ok := i.properties[m.Name]; ok {
 		o.Change(m.Value)
 	}
