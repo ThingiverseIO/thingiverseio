@@ -150,16 +150,6 @@ func (i *Input) StartObservation(property string) (err error) {
 	return
 }
 
-// OnPropertyChange registers a PropertySubscriber to change events of the given property.
-func (i *Input) OnPropertyChange(property string, subscriber PropertySubscriber) (cancel *eventual2go.Completer, err error) {
-	o, err := i.core.GetProperty(property)
-	if err != nil {
-		return
-	}
-	cancel = o.OnChange(propertyFromChange(property, subscriber))
-	return
-}
-
 // GetProperty gets the current value of the property.
 func (i *Input) GetProperty(property string) (p Property, err error) {
 	o, err := i.core.GetProperty(property)
@@ -170,6 +160,17 @@ func (i *Input) GetProperty(property string) (p Property, err error) {
 		Name:  property,
 		value: o.Value().([]byte),
 	}
+	return
+}
+
+// GetProperty gets the current value of the property.
+func (i *Input) GetPropertyObservable(property string) (p PropertyObservable, cancel *eventual2go.Completer, err error) {
+	o, err := i.core.GetProperty(property)
+	if err != nil {
+		return
+	}
+	do, cancel := o.Derive(toProperty(property))
+	p = PropertyObservable{do}
 	return
 }
 

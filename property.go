@@ -14,7 +14,7 @@ func (p Property) Value(value interface{}) (err error) {
 	return
 }
 
-func propertyFromFuture(property string) eventual2go.CompletionHandler {
+func toProperty(property string) eventual2go.Transformer {
 	return func(d eventual2go.Data) eventual2go.Data {
 		return Property{
 			Name:  property,
@@ -22,13 +22,11 @@ func propertyFromFuture(property string) eventual2go.CompletionHandler {
 		}
 	}
 }
-
-func propertyFromChange(property string, s PropertySubscriber) eventual2go.Subscriber{
-	return func(d eventual2go.Data) {
-		p := Property{
+func propertyFromFuture(property string) eventual2go.CompletionHandler {
+	return func(d eventual2go.Data) eventual2go.Data {
+		return Property{
 			Name:  property,
 			value: d.([]byte),
 		}
-		s(p)
 	}
 }
