@@ -199,3 +199,36 @@ func (c *MessageCollector) Get() Message {
 func (c *MessageCollector) Preview() Message {
 	return c.Collector.Preview().(Message)
 }
+
+type MessageObservable struct {
+	*eventual2go.Observable
+}
+
+func NewMessageObservable (value Message) (o *MessageObservable) {
+	return &MessageObservable{eventual2go.NewObservable(value)}
+}
+
+func (o *MessageObservable) Value() Message {
+	return o.Observable.Value().(Message)
+}
+
+func (o *MessageObservable) Change(value Message) {
+	o.Observable.Change(value)
+}
+
+func (o *MessageObservable) OnChange(s MessageSubscriber) (cancel *eventual2go.Completer) {
+	return o.Observable.OnChange(s.toSubscriber())
+}
+
+func (o *MessageObservable) Stream() (*MessageStream) {
+	return &MessageStream{o.Observable.Stream()}
+}
+
+
+func (o *MessageObservable) AsChan() (c chan Message, cancel *eventual2go.Completer) {
+	return o.Stream().AsChan()
+}
+
+func (o *MessageObservable) NextChange() (f *MessageFuture) {
+	return o.Stream().First()
+}

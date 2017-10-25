@@ -1,6 +1,6 @@
 package message
 
-//go:generate event_generator -t Message
+//go:generate evt2gogen -t Message
 
 //TODO add http://www.ugorji.net/blog/go-codecgen
 

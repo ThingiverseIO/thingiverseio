@@ -13,11 +13,11 @@ type Reject struct {
 	Reason string
 }
 
-func (*Reject) GetType() Type { return REJECT }
+// func (*Reject) GetType() Type { return REJECT }
 
-func (*Reject) New() Message {
-	return new(Reject)
-}
+// func (*Reject) New() Message {
+//         return new(Reject)
+// }
 
 func (h *Reject) Unflatten(d [][]byte) {
 	dec := codec.NewDecoder(bytes.NewBuffer(d[0]), &mh)
@@ -32,5 +32,5 @@ func (h *Reject) Flatten() [][]byte {
 }
 
 func init() {
-	registerMessage(new(Reject))
+	// registerMessage(new(Reject))
 }

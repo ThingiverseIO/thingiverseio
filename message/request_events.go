@@ -199,3 +199,36 @@ func (c *RequestCollector) Get() *Request {
 func (c *RequestCollector) Preview() *Request {
 	return c.Collector.Preview().(*Request)
 }
+
+type RequestObservable struct {
+	*eventual2go.Observable
+}
+
+func NewRequestObservable (value *Request) (o *RequestObservable) {
+	return &RequestObservable{eventual2go.NewObservable(value)}
+}
+
+func (o *RequestObservable) Value() *Request {
+	return o.Observable.Value().(*Request)
+}
+
+func (o *RequestObservable) Change(value *Request) {
+	o.Observable.Change(value)
+}
+
+func (o *RequestObservable) OnChange(s RequestSubscriber) (cancel *eventual2go.Completer) {
+	return o.Observable.OnChange(s.toSubscriber())
+}
+
+func (o *RequestObservable) Stream() (*RequestStream) {
+	return &RequestStream{o.Observable.Stream()}
+}
+
+
+func (o *RequestObservable) AsChan() (c chan *Request, cancel *eventual2go.Completer) {
+	return o.Stream().AsChan()
+}
+
+func (o *RequestObservable) NextChange() (f *RequestFuture) {
+	return o.Stream().First()
+}

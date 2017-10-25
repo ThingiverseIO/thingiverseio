@@ -7,7 +7,7 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-//go:generate event_generator -t *Request -n Request
+//go:generate evt2gogen -t *Request -n Request
 
 type Request struct {
 	UUID     uuid.UUID

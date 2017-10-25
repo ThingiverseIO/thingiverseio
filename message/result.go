@@ -7,7 +7,7 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-//go:generate event_generator -t *Result -n Result
+//go:generate evt2gogen -t *Result -n Result
 
 type Result struct {
 	Request *Request

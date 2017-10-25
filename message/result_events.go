@@ -199,3 +199,36 @@ func (c *ResultCollector) Get() *Result {
 func (c *ResultCollector) Preview() *Result {
 	return c.Collector.Preview().(*Result)
 }
+
+type ResultObservable struct {
+	*eventual2go.Observable
+}
+
+func NewResultObservable (value *Result) (o *ResultObservable) {
+	return &ResultObservable{eventual2go.NewObservable(value)}
+}
+
+func (o *ResultObservable) Value() *Result {
+	return o.Observable.Value().(*Result)
+}
+
+func (o *ResultObservable) Change(value *Result) {
+	o.Observable.Change(value)
+}
+
+func (o *ResultObservable) OnChange(s ResultSubscriber) (cancel *eventual2go.Completer) {
+	return o.Observable.OnChange(s.toSubscriber())
+}
+
+func (o *ResultObservable) Stream() (*ResultStream) {
+	return &ResultStream{o.Observable.Stream()}
+}
+
+
+func (o *ResultObservable) AsChan() (c chan *Result, cancel *eventual2go.Completer) {
+	return o.Stream().AsChan()
+}
+
+func (o *ResultObservable) NextChange() (f *ResultFuture) {
+	return o.Stream().First()
+}
