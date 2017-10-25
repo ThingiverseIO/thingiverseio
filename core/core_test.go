@@ -15,6 +15,7 @@ import (
 var Descriptor1 = `
 function testfun()()
 property testprop: data bin
+stream teststream: data bin
 tags TAG1, TEST:2
 `
 
@@ -96,6 +97,54 @@ func TestNonMatchingDescriptor(t *testing.T) {
 
 	if i.Connected() || o.Connected() {
 		t.Fatal("Peers did connect.")
+	}
+}
+
+func TestStreams(t *testing.T) {
+
+	desc, _ := descriptor.Parse(Descriptor1)
+
+	i, o := getInputOutput(desc, desc)
+	defer i.Shutdown()
+	defer o.Shutdown()
+
+	testprop := []byte{1, 9, 5}
+
+	i.StartConsume("teststream")
+
+	s, err := i.GetStream("teststream")
+	if err != nil {
+		t.Fatal("Error getting stream", err)
+	}
+	f := s.First()
+	time.Sleep(1 * time.Millisecond)
+
+	if err := o.AddStream("teststream", testprop); err != nil {
+		t.Fatal("Failed adding to stream", err)
+	}
+
+	time.Sleep(1 * time.Millisecond)
+	if !f.Completed() {
+		t.Fatal("Stream event didn't arrive")
+	}
+
+	if !bytes.Equal(testprop, f.Result().([]byte)) {
+		t.Error("wrong stream event value", f.Result(), testprop)
+	}
+
+	f = s.First()
+	if err = i.StopConsume("teststream");err!=nil {
+		t.Fatal(err)
+	}
+	time.Sleep(1 * time.Millisecond)
+
+	if err := o.AddStream("teststream", testprop); err != nil {
+		t.Fatal("Failed adding to stream", err)
+	}
+
+	time.Sleep(1 * time.Millisecond)
+	if f.Completed() {
+		t.Fatal("Stream event did arrive")
 	}
 }
 

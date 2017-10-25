@@ -2,7 +2,7 @@ package thingiverseio
 
 import "github.com/joernweissenborn/eventual2go"
 
-//go:generate event_generator -t Property
+//go:generate evt2gogen -t Property
 
 type Property struct {
 	Name  string

@@ -199,3 +199,36 @@ func (c *PropertyCollector) Get() Property {
 func (c *PropertyCollector) Preview() Property {
 	return c.Collector.Preview().(Property)
 }
+
+type PropertyObservable struct {
+	*eventual2go.Observable
+}
+
+func NewPropertyObservable (value Property) (o *PropertyObservable) {
+	return &PropertyObservable{eventual2go.NewObservable(value)}
+}
+
+func (o *PropertyObservable) Value() Property {
+	return o.Observable.Value().(Property)
+}
+
+func (o *PropertyObservable) Change(value Property) {
+	o.Observable.Change(value)
+}
+
+func (o *PropertyObservable) OnChange(s PropertySubscriber) (cancel *eventual2go.Completer) {
+	return o.Observable.OnChange(s.toSubscriber())
+}
+
+func (o *PropertyObservable) Stream() (*PropertyStream) {
+	return &PropertyStream{o.Observable.Stream()}
+}
+
+
+func (o *PropertyObservable) AsChan() (c chan Property, cancel *eventual2go.Completer) {
+	return o.Stream().AsChan()
+}
+
+func (o *PropertyObservable) NextChange() (f *PropertyFuture) {
+	return o.Stream().First()
+}

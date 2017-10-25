@@ -19,7 +19,7 @@ var (
 )
 
 type core struct {
-	*eventual2go.Reactor
+	r *eventual2go.Reactor
 	config           *config.Config
 	connected        *typedevents.BoolObservable
 	descriptor       descriptor.Descriptor
@@ -30,6 +30,7 @@ type core struct {
 	tracker          network.Tracker
 	shutdown         *eventual2go.Shutdown
 	properties       properties
+	streams          streams
 }
 
 func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c *core, err error) {
@@ -54,7 +55,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	logPrefix := fmt.Sprintf("TVIO %s", cfg.Internal.UUID)
 
 	c = &core{
-		Reactor:          eventual2go.NewReactor(),
+		r:          eventual2go.NewReactor(),
 		config:           cfg,
 		connected:        typedevents.NewBoolObservable(false),
 		descriptor:       desc,
@@ -65,19 +66,20 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		tracker:          tracker,
 		shutdown:         shutdown,
 		properties:       newProperties(desc),
+		streams:          newStreams(desc),
 	}
 	c.log.Init("Core staring up")
 	c.log.Init("Configuration \n", c.config.User)
-	c.Reactor.React(connectEvent{}, c.onConnection)
+	c.r.React(connectEvent{}, c.onConnection)
 
-	c.Reactor.AddStream(leaveEvent{}, tracker.Leaving().Stream)
-	c.Reactor.React(leaveEvent{}, c.onLeave)
-	c.Reactor.React(mustSendEvent{}, c.onMustSend)
+	c.r.AddStream(leaveEvent{}, tracker.Leaving().Stream)
+	c.r.React(leaveEvent{}, c.onLeave)
+	c.r.React(mustSendEvent{}, c.onMustSend)
 
-	c.Reactor.AddStream(endEvent{}, c.provider.Messages().Where(network.OfType(message.END)).Stream)
-	c.Reactor.React(endEvent{}, c.onEnd)
+	c.r.AddStream(endEvent{}, c.provider.Messages().Where(network.OfType(message.END)).Stream)
+	c.r.React(endEvent{}, c.onEnd)
 
-	c.Reactor.OnShutdown(c.onShutdown)
+	c.r.OnShutdown(c.onShutdown)
 	c.log.Initf("Tagset is: %s", cfg.Internal.Tags)
 	c.log.Init("Core initialized")
 	return
@@ -117,7 +119,7 @@ func (c *core) onConnection(d eventual2go.Data) {
 			}
 		}
 	}
-	c.Reactor.Fire(afterConnectedEvent{}, conn)
+	c.r.Fire(afterConnectedEvent{}, conn)
 }
 
 func (c *core) onEnd(d eventual2go.Data) {
@@ -157,10 +159,10 @@ func (c *core) removePeer(uuid uuid.UUID) {
 		for m, id := range c.mustSendRegister {
 			if id == uuid {
 				c.log.Debug("Removed peer had pending message")
-				c.Fire(mustSendEvent{}, m)
+				c.r.Fire(mustSendEvent{}, m)
 			}
 		}
-		c.Fire(afterPeerRemovedEvent{}, uuid)
+		c.r.Fire(afterPeerRemovedEvent{}, uuid)
 	}
 }
 
@@ -189,7 +191,7 @@ func (c *core) sendToAll(m message.Message) {
 
 func (c *core) Shutdown() {
 	cmp := eventual2go.NewCompleter()
-	c.Reactor.Shutdown(cmp)
+	c.r.Shutdown(cmp)
 	cmp.Future().WaitUntilComplete()
 	c.log.Info("Shutdown complete")
 }
@@ -200,7 +202,7 @@ func (c *core) UUID() uuid.UUID {
 
 func (c *core) mustSend(m message.Message, recv *eventual2go.Future) {
 	recv.Then(c.onRecv(m))
-	c.Fire(mustSendEvent{}, m)
+	c.r.Fire(mustSendEvent{}, m)
 }
 
 func (c *core) onMustSend(d eventual2go.Data) {
@@ -217,8 +219,8 @@ func (c *core) onMustSend(d eventual2go.Data) {
 
 func (c *core) onRecv(m message.Message) eventual2go.CompletionHandler {
 	return func(eventual2go.Data) eventual2go.Data {
-		c.Lock()
-		defer c.Unlock()
+		c.r.Lock()
+		defer c.r.Unlock()
 		delete(c.mustSendRegister, m)
 		return nil
 	}

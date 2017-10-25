@@ -112,15 +112,36 @@ func (i *Input) TriggerAll(function string, parameter interface{}) (err error) {
 	return
 }
 
-// StartListen starts listening on the given function.
+// StartListen starts listening to the given function.
 func (i *Input) StartListen(function string) (err error) {
 	err = i.core.StartListen(function)
 	return
 }
 
-// StopListen stops listening on the given function.
+// StopListen stops listening to the given function.
 func (i *Input) StopListen(function string) {
 	i.core.StopListen(function)
+}
+
+// StartConsume starts consuming the given stream.
+func (i *Input) StartConsume(stream string) (err error) {
+	err = i.core.StartConsume(stream)
+	return
+}
+
+// StopConsume stops consuming the given stream.
+func (i *Input) StopConsume(stream string) {
+	i.core.StopConsume(stream)
+}
+
+// GetStream gets stream of StreamEvent for the given stream.
+func (i *Input) GetStream(stream string) (s *StreamEventStream, err error) {
+	ss, err := i.core.GetStream(stream)
+	if err != nil {
+		return
+	}
+	s = &StreamEventStream{ss.Transform(toStreamEvent(stream))}
+	return
 }
 
 // StartObservation starts observation of the given property.

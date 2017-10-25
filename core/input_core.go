@@ -18,8 +18,9 @@ func isListenResult(r *message.Result) bool {
 
 type InputCore struct {
 	*core
-	listenFunctions    map[string]interface{}
+	listenedFunctions  map[string]interface{}
 	observedProperties map[string]interface{}
+	consumedStreams    map[string]interface{}
 	results            *message.ResultStream
 }
 
@@ -39,8 +40,9 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 	i = InputCore{
 		core:               c,
-		listenFunctions:    map[string]interface{}{},
+		listenedFunctions:  map[string]interface{}{},
 		observedProperties: map[string]interface{}{},
+		consumedStreams:    map[string]interface{}{},
 	}
 
 	i.results = &message.ResultStream{
@@ -51,18 +53,23 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 	i.tracker.Arrivals().Where(i.isInterestingArrival).ListenNonBlocking(i.onArrival)
 
-	i.Reactor.React(afterConnectedEvent{}, i.onAfterConnected)
+	i.r.React(afterConnectedEvent{}, i.onAfterConnected)
 
-	i.Reactor.React(startListenEvent{}, i.onStartListen)
+	i.r.React(startListenEvent{}, i.onStartListen)
+	i.r.React(stopListenEvent{}, i.onStopListen)
 
-	i.Reactor.React(stopListenEvent{}, i.onStopListen)
+	i.r.React(startConsumeEvent{}, i.onStartConsume)
+	i.r.React(stopConsumeEvent{}, i.onStopConsume)
 
-	i.Reactor.React(startObserveEvent{}, i.onStartObserve)
+	i.r.AddStream(addStreamEvent{}, i.provider.Messages().TransformWhere(network.ToMessage, network.OfType(message.ADDSTREAM)))
+	i.r.React(addStreamEvent{}, i.onAddStream)
 
-	i.Reactor.React(stopObserveEvent{}, i.onStopObserve)
+	i.r.React(startObserveEvent{}, i.onStartObserve)
+	i.r.React(stopObserveEvent{}, i.onStopObserve)
 
-	i.AddStream(setPropertyEvent{}, i.provider.Messages().TransformWhere(network.ToMessage, network.OfType(message.SETPROPERTY)))
-	i.React(setPropertyEvent{}, i.onSetProperty)
+	i.r.AddStream(setPropertyEvent{}, i.provider.Messages().TransformWhere(network.ToMessage, network.OfType(message.SETPROPERTY)))
+	i.r.React(setPropertyEvent{}, i.onSetProperty)
+
 	return
 
 }
@@ -81,14 +88,10 @@ func (i InputCore) isInterestingArrival(a network.Arrival) (is bool) {
 	return
 }
 
-func (i InputCore) ListenStream() *message.ResultStream {
-	return i.results.Where(isListenResult)
-}
-
 func (i *InputCore) onAfterConnected(d eventual2go.Data) {
 	conn := d.(network.Connection)
 
-	for function := range i.listenFunctions {
+	for function := range i.listenedFunctions {
 		i.log.Debugf("Informing %s about function listenig to '%s'", conn.UUID, function)
 		conn.Send(&message.StartListen{
 			Function: function,
@@ -99,6 +102,13 @@ func (i *InputCore) onAfterConnected(d eventual2go.Data) {
 		i.log.Debugf("Informing %s about observing property '%s'", conn.UUID, property)
 		conn.Send(&message.StartObserve{
 			Property: property,
+		})
+	}
+
+	for stream := range i.consumedStreams {
+		i.log.Debugf("Informing %s about consuming stream '%s'", conn.UUID, stream)
+		conn.Send(&message.StartConsume{
+			Stream: stream,
 		})
 	}
 }
@@ -161,7 +171,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 			next = in.FirstWhere(network.OfType(message.CONNECT))
 			if next.WaitUntilTimeout(connectionTimeout) {
 				i.log.Debug("Received CONNECT from", conn.UUID)
-				i.Fire(connectEvent{}, conn)
+				i.r.Fire(connectEvent{}, conn)
 				return
 			}
 		} else {
@@ -180,7 +190,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 func (i *InputCore) onStartListen(d eventual2go.Data) {
 	function := d.(string)
 	i.log.Infof("Starting to listen to function '%s'", function)
-	i.listenFunctions[function] = nil
+	i.listenedFunctions[function] = nil
 	i.sendToAll(&message.StartListen{
 		Function: function,
 	})
@@ -190,11 +200,40 @@ func (i *InputCore) onStopListen(d eventual2go.Data) {
 	function := d.(string)
 	i.log.Infof("Stopping to listen to function '%s'", function)
 
-	if _, ok := i.listenFunctions[function]; ok {
-		delete(i.listenFunctions, function)
+	if _, ok := i.listenedFunctions[function]; ok {
+		delete(i.listenedFunctions, function)
 		i.sendToAll(&message.StopListen{
 			Function: function,
 		})
+	}
+}
+
+func (i *InputCore) onStartConsume(d eventual2go.Data) {
+	stream := d.(string)
+	i.log.Infof("Starting to consume stream '%s'", stream)
+	i.consumedStreams[stream] = nil
+	i.sendToAll(&message.StartConsume{
+		Stream: stream,
+	})
+}
+
+func (i *InputCore) onStopConsume(d eventual2go.Data) {
+	stream := d.(string)
+
+	if _, ok := i.consumedStreams[stream]; ok {
+		i.log.Infof("Stopping to consume stream '%s'", stream)
+		delete(i.consumedStreams, stream)
+		i.sendToAll(&message.StopConsume{
+			Stream: stream,
+		})
+	}
+}
+
+func (i *InputCore) onAddStream(d eventual2go.Data) {
+	m := d.(*message.AddStream)
+	i.log.Debugf("Got value on stream '%s'", m.Name)
+	if s, ok := i.streams[m.Name]; ok {
+		s.Add(m.Value)
 	}
 }
 
@@ -239,6 +278,7 @@ func (i *InputCore) GetProperty(property string) (o *eventual2go.Observable, err
 func (i *InputCore) UpdateProperty(property string) (f *eventual2go.Future, err error) {
 	o, err := i.GetProperty(property)
 	f = o.NextChange()
+	i.log.Debugf("Sending request to update property '%s'", property)
 	i.mustSend(&message.GetProperty{property}, f)
 	return
 }
@@ -294,6 +334,10 @@ func (i *InputCore) Request(function string, callType message.CallType,
 
 }
 
+func (i InputCore) ListenStream() *message.ResultStream {
+	return i.results.Where(isListenResult)
+}
+
 func (i *InputCore) StartListen(function string) (err error) {
 
 	if !i.descriptor.HasFunction(function) {
@@ -301,7 +345,7 @@ func (i *InputCore) StartListen(function string) (err error) {
 		return
 	}
 
-	i.Reactor.Fire(startListenEvent{}, function)
+	i.r.Fire(startListenEvent{}, function)
 
 	return
 }
@@ -313,7 +357,43 @@ func (i *InputCore) StopListen(function string) (err error) {
 		return
 	}
 
-	i.Reactor.Fire(stopListenEvent{}, function)
+	i.r.Fire(stopListenEvent{}, function)
+
+	return
+}
+
+func (i *InputCore) GetStream(stream string) (s *eventual2go.Stream, err error) {
+
+	if !i.descriptor.HasStream(stream) {
+		err = fmt.Errorf("Stream '%s' is not in descriptor", stream)
+		return
+	}
+
+	s = i.streams[stream].Stream()
+
+	return
+}
+
+func (i *InputCore) StartConsume(stream string) (err error) {
+
+	if !i.descriptor.HasStream(stream) {
+		err = fmt.Errorf("Stream '%s' is not in descriptor", stream)
+		return
+	}
+
+	i.r.Fire(startConsumeEvent{}, stream)
+
+	return
+}
+
+func (i *InputCore) StopConsume(stream string) (err error) {
+
+	if !i.descriptor.HasStream(stream) {
+		err = fmt.Errorf("Stream '%s' is not in descriptor", stream)
+		return
+	}
+
+	i.r.Fire(stopConsumeEvent{}, stream)
 
 	return
 }
@@ -325,7 +405,7 @@ func (i *InputCore) StartObservation(property string) (err error) {
 		return
 	}
 
-	i.Reactor.Fire(startObserveEvent{}, property)
+	i.r.Fire(startObserveEvent{}, property)
 
 	return
 }
@@ -337,7 +417,7 @@ func (i *InputCore) StopObservation(property string) (err error) {
 		return
 	}
 
-	i.Reactor.Fire(stopObserveEvent{}, property)
+	i.r.Fire(stopObserveEvent{}, property)
 
 	return
 }

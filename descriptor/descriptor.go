@@ -10,6 +10,7 @@ import (
 type Descriptor struct {
 	Functions  []Function
 	Properties []Property
+	Streams    []Stream
 	Tags       Tagset
 }
 
@@ -40,6 +41,16 @@ type Property struct {
 
 func (p Property) String() string {
 	return fmt.Sprintf("%s%s", p.Name, p.Parameter)
+}
+
+// Stream represents a ThingiverseIO stream, consisting of a name and parameters.
+type Stream struct {
+	Name      string
+	Parameter []Parameter
+}
+
+func (s Stream) String() string {
+	return fmt.Sprintf("%s%s", s.Name, s.Parameter)
 }
 
 // Parameter consists of a name and a type.
@@ -90,6 +101,16 @@ func (d Descriptor) HasProperty(name string) (has bool) {
 	return
 }
 
+// HasProperty returns true if the descriptor has the given property.
+func (d Descriptor) HasStream(name string) (has bool) {
+	for _, s := range d.Streams {
+		if has = s.Name == name; has {
+			return
+		}
+	}
+	return
+}
+
 // Check parses a descriptor string returns an error if the descriptor is not valid.
 func Check(desc string) (err error) {
 	_, err = Parse(desc)
@@ -121,6 +142,13 @@ func Parse(desc string) (d Descriptor, err error) {
 				return
 			}
 			d.Properties = append(d.Properties, p)
+		case strings.HasPrefix(line, "stream"):
+			var s Stream
+			s, err = parseStream(linecounter, line)
+			if err != nil {
+				return
+			}
+			d.Streams = append(d.Streams, s)
 		case strings.HasPrefix(line, "tags"):
 			var tags map[string]string
 			tags, err = parseTagsLine(linecounter, line)
@@ -163,7 +191,7 @@ func parseProperty(line int, s string) (p Property, err error) {
 		par = strings.TrimRight(par, " ")
 		spl := strings.Split(par, " ")
 		if len(spl) != 2 {
-			err = newLineError(line, fmt.Sprint("malformed property parameter", par))
+			err = newLineError(line, fmt.Sprint("malformed stream parameter", par))
 			return
 		}
 		n := spl[0]
@@ -174,6 +202,39 @@ func parseProperty(line int, s string) (p Property, err error) {
 			return
 		}
 		p.Parameter = append(p.Parameter, Parameter{n, t})
+	}
+	return
+}
+
+func parseStream(line int, s string) (st Stream, err error) {
+	s = strings.TrimLeft(s, "stream")
+	s = strings.TrimLeft(s, " ")
+	split1 := strings.Split(s, ":")
+	st.Name = strings.TrimRight(split1[0], " ")
+
+	if len(split1) == 1 {
+		err = newLineError(line, "invalid property")
+		return
+	}
+
+	split2 := strings.Split(split1[1], ",")
+
+	for _, par := range split2 {
+		par = strings.TrimLeft(par, " ")
+		par = strings.TrimRight(par, " ")
+		spl := strings.Split(par, " ")
+		if len(spl) != 2 {
+			err = newLineError(line, fmt.Sprint("malformed stream parameter", par))
+			return
+		}
+		n := spl[0]
+		t := spl[1]
+
+		if !containsAny(t, "string", "bool", "bin", "int", "float") {
+			err = newLineError(line, fmt.Sprint("malformed parameter, unknown type", t))
+			return
+		}
+		st.Parameter = append(st.Parameter, Parameter{n, t})
 	}
 	return
 }

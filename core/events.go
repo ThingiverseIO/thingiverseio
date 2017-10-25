@@ -28,4 +28,12 @@ type setPropertyEvent struct {
 	name string
 }
 
+type startConsumeEvent struct{}
+
+type stopConsumeEvent struct{}
+
+type addStreamEvent struct {
+	name string
+}
+
 type mustSendEvent struct{}
