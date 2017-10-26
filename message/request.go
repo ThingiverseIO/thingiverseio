@@ -51,11 +51,10 @@ func (r Request) Parameter() []byte {
 	return r.params
 }
 
-func (r *Request) Decode(t interface{}) {
+func (r *Request) Decode(t interface{}) (err error) {
 	buf := bytes.NewBuffer(r.params)
 	dec := codec.NewDecoder(buf, &mh)
-	dec.Decode(t)
-
+	err = dec.Decode(t)
 	return
 }
 

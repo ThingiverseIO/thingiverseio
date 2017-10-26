@@ -47,10 +47,10 @@ func (r Result) Parameter() []byte {
 	return r.params
 }
 
-func (r Result) Decode(t interface{}) {
+func (r Result) Decode(t interface{}) (err error) {
 	buf := bytes.NewBuffer(r.params)
 	dec := codec.NewDecoder(buf, &mh)
-	dec.Decode(t)
+	err = dec.Decode(t)
 	return
 }
 
