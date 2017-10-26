@@ -73,22 +73,24 @@ func (i *Input) WaitUntilConnected() {
 }
 
 // Call executes a ThingiverseIO Call and returns a ResultFuture, which gets completed if a suitable output reponds.
-func (i *Input) Call(function string, parameter interface{}) (result *message.ResultFuture, err error) {
+func (i *Input) Call(function string, parameter interface{}) (result *ResultFuture, err error) {
 	data, err := encode(parameter)
 	if err != nil {
 		return
 	}
-	result, _, _, err = i.core.Request(function, message.CALL, data)
+	r, _, _, err := i.core.Request(function, message.CALL, data)
+	result = &ResultFuture{r.Future}
 	return
 }
 
 // CallAll executes a ThingiverseIO CallAll and returns the Requests UUID and stream on which results are delivered. The stream must be closed manually!
-func (i *Input) CallAll(function string, parameter interface{}) (results *message.ResultStream, err error) {
+func (i *Input) CallAll(function string, parameter interface{}) (results *ResultStream, err error) {
 	data, err := encode(parameter)
 	if err != nil {
 		return
 	}
-	_, results, _, err = i.core.Request(function, message.CALLALL, data)
+	_, r, _, err := i.core.Request(function, message.CALLALL, data)
+	results = &ResultStream{r.Stream}
 	return
 }
 
@@ -163,7 +165,7 @@ func (i *Input) GetProperty(property string) (p Property, err error) {
 	return
 }
 
-// GetProperty gets the current value of the property.
+// GetPropertyObservable gets an observable linked to the property.
 func (i *Input) GetPropertyObservable(property string) (p *PropertyObservable, cancel *eventual2go.Completer, err error) {
 	o, err := i.core.GetProperty(property)
 	if err != nil {
@@ -190,6 +192,6 @@ func (i *Input) StopObservation(property string) {
 }
 
 // ListenResults returns a ResultStream to receive results of Trigger or TriggerAll function calls.
-func (i *Input) ListenResults() *message.ResultStream {
-	return i.core.ListenStream()
+func (i *Input) ListenResults() *ResultStream {
+	return &ResultStream{i.core.ListenStream().Stream}
 }

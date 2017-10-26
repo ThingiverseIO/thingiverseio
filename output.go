@@ -4,7 +4,6 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/core"
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
-	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/uuid"
 	"github.com/joernweissenborn/eventual2go/typedevents"
 )
@@ -71,7 +70,7 @@ func (o *Output) WaitUntilConnected() {
 }
 
 // Reply reponds the given output parameter to all interested Inputs of a given request.
-func (o *Output) Reply(request *message.Request, parameter interface{}) (err error) {
+func (o *Output) Reply(request *Request, parameter interface{}) (err error) {
 	data, err := encode(parameter)
 	if err != nil {
 		return
@@ -95,8 +94,8 @@ func (o *Output) Emit(function string, inparams interface{}, outparams interface
 }
 
 // Requests returns a RequestStream, which delivers incoming requests. Although multiple listeners can be registered, multiple replies to one request can lead to undefined behaviour.
-func (o *Output) Requests() *message.RequestStream {
-	return o.core.RequestStream()
+func (o *Output) Requests() *RequestStream {
+	return &RequestStream{o.core.RequestStream().Stream}
 }
 
 func (o *Output) SetProperty(property string, value interface{}) (err error) {
