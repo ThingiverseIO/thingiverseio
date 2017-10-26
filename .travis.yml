@@ -16,6 +16,7 @@ env:
 before_install:
 
 install:
+  - go get github.com/joernweissenborn/eventual2go
   - go get github.com/ThingiverseIO/logger
 
 script:
