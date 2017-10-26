@@ -164,23 +164,23 @@ func (i *Input) GetProperty(property string) (p Property, err error) {
 }
 
 // GetProperty gets the current value of the property.
-func (i *Input) GetPropertyObservable(property string) (p PropertyObservable, cancel *eventual2go.Completer, err error) {
+func (i *Input) GetPropertyObservable(property string) (p *PropertyObservable, cancel *eventual2go.Completer, err error) {
 	o, err := i.core.GetProperty(property)
 	if err != nil {
 		return
 	}
 	do, cancel := o.Derive(toProperty(property))
-	p = PropertyObservable{do}
+	p = &PropertyObservable{do}
 	return
 }
 
 // UpdateProperty updates the value of the property. Returns a Future which gets completed when the update has been arrived.
-func (i *Input) UpdateProperty(property string) (p PropertyFuture, err error) {
+func (i *Input) UpdateProperty(property string) (p *PropertyFuture, err error) {
 	v, err := i.core.UpdateProperty(property)
 	if err != nil {
 		return
 	}
-	p = PropertyFuture{v.Then(propertyFromFuture(property))}
+	p = &PropertyFuture{v.Then(propertyFromFuture(property))}
 	return
 }
 
