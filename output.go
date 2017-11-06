@@ -98,6 +98,16 @@ func (o *Output) Requests() *RequestStream {
 	return &RequestStream{o.core.RequestStream().Stream}
 }
 
+// RequestsWhereFunction returns a RequestStream only for the given function.
+func (o *Output) RequestsWhereFunction(function string) *RequestStream {
+	return (&RequestStream{o.core.RequestStream().Stream}).Where(filterRequests(function))
+}
+
+func filterRequests(function string) RequestFilter {
+	return func(r *Request) bool {return r.Function==function}
+}
+
+// SetProperty sets the value of a property.
 func (o *Output) SetProperty(property string, value interface{}) (err error) {
 	v, err := encode(value)
 	if err != nil {
@@ -107,6 +117,7 @@ func (o *Output) SetProperty(property string, value interface{}) (err error) {
 	return
 }
 
+// AddStream adds a value on a stream.
 func (o *Output) AddStream(stream string, value interface{}) (err error) {
 	v, err := encode(value)
 	if err != nil {
