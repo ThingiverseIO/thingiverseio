@@ -60,7 +60,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		connected:        typedevents.NewBoolObservable(false),
 		descriptor:       desc,
 		connections:      map[uuid.UUID]network.Connection{},
-		log:              logger.New(logPrefix),
+		log:              logger.New(logPrefix).SetDebug(cfg.User.Debug),
 		mustSendRegister: map[message.Message]uuid.UUID{},
 		provider:         provider,
 		tracker:          tracker,
