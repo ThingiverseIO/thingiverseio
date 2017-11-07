@@ -123,7 +123,7 @@ func TestStreams(t *testing.T) {
 		t.Fatal("Failed adding to stream", err)
 	}
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	if !f.Completed() {
 		t.Fatal("Stream event didn't arrive")
 	}
@@ -136,13 +136,13 @@ func TestStreams(t *testing.T) {
 	if err = i.StopConsume("teststream");err!=nil {
 		t.Fatal(err)
 	}
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	if err := o.AddStream("teststream", testprop); err != nil {
 		t.Fatal("Failed adding to stream", err)
 	}
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	if f.Completed() {
 		t.Fatal("Stream event did arrive")
 	}
@@ -158,13 +158,13 @@ func TestObserveProperty(t *testing.T) {
 
 	i.StartObservation("testprop")
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	if err := o.SetProperty("testprop", testprop); err != nil {
 		t.Fatal("Failed to set property", err)
 	}
 
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	v, err := i.GetProperty("testprop")
 	if err != nil {
 		t.Fatal(err)
