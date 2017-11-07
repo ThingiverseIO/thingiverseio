@@ -117,7 +117,7 @@ func TestStreams(t *testing.T) {
 		t.Fatal("Error getting stream", err)
 	}
 	f := s.First()
-	time.Sleep(1 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 
 	if err := o.AddStream("teststream", testprop); err != nil {
 		t.Fatal("Failed adding to stream", err)
