@@ -31,15 +31,15 @@ func checkMessage(m Message, sender uuid.UUID, t *testing.T) {
 
 }
 
-func ProviderTestsuite(provider1, provider2 Provider, t *testing.T) {
+func TransportTestsuite(transport1, transport2 Transport, t *testing.T) {
 
 	uuid1 := uuid.New()
 	cfg1 := &config.Config{
 		Internal: &config.InternalConfig{UUID: uuid1},
 		User:     config.DefaultLocalhost(),
 	}
-	if err := provider1.Init(cfg1); err != nil {
-		t.Fatal("Error on initialzing provider1", err)
+	if err := transport1.Init(cfg1); err != nil {
+		t.Fatal("Error on initialzing transport1", err)
 	}
 
 	uuid2 := uuid.New()
@@ -48,22 +48,22 @@ func ProviderTestsuite(provider1, provider2 Provider, t *testing.T) {
 		User:     config.DefaultLocalhost(),
 	}
 
-	if err := provider2.Init(cfg2); err != nil {
-		t.Fatal("Error on initialzing provider2", err)
+	if err := transport2.Init(cfg2); err != nil {
+		t.Fatal("Error on initialzing transport2", err)
 	}
 
-	conn1, err := provider1.Connect(provider2.Details(), uuid2)
+	conn1, err := transport1.Connect(transport2.Details(), uuid2)
 	if err != nil {
-		t.Fatal("Error on connecting to provider2", err)
+		t.Fatal("Error on connecting to transport2", err)
 	}
 
-	conn2, err := provider2.Connect(provider1.Details(), uuid2)
+	conn2, err := transport2.Connect(transport1.Details(), uuid2)
 	if err != nil {
-		t.Fatal("Error on connecting to provider1", err)
+		t.Fatal("Error on connecting to transport1", err)
 	}
 
-	msg1 := provider1.Messages().First()
-	msg2 := provider2.Messages().First()
+	msg1 := transport1.Messages().First()
+	msg2 := transport2.Messages().First()
 
 	conn1.Send(testMsg())
 	conn2.Send(testMsg())
@@ -92,7 +92,7 @@ func TrackerTestSuite(tracker1, tracker2 Tracker, t *testing.T) {
 	details1 := [][]byte{[]byte{1, 2, 3}}
 
 	if err := tracker1.Init(cfg1, details1); err != nil {
-		t.Fatal("Error on initialzing provider1", err)
+		t.Fatal("Error on initialzing transport1", err)
 	}
 
 	arr1 := tracker1.Arrivals().First()
@@ -106,7 +106,7 @@ func TrackerTestSuite(tracker1, tracker2 Tracker, t *testing.T) {
 	details2 := [][]byte{[]byte{4, 5, 6}}
 
 	if err := tracker2.Init(cfg2, details2); err != nil {
-		t.Fatal("Error on initialzing provider2", err)
+		t.Fatal("Error on initialzing transport2", err)
 	}
 
 	arr2 := tracker2.Arrivals().First()

@@ -6,34 +6,34 @@ import (
 	"github.com/joernweissenborn/eventual2go"
 )
 
-type MockProvider struct {
+type MockTransport struct {
 	details      Details
 	messageBoxes []*MessageStreamController
 	cfg          *config.Config
 }
 
-func NewMockProvider(nr int) (p []*MockProvider) {
+func NewMockTransport(nr int) (p []*MockTransport) {
 	messageBoxes := []*MessageStreamController{}
 
 	for i := 0; i < nr; i++ {
 		messageBoxes = append(messageBoxes, NewMessageStreamController())
 	}
 	for i := 0; i < nr; i++ {
-		p = append(p, &MockProvider{
+		p = append(p, &MockTransport{
 			messageBoxes: messageBoxes,
-			details:      Details{Provider: 0, Config: []byte{byte(i)}},
+			details:      Details{Transport: 0, Config: []byte{byte(i)}},
 		})
 
 	}
 	return
 }
 
-func (m *MockProvider) Init(cfg *config.Config) error {
+func (m *MockTransport) Init(cfg *config.Config) error {
 	m.cfg = cfg
 	return nil
 }
 
-func (m *MockProvider) Connect(details Details, uuid uuid.UUID) (Connection, error) {
+func (m *MockTransport) Connect(details Details, uuid uuid.UUID) (Connection, error) {
 	ams, _ := eventual2go.SpawnActor(&MockConnection{
 		cfg:        m.cfg,
 		messageBox: m.messageBoxes[details.Config[0]],
@@ -41,15 +41,15 @@ func (m *MockProvider) Connect(details Details, uuid uuid.UUID) (Connection, err
 	return Connection{ams, uuid}, nil
 }
 
-func (m *MockProvider) Details() Details {
+func (m *MockTransport) Details() Details {
 	return m.details
 }
 
-func (m *MockProvider) Messages() *MessageStream {
+func (m *MockTransport) Messages() *MessageStream {
 	return m.messageBoxes[m.details.Config[0]].Stream()
 }
 
-func (m *MockProvider) Shutdown(d eventual2go.Data) error { return nil }
+func (m *MockTransport) Shutdown(d eventual2go.Data) error { return nil }
 
 type MockConnection struct {
 	cfg        *config.Config

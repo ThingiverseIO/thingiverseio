@@ -12,16 +12,16 @@ import (
 
 var mh codec.MsgpackHandle
 
-type Providers struct {
+type Transports struct {
 	Details        []Details
 	EncodedDetails [][]byte
-	Provider       map[ProviderID]Provider
+	Transport       map[TransportID]Transport
 	messages       *MessageStreamController
 }
 
-func NewProviders(cfg *config.Config, provider []Provider) (ps Providers, err error) {
-	ps = Providers{
-		Provider: map[ProviderID]Provider{},
+func NewTransports(cfg *config.Config, provider []Transport) (ps Transports, err error) {
+	ps = Transports{
+		Transport: map[TransportID]Transport{},
 		messages: NewMessageStreamController(),
 	}
 
@@ -30,7 +30,7 @@ func NewProviders(cfg *config.Config, provider []Provider) (ps Providers, err er
 			return
 		}
 
-		ps.Provider[p.Details().Provider] = p
+		ps.Transport[p.Details().Transport] = p
 
 		ps.messages.Join(p.Messages())
 
@@ -45,12 +45,12 @@ func NewProviders(cfg *config.Config, provider []Provider) (ps Providers, err er
 	return
 }
 
-func (p Providers) Connect(details [][]byte, uuid uuid.UUID) (conn Connection, err error) {
+func (p Transports) Connect(details [][]byte, uuid uuid.UUID) (conn Connection, err error) {
 	for _, encDetail := range details {
 		var d Details
 		dec := codec.NewDecoder(bytes.NewBuffer(encDetail), &mh)
 		dec.Decode(&d)
-		if p, ok := p.Provider[d.Provider]; ok {
+		if p, ok := p.Transport[d.Transport]; ok {
 			conn, err = p.Connect(d, uuid)
 			if err == nil {
 				return
@@ -63,12 +63,12 @@ func (p Providers) Connect(details [][]byte, uuid uuid.UUID) (conn Connection, e
 	return
 }
 
-func (p Providers) Messages() *MessageStream {
+func (p Transports) Messages() *MessageStream {
 	return p.messages.Stream()
 }
 
-func (p Providers) RegisterShutdown(s *eventual2go.Shutdown) {
-	for _, provider := range p.Provider {
+func (p Transports) RegisterShutdown(s *eventual2go.Shutdown) {
+	for _, provider := range p.Transport {
 		s.Register(provider)
 	}
 }

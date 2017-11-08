@@ -26,24 +26,24 @@ type core struct {
 	connections      map[uuid.UUID]network.Connection
 	log              *logger.Logger
 	mustSendRegister map[message.Message]uuid.UUID
-	provider         network.Providers
+	transport         network.Transports
 	tracker          network.Tracker
 	shutdown         *eventual2go.Shutdown
 	properties       properties
 	streams          streams
 }
 
-func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tracker, providers ...network.Provider) (c *core, err error) {
+func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tracker, transports ...network.Transport) (c *core, err error) {
 
 	shutdown := eventual2go.NewShutdown()
 
-	provider, err := network.NewProviders(cfg, providers)
+	transport, err := network.NewTransports(cfg, transports)
 	if err != nil {
 		return
 	}
-	provider.RegisterShutdown(shutdown)
+	transport.RegisterShutdown(shutdown)
 
-	if err = tracker.Init(cfg, provider.EncodedDetails); err != nil {
+	if err = tracker.Init(cfg, transport.EncodedDetails); err != nil {
 		return
 	}
 	shutdown.Register(tracker)
@@ -62,7 +62,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		connections:      map[uuid.UUID]network.Connection{},
 		log:              logger.New(logPrefix).SetDebug(cfg.User.Debug),
 		mustSendRegister: map[message.Message]uuid.UUID{},
-		provider:         provider,
+		transport:         transport,
 		tracker:          tracker,
 		shutdown:         shutdown,
 		properties:       newProperties(desc),
@@ -76,7 +76,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	c.r.React(leaveEvent{}, c.onLeave)
 	c.r.React(mustSendEvent{}, c.onMustSend)
 
-	c.r.AddStream(endEvent{}, c.provider.Messages().Where(network.OfType(message.END)).Stream)
+	c.r.AddStream(endEvent{}, c.transport.Messages().Where(network.OfType(message.END)).Stream)
 	c.r.React(endEvent{}, c.onEnd)
 
 	c.r.OnShutdown(c.onShutdown)

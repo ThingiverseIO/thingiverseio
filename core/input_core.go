@@ -25,7 +25,7 @@ type InputCore struct {
 }
 
 func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
-	tracker network.Tracker, provider ...network.Provider) (i InputCore, err error) {
+	tracker network.Tracker, transport ...network.Transport) (i InputCore, err error) {
 
 	tags := desc.AsTagset()
 	tags.Merge(usrCfg.Tags)
@@ -36,7 +36,7 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 		&config.Config{
 			Internal: intCfg,
 			User:     usrCfg,
-		}, tracker, provider...)
+		}, tracker, transport...)
 
 	i = InputCore{
 		core:               c,
@@ -46,7 +46,7 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	}
 
 	i.results = &message.ResultStream{
-		Stream: i.provider.Messages().
+		Stream: i.transport.Messages().
 			Where(network.OfType(message.RESULT)).
 			Transform(network.ToMessage),
 	}
@@ -61,13 +61,13 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	i.r.React(startConsumeEvent{}, i.onStartConsume)
 	i.r.React(stopConsumeEvent{}, i.onStopConsume)
 
-	i.r.AddStream(addStreamEvent{}, i.provider.Messages().TransformWhere(network.ToMessage, network.OfType(message.ADDSTREAM)))
+	i.r.AddStream(addStreamEvent{}, i.transport.Messages().TransformWhere(network.ToMessage, network.OfType(message.ADDSTREAM)))
 	i.r.React(addStreamEvent{}, i.onAddStream)
 
 	i.r.React(startObserveEvent{}, i.onStartObserve)
 	i.r.React(stopObserveEvent{}, i.onStopObserve)
 
-	i.r.AddStream(setPropertyEvent{}, i.provider.Messages().TransformWhere(network.ToMessage, network.OfType(message.SETPROPERTY)))
+	i.r.AddStream(setPropertyEvent{}, i.transport.Messages().TransformWhere(network.ToMessage, network.OfType(message.SETPROPERTY)))
 	i.r.React(setPropertyEvent{}, i.onSetProperty)
 
 	return
@@ -81,7 +81,7 @@ func (i InputCore) isInterestingArrival(a network.Arrival) (is bool) {
 		i.log.Debug("Peer is not an output.")
 		return
 	}
-	if is = a.Supported(i.provider.Details); !is {
+	if is = a.Supported(i.transport.Details); !is {
 		i.log.Debug("Peer network is not supported")
 	}
 	i.log.Debug("Peer is interesting")
@@ -116,13 +116,13 @@ func (i *InputCore) onAfterConnected(d eventual2go.Data) {
 func (i InputCore) onArrival(a network.Arrival) {
 	i.log.Debug("Peer arrived: ", a.UUID)
 	i.log.Debug("Peer Details:\n", hex.Dump(a.Details[0]))
-	conn, err := i.provider.Connect(a.Details, a.UUID)
+	conn, err := i.transport.Connect(a.Details, a.UUID)
 	if err != nil {
 		i.log.Error("Error connecting to peer ", conn.UUID, err)
 		return
 	}
 
-	in := i.provider.Messages().Where(network.FromSender(a.UUID))
+	in := i.transport.Messages().Where(network.FromSender(a.UUID))
 	defer in.Close()
 
 	next := in.FirstWhere(network.OfType(message.HELLOOK))
@@ -130,7 +130,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 	// Send Hello
 
 	conn.Send(&message.Hello{
-		NetworkDetails: i.provider.EncodedDetails,
+		NetworkDetails: i.transport.EncodedDetails,
 		Tag:            i.config.Internal.Tags.GetFirst(),
 	})
 

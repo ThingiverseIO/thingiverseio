@@ -27,7 +27,7 @@ func getInputOutput(descIn, descOut descriptor.Descriptor) (i core.InputCore, o 
 
 	mt1 := &network.MockTracker{}
 	mt2 := &network.MockTracker{}
-	mps := network.NewMockProvider(2)
+	mps := network.NewMockTransport(2)
 
 	i, _ = core.NewInputCore(descIn, cfg, mt1, mps[0])
 	o, _ = core.NewOutputCore(descOut, cfg, mt2, mps[1])
@@ -52,7 +52,7 @@ func TestBasicConnection(t *testing.T) {
 
 	mt1 := &network.MockTracker{}
 	mt2 := &network.MockTracker{}
-	mps := network.NewMockProvider(2)
+	mps := network.NewMockTransport(2)
 
 	i, _ := core.NewInputCore(desc, cfg, mt1, mps[0])
 	o, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])
@@ -261,7 +261,7 @@ func TestCallGuarantee(t *testing.T) {
 	mt1 := &network.MockTracker{}
 	mt2 := &network.MockTracker{}
 	mt3 := &network.MockTracker{}
-	mps := network.NewMockProvider(3)
+	mps := network.NewMockTransport(3)
 
 	i, _ := core.NewInputCore(desc, cfg, mt1, mps[0])
 	defer i.Shutdown()
@@ -397,7 +397,7 @@ func TestTriggerAll(t *testing.T) {
 	mt1 := &network.MockTracker{}
 	mt2 := &network.MockTracker{}
 	mt3 := &network.MockTracker{}
-	mps := network.NewMockProvider(3)
+	mps := network.NewMockTransport(3)
 
 	i, _ := core.NewInputCore(desc, cfg, mt1, mps[0])
 	o1, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])
@@ -476,7 +476,7 @@ func TestCallAll(t *testing.T) {
 	mt1 := &network.MockTracker{}
 	mt2 := &network.MockTracker{}
 	mt3 := &network.MockTracker{}
-	mps := network.NewMockProvider(3)
+	mps := network.NewMockTransport(3)
 
 	i, _ := core.NewInputCore(desc, cfg, mt1, mps[0])
 	o1, _ := core.NewOutputCore(desc, cfg, mt2, mps[1])

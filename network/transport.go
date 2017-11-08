@@ -6,10 +6,10 @@ import (
 	"github.com/joernweissenborn/eventual2go"
 )
 
-type Provider interface {
+type Transport interface {
 	eventual2go.Shutdowner
 
-	// Init initializes a providers incoming channel.
+	// Init initializes a transports incoming channel.
 	Init(cfg *config.Config) error
 
 	// Connect connectes to peer using the given details.

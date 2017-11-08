@@ -21,7 +21,7 @@ func (a Arrival) Supported(details []Details) (is bool) {
 		dec := codec.NewDecoder(bytes.NewBuffer(encAd), &mh)
 		dec.Decode(&ad)
 		for _, d := range details {
-			if is = d.Provider == ad.Provider; is {
+			if is = d.Transport == ad.Transport; is {
 				return
 			}
 		}

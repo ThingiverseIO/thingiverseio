@@ -2,10 +2,10 @@ package network
 
 import "testing"
 
-func TestProviderMock(t *testing.T) {
-	provs := NewMockProvider(2)
+func TestTransportMock(t *testing.T) {
+	provs := NewMockTransport(2)
 
-	ProviderTestsuite(provs[0], provs[1], t)
+	TransportTestsuite(provs[0], provs[1], t)
 }
 
 func TestTrackerMock(t *testing.T) {

@@ -22,7 +22,7 @@ type OutputCore struct {
 }
 
 func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
-	tracker network.Tracker, provider ...network.Provider) (o OutputCore, err error) {
+	tracker network.Tracker, transport ...network.Transport) (o OutputCore, err error) {
 
 	tags := desc.AsTagset()
 	tags.Merge(usrCfg.Tags)
@@ -33,7 +33,7 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 		&config.Config{
 			Internal: intCfg,
 			User:     usrCfg,
-		}, tracker, provider...)
+		}, tracker, transport...)
 
 	o = OutputCore{
 		core:     c,
@@ -43,36 +43,36 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	}
 
 	o.requests = &message.RequestStream{
-		Stream: o.provider.Messages().
+		Stream: o.transport.Messages().
 			Where(network.OfType(message.REQUEST)).
 			Transform(network.ToMessage),
 	}
 
-	o.provider.Messages().Where(network.OfType(message.HELLO)).ListenNonBlocking(o.onHello)
+	o.transport.Messages().Where(network.OfType(message.HELLO)).ListenNonBlocking(o.onHello)
 
 	o.r.React(afterConnectedEvent{}, o.onAfterConnected)
 
 	o.r.React(replyEvent{}, o.onReply)
 
-	o.r.AddStream(startListenEvent{}, o.provider.Messages().Where(network.OfType(message.STARTLISTEN)).Stream)
+	o.r.AddStream(startListenEvent{}, o.transport.Messages().Where(network.OfType(message.STARTLISTEN)).Stream)
 	o.r.React(startListenEvent{}, o.onStartListen)
 
-	o.r.AddStream(stopListenEvent{}, o.provider.Messages().Where(network.OfType(message.STOPLISTEN)).Stream)
+	o.r.AddStream(stopListenEvent{}, o.transport.Messages().Where(network.OfType(message.STOPLISTEN)).Stream)
 	o.r.React(stopListenEvent{}, o.onStopListen)
 
-	o.r.AddStream(startConsumeEvent{}, o.provider.Messages().Where(network.OfType(message.STARTCONSUME)).Stream)
+	o.r.AddStream(startConsumeEvent{}, o.transport.Messages().Where(network.OfType(message.STARTCONSUME)).Stream)
 	o.r.React(startConsumeEvent{}, o.onStartConsume)
 
-	o.r.AddStream(stopConsumeEvent{}, o.provider.Messages().Where(network.OfType(message.STOPCONSUME)).Stream)
+	o.r.AddStream(stopConsumeEvent{}, o.transport.Messages().Where(network.OfType(message.STOPCONSUME)).Stream)
 	o.r.React(stopConsumeEvent{}, o.onStopConsume)
 
-	o.r.AddStream(startObserveEvent{}, o.provider.Messages().Where(network.OfType(message.STARTOBSERVE)).Stream)
+	o.r.AddStream(startObserveEvent{}, o.transport.Messages().Where(network.OfType(message.STARTOBSERVE)).Stream)
 	o.r.React(startObserveEvent{}, o.onStartObserve)
 
-	o.r.AddStream(stopObserveEvent{}, o.provider.Messages().Where(network.OfType(message.STOPOBSERVE)).Stream)
+	o.r.AddStream(stopObserveEvent{}, o.transport.Messages().Where(network.OfType(message.STOPOBSERVE)).Stream)
 	o.r.React(stopObserveEvent{}, o.onStopObserve)
 
-	o.r.AddStream(getPropertyEvent{}, o.provider.Messages().Where(network.OfType(message.GETPROPERTY)).Stream)
+	o.r.AddStream(getPropertyEvent{}, o.transport.Messages().Where(network.OfType(message.GETPROPERTY)).Stream)
 	o.r.React(getPropertyEvent{}, o.onGetProperty)
 
 	for p, obs := range o.properties {
@@ -96,13 +96,13 @@ func (o OutputCore) onHello(m network.Message) {
 	msg := m.Decode().(*message.Hello)
 	o.log.Debug("Peer Details:\n", hex.Dump(msg.NetworkDetails[0]))
 
-	conn, err := o.provider.Connect(msg.NetworkDetails, m.Sender)
+	conn, err := o.transport.Connect(msg.NetworkDetails, m.Sender)
 	if err != nil {
 		o.log.Errorf("Error connecting to %s: %s", m.Sender, err)
 		return
 	}
 
-	in := o.provider.Messages().Where(network.FromSender(m.Sender))
+	in := o.transport.Messages().Where(network.FromSender(m.Sender))
 	defer in.Close()
 
 	next := in.First()
