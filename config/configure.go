@@ -10,6 +10,7 @@ var (
 	overrides = map[string]interface{}{}
 )
 
+// Set a configuration override. Useful for debugging. 
 func SetOverride(key string, value interface{}) { overrides[key] = value }
 
 //Configure loads the configuration from enviroment, 'CWD/.tvio' and ''/home/USER/.tvio'.

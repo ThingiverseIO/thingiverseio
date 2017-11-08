@@ -53,7 +53,7 @@ func (cfg *UserConfig) GetLogger() (logger io.Writer) {
 }
 
 func (cfg *UserConfig) String() string {
-	return fmt.Sprintf(`Interfaces: %v
+	return fmt.Sprintf(`Interface: %v
 Logger: %s
 Tags: %s
 Debug: %v
