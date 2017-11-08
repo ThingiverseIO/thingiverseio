@@ -3,7 +3,7 @@ package message
 import (
 	"bytes"
 
-	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/ThingiverseIO/uuid"
 	"github.com/ugorji/go/codec"
 )
 

@@ -7,7 +7,7 @@ import (
 
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/network"
-	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/ThingiverseIO/uuid"
 	"github.com/go-mangos/mangos"
 	"github.com/go-mangos/mangos/protocol/pull"
 	"github.com/go-mangos/mangos/transport/tcp"

@@ -7,7 +7,7 @@ import (
 
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/message"
-	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/ThingiverseIO/uuid"
 )
 
 func testMsg() *message.Mock {

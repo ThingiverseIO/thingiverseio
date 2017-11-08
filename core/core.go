@@ -9,7 +9,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/network"
-	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/ThingiverseIO/uuid"
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/joernweissenborn/eventual2go/typedevents"
 )
@@ -19,7 +19,7 @@ var (
 )
 
 type core struct {
-	r *eventual2go.Reactor
+	r                *eventual2go.Reactor
 	config           *config.Config
 	connected        *typedevents.BoolObservable
 	descriptor       descriptor.Descriptor
@@ -55,7 +55,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	logPrefix := fmt.Sprintf("TVIO %s", cfg.Internal.UUID)
 
 	c = &core{
-		r:          eventual2go.NewReactor(),
+		r:                eventual2go.NewReactor(),
 		config:           cfg,
 		connected:        typedevents.NewBoolObservable(false),
 		descriptor:       desc,

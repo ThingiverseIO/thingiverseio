@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/ThingiverseIO/thingiverseio/config"
-	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/ThingiverseIO/uuid"
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/ugorji/go/codec"
 )

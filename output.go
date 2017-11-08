@@ -4,7 +4,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/core"
 	"github.com/ThingiverseIO/thingiverseio/descriptor"
-	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/ThingiverseIO/uuid"
 	"github.com/joernweissenborn/eventual2go/typedevents"
 )
 

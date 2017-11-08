@@ -9,7 +9,7 @@ import (
 	"github.com/ThingiverseIO/thingiverseio/config"
 	"github.com/ThingiverseIO/thingiverseio/message"
 	"github.com/ThingiverseIO/thingiverseio/network"
-	"github.com/ThingiverseIO/thingiverseio/uuid"
+	"github.com/ThingiverseIO/uuid"
 	"github.com/joernweissenborn/eventual2go"
 	"github.com/pebbe/zmq4"
 	"github.com/ugorji/go/codec"
