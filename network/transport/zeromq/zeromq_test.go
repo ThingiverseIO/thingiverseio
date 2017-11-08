@@ -4,12 +4,12 @@ import (
 	"testing"
 
 	"github.com/ThingiverseIO/thingiverseio/network"
-	"github.com/ThingiverseIO/thingiverseio/network/provider/zeromq"
+	"github.com/ThingiverseIO/thingiverseio/network/transport/zeromq"
 )
 
 func TestNanoMessage(t *testing.T) {
-	provider1 := &zeromq.Provider{}
-	provider2 := &zeromq.Provider{}
+	transport1 := &zeromq.Transport{}
+	transport2 := &zeromq.Transport{}
 
-	network.ProviderTestsuite(provider1, provider2, t)
+	network.TransportTestsuite(transport1, transport2, t)
 }

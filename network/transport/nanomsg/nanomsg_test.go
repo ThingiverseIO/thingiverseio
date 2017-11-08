@@ -8,8 +8,8 @@ import (
 )
 
 func TestNanoMessage(t *testing.T) {
-	transport1 := &nanomsg.Provider{}
-	transport2 := &nanomsg.Provider{}
+	transport1 := &nanomsg.Transport{}
+	transport2 := &nanomsg.Transport{}
 
-	network.ProviderTestsuite(transport1, transport2, t)
+	network.TransportTestsuite(transport1, transport2, t)
 }
