@@ -37,6 +37,9 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 			Internal: intCfg,
 			User:     usrCfg,
 		}, tracker, transport...)
+	if err != nil {
+		return
+	}
 
 	i = InputCore{
 		core:               c,

@@ -34,6 +34,9 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 			Internal: intCfg,
 			User:     usrCfg,
 		}, tracker, transport...)
+	if err != nil {
+		return
+	}
 
 	o = OutputCore{
 		core:     c,
