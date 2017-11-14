@@ -46,36 +46,35 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	}
 
 	o.requests = &message.RequestStream{
-		Stream: o.transport.Messages().
-			Where(network.OfType(message.REQUEST)).
-			Transform(network.ToMessage),
+		Stream: o.transport.Packages().
+			TransformWhere(network.ToMessage, network.OfType(message.REQUEST)),
 	}
 
-	o.transport.Messages().Where(network.OfType(message.HELLO)).ListenNonBlocking(o.onHello)
+	o.transport.Packages().Where(network.OfType(message.HELLO)).ListenNonBlocking(o.onHello)
 
 	o.r.React(afterConnectedEvent{}, o.onAfterConnected)
 
 	o.r.React(replyEvent{}, o.onReply)
 
-	o.r.AddStream(startListenEvent{}, o.transport.Messages().Where(network.OfType(message.STARTLISTEN)).Stream)
+	o.r.AddStream(startListenEvent{}, o.transport.Packages().Where(network.OfType(message.STARTLISTEN)).Stream)
 	o.r.React(startListenEvent{}, o.onStartListen)
 
-	o.r.AddStream(stopListenEvent{}, o.transport.Messages().Where(network.OfType(message.STOPLISTEN)).Stream)
+	o.r.AddStream(stopListenEvent{}, o.transport.Packages().Where(network.OfType(message.STOPLISTEN)).Stream)
 	o.r.React(stopListenEvent{}, o.onStopListen)
 
-	o.r.AddStream(startConsumeEvent{}, o.transport.Messages().Where(network.OfType(message.STARTCONSUME)).Stream)
+	o.r.AddStream(startConsumeEvent{}, o.transport.Packages().Where(network.OfType(message.STARTCONSUME)).Stream)
 	o.r.React(startConsumeEvent{}, o.onStartConsume)
 
-	o.r.AddStream(stopConsumeEvent{}, o.transport.Messages().Where(network.OfType(message.STOPCONSUME)).Stream)
+	o.r.AddStream(stopConsumeEvent{}, o.transport.Packages().Where(network.OfType(message.STOPCONSUME)).Stream)
 	o.r.React(stopConsumeEvent{}, o.onStopConsume)
 
-	o.r.AddStream(startObserveEvent{}, o.transport.Messages().Where(network.OfType(message.STARTOBSERVE)).Stream)
+	o.r.AddStream(startObserveEvent{}, o.transport.Packages().Where(network.OfType(message.STARTOBSERVE)).Stream)
 	o.r.React(startObserveEvent{}, o.onStartObserve)
 
-	o.r.AddStream(stopObserveEvent{}, o.transport.Messages().Where(network.OfType(message.STOPOBSERVE)).Stream)
+	o.r.AddStream(stopObserveEvent{}, o.transport.Packages().Where(network.OfType(message.STOPOBSERVE)).Stream)
 	o.r.React(stopObserveEvent{}, o.onStopObserve)
 
-	o.r.AddStream(getPropertyEvent{}, o.transport.Messages().Where(network.OfType(message.GETPROPERTY)).Stream)
+	o.r.AddStream(getPropertyEvent{}, o.transport.Packages().Where(network.OfType(message.GETPROPERTY)).Stream)
 	o.r.React(getPropertyEvent{}, o.onGetProperty)
 
 	for p, obs := range o.properties {
@@ -92,20 +91,20 @@ func NewOutputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 
 }
 
-func (o OutputCore) onHello(m network.Message) {
+func (o OutputCore) onHello(p network.Package) {
 
-	o.log.Debugf("Received HELLO message from %s", m.Sender)
+	o.log.Debugf("Received HELLO message from %s", p.Sender)
 
-	msg := m.Decode().(*message.Hello)
+	msg := p.Decode().(*message.Hello)
 	o.log.Debug("Peer Details:\n", hex.Dump(msg.NetworkDetails[0]))
 
-	conn, err := o.transport.Connect(msg.NetworkDetails, m.Sender)
+	conn, err := o.transport.Connect(msg.NetworkDetails, p.Sender)
 	if err != nil {
-		o.log.Errorf("Error connecting to %s: %s", m.Sender, err)
+		o.log.Errorf("Error connecting to %s: %s", p.Sender, err)
 		return
 	}
 
-	in := o.transport.Messages().Where(network.FromSender(m.Sender))
+	in := o.transport.Packages().Where(network.FromSender(p.Sender))
 	defer in.Close()
 
 	next := in.First()
@@ -186,28 +185,28 @@ func (o OutputCore) onReply(d eventual2go.Data) {
 	}
 }
 func (o *OutputCore) onStartListen(d eventual2go.Data) {
-	m := d.(network.Message)
+	p := d.(network.Package)
 
-	function := m.Decode().(*message.StartListen).Function
+	function := p.Decode().(*message.StartListen).Function
 
-	o.log.Infof("Got new listener for function '%s': %s", function, m.Sender)
+	o.log.Infof("Got new listener for function '%s': %s", function, p.Sender)
 
 	if _, ok := o.listener[function]; !ok {
 		o.listener[function] = map[uuid.UUID]network.Connection{}
 	}
 
-	o.listener[function][m.Sender] = o.connections[m.Sender]
+	o.listener[function][p.Sender] = o.connections[p.Sender]
 }
 
 func (o *OutputCore) onStopListen(d eventual2go.Data) {
-	m := d.(network.Message)
+	p := d.(network.Package)
 
-	function := m.Decode().(*message.StopListen).Function
+	function := p.Decode().(*message.StopListen).Function
 
-	o.log.Infof("Listener stopped listening to function '%s': %s", function, m.Sender)
+	o.log.Infof("Listener stopped listening to function '%s': %s", function, p.Sender)
 
 	if _, ok := o.listener[function]; ok {
-		delete(o.listener[function], m.Sender)
+		delete(o.listener[function], p.Sender)
 	}
 }
 
@@ -229,28 +228,28 @@ func (o *OutputCore) onAddStream(stream string) eventual2go.Subscriber {
 }
 
 func (o *OutputCore) onStartConsume(d eventual2go.Data) {
-	m := d.(network.Message)
+	p := d.(network.Package)
 
-	stream := m.Decode().(*message.StartConsume).Stream
+	stream := p.Decode().(*message.StartConsume).Stream
 
-	o.log.Infof("Got new consumer for stream '%s': %s", stream, m.Sender)
+	o.log.Infof("Got new consumer for stream '%s': %s", stream, p.Sender)
 
 	if _, ok := o.listener[stream]; !ok {
 		o.consumer[stream] = map[uuid.UUID]network.Connection{}
 	}
 
-	o.consumer[stream][m.Sender] = o.connections[m.Sender]
+	o.consumer[stream][p.Sender] = o.connections[p.Sender]
 }
 
 func (o *OutputCore) onStopConsume(d eventual2go.Data) {
-	m := d.(network.Message)
+	p := d.(network.Package)
 
-	stream := m.Decode().(*message.StopConsume).Stream
+	stream := p.Decode().(*message.StopConsume).Stream
 
-	o.log.Infof("Consumer stopped consuming stream '%s': %s", stream, m.Sender)
+	o.log.Infof("Consumer stopped consuming stream '%s': %s", stream, p.Sender)
 
 	if _, ok := o.consumer[stream]; ok {
-		delete(o.consumer[stream], m.Sender)
+		delete(o.consumer[stream], p.Sender)
 	}
 }
 
@@ -272,27 +271,27 @@ func (o *OutputCore) onSetProperty(property string) eventual2go.Subscriber {
 }
 
 func (o *OutputCore) onGetProperty(d eventual2go.Data) {
-	m := d.(network.Message)
+	p := d.(network.Package)
 
-	property := m.Decode().(*message.GetProperty).Name
+	property := p.Decode().(*message.GetProperty).Name
 
-	o.log.Debugf("Got request for property '%s' from %s", property, m.Sender)
+	o.log.Debugf("Got request for property '%s' from %s", property, p.Sender)
 
-	o.sendProperty(m.Sender, property)
+	o.sendProperty(p.Sender, property)
 }
 
 func (o *OutputCore) onStartObserve(d eventual2go.Data) {
-	m := d.(network.Message)
+	p := d.(network.Package)
 
-	property := m.Decode().(*message.StartObserve).Property
+	property := p.Decode().(*message.StartObserve).Property
 
-	o.log.Infof("Got new observer for property '%s': %s", property, m.Sender)
+	o.log.Infof("Got new observer for property '%s': %s", property, p.Sender)
 
 	if _, ok := o.observer[property]; !ok {
 		o.observer[property] = map[uuid.UUID]network.Connection{}
 	}
-	o.observer[property][m.Sender] = o.connections[m.Sender]
-	o.sendProperty(m.Sender, property)
+	o.observer[property][p.Sender] = o.connections[p.Sender]
+	o.sendProperty(p.Sender, property)
 }
 
 func (o *OutputCore) sendProperty(peer uuid.UUID, property string) {
@@ -304,14 +303,14 @@ func (o *OutputCore) sendProperty(peer uuid.UUID, property string) {
 }
 
 func (o *OutputCore) onStopObserve(d eventual2go.Data) {
-	m := d.(network.Message)
+	p := d.(network.Package)
 
-	property := m.Decode().(*message.StopObserve).Property
+	property := p.Decode().(*message.StopObserve).Property
 
-	o.log.Infof("Observer stopped observing property '%s': %s", property, m.Sender)
+	o.log.Infof("Observer stopped observing property '%s': %s", property, p.Sender)
 
 	if _, ok := o.observer[property]; ok {
-		delete(o.observer[property], m.Sender)
+		delete(o.observer[property], p.Sender)
 	}
 }
 

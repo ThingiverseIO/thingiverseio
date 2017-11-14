@@ -49,9 +49,8 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	}
 
 	i.results = &message.ResultStream{
-		Stream: i.transport.Messages().
-			Where(network.OfType(message.RESULT)).
-			Transform(network.ToMessage),
+		Stream: i.transport.Packages().
+			TransformWhere(network.ToMessage, network.OfType(message.RESULT)),
 	}
 
 	i.tracker.Arrivals().Where(i.isInterestingArrival).ListenNonBlocking(i.onArrival)
@@ -64,13 +63,13 @@ func NewInputCore(desc descriptor.Descriptor, usrCfg *config.UserConfig,
 	i.r.React(startConsumeEvent{}, i.onStartConsume)
 	i.r.React(stopConsumeEvent{}, i.onStopConsume)
 
-	i.r.AddStream(addStreamEvent{}, i.transport.Messages().TransformWhere(network.ToMessage, network.OfType(message.ADDSTREAM)))
+	i.r.AddStream(addStreamEvent{}, i.transport.Packages().TransformWhere(network.ToMessage, network.OfType(message.ADDSTREAM)))
 	i.r.React(addStreamEvent{}, i.onAddStream)
 
 	i.r.React(startObserveEvent{}, i.onStartObserve)
 	i.r.React(stopObserveEvent{}, i.onStopObserve)
 
-	i.r.AddStream(setPropertyEvent{}, i.transport.Messages().TransformWhere(network.ToMessage, network.OfType(message.SETPROPERTY)))
+	i.r.AddStream(setPropertyEvent{}, i.transport.Packages().TransformWhere(network.ToMessage, network.OfType(message.SETPROPERTY)))
 	i.r.React(setPropertyEvent{}, i.onSetProperty)
 
 	return
@@ -125,7 +124,7 @@ func (i InputCore) onArrival(a network.Arrival) {
 		return
 	}
 
-	in := i.transport.Messages().Where(network.FromSender(a.UUID))
+	in := i.transport.Packages().Where(network.FromSender(a.UUID))
 	defer in.Close()
 
 	next := in.FirstWhere(network.OfType(message.HELLOOK))

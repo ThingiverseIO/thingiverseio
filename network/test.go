@@ -16,17 +16,17 @@ func testMsg() *message.Mock {
 	}
 }
 
-func checkMessage(m Message, sender uuid.UUID, t *testing.T) {
-	if m.Sender != sender {
-		t.Error("Wrond sender", sender, m.Sender)
+func checkPackage(p Package, sender uuid.UUID, t *testing.T) {
+	if p.Sender != sender {
+		t.Error("Wrond sender", sender, p.Sender)
 	}
 
-	if m.Type != message.MOCK {
-		t.Error("Wrong type", m.Type)
+	if p.Type != message.MOCK {
+		t.Error("Wrong type", p.Type)
 	}
 
-	if !bytes.Equal(m.Payload[0], testMsg().Data[0]) || !bytes.Equal(m.Payload[1], testMsg().Data[1]) {
-		t.Error("Wrong payload", m.Payload, testMsg().Data)
+	if !bytes.Equal(p.Payload[0], testMsg().Data[0]) || !bytes.Equal(p.Payload[1], testMsg().Data[1]) {
+		t.Error("Wrong payload", p.Payload, testMsg().Data)
 	}
 
 }
@@ -62,8 +62,8 @@ func TransportTestsuite(transport1, transport2 Transport, t *testing.T) {
 		t.Fatal("Error on connecting to transport1", err)
 	}
 
-	msg1 := transport1.Messages().First()
-	msg2 := transport2.Messages().First()
+	msg1 := transport1.Packages().First()
+	msg2 := transport2.Packages().First()
 
 	conn1.Send(testMsg())
 	conn2.Send(testMsg())
@@ -76,8 +76,8 @@ func TransportTestsuite(transport1, transport2 Transport, t *testing.T) {
 		t.Fatal("Message 2 did not arrive.")
 	}
 
-	checkMessage(msg1.Result(), uuid2, t)
-	checkMessage(msg2.Result(), uuid1, t)
+	checkPackage(msg1.Result(), uuid2, t)
+	checkPackage(msg2.Result(), uuid1, t)
 
 }
 

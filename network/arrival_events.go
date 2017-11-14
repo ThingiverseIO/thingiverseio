@@ -199,3 +199,36 @@ func (c *ArrivalCollector) Get() Arrival {
 func (c *ArrivalCollector) Preview() Arrival {
 	return c.Collector.Preview().(Arrival)
 }
+
+type ArrivalObservable struct {
+	*eventual2go.Observable
+}
+
+func NewArrivalObservable (value Arrival) (o *ArrivalObservable) {
+	return &ArrivalObservable{eventual2go.NewObservable(value)}
+}
+
+func (o *ArrivalObservable) Value() Arrival {
+	return o.Observable.Value().(Arrival)
+}
+
+func (o *ArrivalObservable) Change(value Arrival) {
+	o.Observable.Change(value)
+}
+
+func (o *ArrivalObservable) OnChange(s ArrivalSubscriber) (cancel *eventual2go.Completer) {
+	return o.Observable.OnChange(s.toSubscriber())
+}
+
+func (o *ArrivalObservable) Stream() (*ArrivalStream) {
+	return &ArrivalStream{o.Observable.Stream()}
+}
+
+
+func (o *ArrivalObservable) AsChan() (c chan Arrival, cancel *eventual2go.Completer) {
+	return o.Stream().AsChan()
+}
+
+func (o *ArrivalObservable) NextChange() (f *ArrivalFuture) {
+	return o.Stream().First()
+}

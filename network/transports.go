@@ -16,13 +16,13 @@ type Transports struct {
 	Details        []Details
 	EncodedDetails [][]byte
 	Transport       map[TransportID]Transport
-	messages       *MessageStreamController
+	packages       *PackageStreamController
 }
 
 func NewTransports(cfg *config.Config, provider []Transport) (ps Transports, err error) {
 	ps = Transports{
 		Transport: map[TransportID]Transport{},
-		messages: NewMessageStreamController(),
+		packages: NewPackageStreamController(),
 	}
 
 	for _, p := range provider {
@@ -32,7 +32,7 @@ func NewTransports(cfg *config.Config, provider []Transport) (ps Transports, err
 
 		ps.Transport[p.Details().Transport] = p
 
-		ps.messages.Join(p.Messages())
+		ps.packages.Join(p.Packages())
 
 		var dtl bytes.Buffer
 		enc := codec.NewEncoder(&dtl, &mh)
@@ -63,8 +63,8 @@ func (p Transports) Connect(details [][]byte, uuid uuid.UUID) (conn Connection, 
 	return
 }
 
-func (p Transports) Messages() *MessageStream {
-	return p.messages.Stream()
+func (p Transports) Packages() *PackageStream {
+	return p.packages.Stream()
 }
 
 func (p Transports) RegisterShutdown(s *eventual2go.Shutdown) {

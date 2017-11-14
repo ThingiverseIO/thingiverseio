@@ -34,7 +34,7 @@ func (c *Connection) Init() (err error) {
 }
 
 func (c *Connection) OnMessage(d eventual2go.Data) {
-	msg := d.(network.Message)
+	msg := d.(network.Package)
 	msg.Sender = c.cfg.Internal.UUID
 	var buf bytes.Buffer
 	enc := codec.NewEncoder(&buf, &mh)

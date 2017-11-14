@@ -7,7 +7,7 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-//go:generate event_generator -t Arrival
+//go:generate evt2gogen -t Arrival
 
 type Arrival struct {
 	IsOutput bool

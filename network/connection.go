@@ -12,7 +12,7 @@ type Connection struct {
 }
 
 func (c Connection) Send(msg message.Message) {
-	c.ActorMessageStream.Send(Message{
+	c.ActorMessageStream.Send(Package{
 		Payload: msg.Flatten(),
 		Type:    msg.GetType(),
 	})

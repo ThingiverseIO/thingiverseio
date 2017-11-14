@@ -103,9 +103,9 @@ func (p *Transport) Details() (details network.Details) {
 	return
 }
 
-// Messages returns a stream of incoming messages.
-func (p *Transport) Messages() *network.MessageStream {
-	return &network.MessageStream{Stream: p.messages.Stream().Transform(decode)}
+// Packages returns a stream of incoming messages.
+func (p *Transport) Packages() *network.PackageStream {
+	return &network.PackageStream{Stream: p.messages.Stream().Transform(decode)}
 }
 
 func (p *Transport) receive() {
@@ -130,7 +130,7 @@ func decode(d eventual2go.Data) eventual2go.Data {
 	m := d.(*mangos.Message)
 	dec := codec.NewDecoder(bytes.NewBuffer(m.Body), &mh)
 
-	var msg network.Message
+	var msg network.Package
 	dec.Decode(&msg)
 
 	return msg

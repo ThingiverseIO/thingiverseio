@@ -76,7 +76,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	c.r.React(leaveEvent{}, c.onLeave)
 	c.r.React(mustSendEvent{}, c.onMustSend)
 
-	c.r.AddStream(endEvent{}, c.transport.Messages().Where(network.OfType(message.END)).Stream)
+	c.r.AddStream(endEvent{}, c.transport.Packages().Where(network.OfType(message.END)).Stream)
 	c.r.React(endEvent{}, c.onEnd)
 
 	c.r.OnShutdown(c.onShutdown)
@@ -123,9 +123,9 @@ func (c *core) onConnection(d eventual2go.Data) {
 }
 
 func (c *core) onEnd(d eventual2go.Data) {
-	m := d.(network.Message)
-	c.log.Info("Received END from", m.Sender)
-	c.removePeer(m.Sender)
+	p := d.(network.Package)
+	c.log.Info("Received END from", p.Sender)
+	c.removePeer(p.Sender)
 }
 
 func (c *core) onLeave(d eventual2go.Data) {

@@ -8,15 +8,15 @@ import (
 
 type MockTransport struct {
 	details      Details
-	messageBoxes []*MessageStreamController
+	messageBoxes []*PackageStreamController
 	cfg          *config.Config
 }
 
 func NewMockTransport(nr int) (p []*MockTransport) {
-	messageBoxes := []*MessageStreamController{}
+	messageBoxes := []*PackageStreamController{}
 
 	for i := 0; i < nr; i++ {
-		messageBoxes = append(messageBoxes, NewMessageStreamController())
+		messageBoxes = append(messageBoxes, NewPackageStreamController())
 	}
 	for i := 0; i < nr; i++ {
 		p = append(p, &MockTransport{
@@ -45,7 +45,7 @@ func (m *MockTransport) Details() Details {
 	return m.details
 }
 
-func (m *MockTransport) Messages() *MessageStream {
+func (m *MockTransport) Packages() *PackageStream {
 	return m.messageBoxes[m.details.Config[0]].Stream()
 }
 
@@ -53,7 +53,7 @@ func (m *MockTransport) Shutdown(d eventual2go.Data) error { return nil }
 
 type MockConnection struct {
 	cfg        *config.Config
-	messageBox *MessageStreamController
+	messageBox *PackageStreamController
 }
 
 func (m *MockConnection) Init() error {
@@ -61,7 +61,7 @@ func (m *MockConnection) Init() error {
 }
 
 func (m *MockConnection) OnMessage(d eventual2go.Data) {
-	msg := d.(Message)
+	msg := d.(Package)
 	msg.Sender = m.cfg.Internal.UUID
 	m.messageBox.Add(msg)
 }

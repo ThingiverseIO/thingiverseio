@@ -18,6 +18,6 @@ type Transport interface {
 	// Details returns the details of the incoming connection. This will be advertised to other peers.
 	Details() Details
 
-	// Messages returns a stream of incoming messages.
-	Messages() *MessageStream
+	// Packages returns a stream of incoming messages.
+	Packages() *PackageStream
 }
