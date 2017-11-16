@@ -109,6 +109,7 @@ func (o OutputCore) onHello(p network.Package) {
 
 	next := in.First()
 
+	o.log.Debugf("Checking if tag '%s' is supported", msg.Tag)
 	have := o.config.Internal.Tags.Has(msg.Tag)
 	conn.Send(&message.HelloOk{Have: have})
 
@@ -125,6 +126,7 @@ func (o OutputCore) onHello(p network.Package) {
 			case message.DOHAVE:
 				o.log.Debug("Got message DOHAVE from ", conn.UUID)
 				tag := nmsg.Decode().(*message.DoHave).Tag
+				o.log.Debugf("Checking if tag '%s' is supported", tag)
 				have = o.config.Internal.Tags.Has(tag)
 				if have {
 					o.log.Debugf("Tag '%s' is supported", tag)
