@@ -51,7 +51,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 	if err != nil {
 		return
 	}
-	logger.SetDefaultBackend(logger.NewMultiWriteBackend(writer))
+	logBackend := logger.NewWriterBackend(writer)
 	logPrefix := fmt.Sprintf("TVIO %s", cfg.Internal.UUID)
 
 	c = &core{
@@ -60,7 +60,7 @@ func initCore(desc descriptor.Descriptor, cfg *config.Config, tracker network.Tr
 		connected:        typedevents.NewBoolObservable(false),
 		descriptor:       desc,
 		connections:      map[uuid.UUID]network.Connection{},
-		log:              logger.New(logPrefix).SetDebug(cfg.User.Debug),
+		log:              logger.New(logPrefix).SetDebug(cfg.User.Debug).SetBackend(logBackend),
 		mustSendRegister: map[message.Message]uuid.UUID{},
 		transport:         transport,
 		tracker:          tracker,
