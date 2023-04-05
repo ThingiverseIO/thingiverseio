@@ -2,6 +2,7 @@ package beacon
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"time"
 
@@ -18,18 +19,23 @@ type listener struct {
 func newListener(port int) (l *listener, err error) {
 	ip := net.IPv4(224, 0, 0, 165)
 
-	ifis, err := net.Interfaces()
-	if err != nil {
-		return
-	}
+	// ifis, err := net.Interfaces()
+	// if err != nil {
+	//         return
+	// }
 
 	//get the first multicast adapter for listening
-	var ifi *net.Interface
-	for _, i := range ifis {
-		if i.Flags&net.FlagMulticast == net.FlagMulticast {
-			ifi = &i
-			break
-		}
+	// var ifi *net.Interface
+	// for _, i := range ifis {
+	//         if i.Flags&net.FlagMulticast == net.FlagMulticast {
+	//                 ifi = &i
+	//                 break
+	//         }
+	// }
+	ifi, err := net.InterfaceByName("Wi-Fi")
+	if err != nil {
+		err = fmt.Errorf("can't find specified interface %v\n", err)
+		return
 	}
 
 	if ifi == nil {
