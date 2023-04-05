@@ -2,6 +2,7 @@ package beacon
 
 import (
 	"errors"
+	"strings"
 	"net"
 	"time"
 
@@ -15,23 +16,29 @@ type listener struct {
 	stop    *eventual2go.Completer
 }
 
-func newListener(port int) (l *listener, err error) {
-	ip := net.IPv4(224, 0, 0, 165)
+func newListener(address string, port int) (l *listener, err error) {
 
 	ifis, err := net.Interfaces()
 	if err != nil {
 		return
 	}
 
-	//get the first multicast adapter for listening
+	// get the first multicast adapter for listening
 	var ifi *net.Interface
 	for _, i := range ifis {
-		if i.Flags&net.FlagMulticast == net.FlagMulticast {
-			ifi = &i
-			break
+		addresses, _ := i.Addrs()
+
+		for _, v := range addresses {
+			if strings.Contains(v.String(), address) {
+				ifi = &i
+				break
+			}
+
 		}
+
 	}
 
+	ip := net.IPv4(224, 0, 0, 165)
 	if ifi == nil {
 		err = errors.New("Could not find multicast adapter")
 		return

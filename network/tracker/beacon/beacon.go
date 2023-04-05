@@ -16,7 +16,7 @@ type Beacon struct {
 
 func New(conf *Config) (b *Beacon, err error) {
 
-	listener, err := newListener(conf.Port)
+	listener, err := newListener(conf.Address, conf.Port)
 	if err != nil {
 		return
 	}
