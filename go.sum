@@ -74,6 +74,8 @@ github.com/hashicorp/memberlist v0.5.0 h1:EtYPN8DpAURiapus508I4n9CzHs2W+8NZGbmmR
 github.com/hashicorp/memberlist v0.5.0/go.mod h1:yvyXLpo0QaGE59Y7hDTsTzDD25JYBZ4mHgHUZ8lrOI0=
 github.com/joernweissenborn/eventual2go v0.0.0-20180118201520-b1f166ca449e h1:oVr3j6GasqylpQUzg9yQQnhCO/P3bpyg5qoBr95HoRc=
 github.com/joernweissenborn/eventual2go v0.0.0-20180118201520-b1f166ca449e/go.mod h1:JplxAyDFIsgzoPOLtHd0EziXWFfAMg/b/8V10Q8DohY=
+github.com/joernweissenborn/eventual2go v0.1.0 h1:xwyWJZkYAs25mG+Sb26+ULxU0mlOXpZzldw3cKpHfwc=
+github.com/joernweissenborn/eventual2go v0.1.0/go.mod h1:gWoPfAy3hXC7sVi1NUuO0utITYKkT7fpuRVMcvOkbFA=
 github.com/json-iterator/go v1.1.6/go.mod h1:+SdeFBvtyEkXs7REEP0seUULqWtbJapLOCVDaaPEHmU=
 github.com/json-iterator/go v1.1.9/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=

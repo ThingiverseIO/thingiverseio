@@ -7,7 +7,7 @@ require (
 	github.com/ThingiverseIO/uuid v0.0.0-20171108183054-8faf82fb5dbb
 	github.com/go-mangos/mangos v1.2.1-0.20170412215926-e3181ec4a2a5
 	github.com/hashicorp/memberlist v0.5.0
-	github.com/joernweissenborn/eventual2go v0.0.0-20180118201520-b1f166ca449e
+	github.com/joernweissenborn/eventual2go v0.1.0
 	github.com/pebbe/zmq4 v1.2.9
 	github.com/spf13/viper v1.0.0
 	github.com/ugorji/go v0.0.0-20170918222552-54210f4e076c
