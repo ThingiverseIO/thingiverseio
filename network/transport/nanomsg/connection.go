@@ -43,6 +43,7 @@ func (c *Connection) OnMessage(d eventual2go.Data) {
 
 	m := mangos.NewMessage(len(body))
 	m.Body = body
+
 	c.socket.SendMsg(m)
 }
 

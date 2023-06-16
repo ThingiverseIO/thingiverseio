@@ -44,6 +44,9 @@ func (p *Transport) Init(cfg *config.Config) (err error) {
 	if err = p.socket.SetOption("RECV-DEADLINE", 100*time.Millisecond); err != nil {
 		return
 	}
+	if err = p.socket.SetOption("MAX-RCV-SIZE", 0); err != nil {
+		return
+	}
 
 	iface := cfg.User.Interface
 

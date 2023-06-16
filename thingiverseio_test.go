@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 	"time"
+	"math/rand"
 
 	"github.com/ThingiverseIO/thingiverseio"
 	"github.com/ThingiverseIO/thingiverseio/config"
@@ -46,7 +47,7 @@ func TestObserveProperty(t *testing.T) {
 	i.Run()
 
 	if !f1.WaitUntilTimeout(1 * time.Second) {
-		t.Fatal("Peer did not connect",f1.Completed())
+		t.Fatal("Peer did not connect", f1.Completed())
 	}
 	if !f2.WaitUntilTimeout(1 * time.Second) {
 		t.Fatal("Peer did not connect")
@@ -153,6 +154,66 @@ func TestCall(t *testing.T) {
 
 	select {
 	case <-time.After(5 * time.Second):
+		t.Fatal("Didnt Got Request")
+	case r := <-c:
+		if r.Input != i.UUID() {
+			t.Error("Wrong Import UUID", r.Input, i.UUID())
+		}
+		var res []byte
+		r.Decode(&res)
+		if !bytes.Equal(res, params) {
+			t.Error("Wrong Params", r.Parameter(), params)
+		}
+		e.Reply(r, params)
+	}
+
+	select {
+	case <-time.After(2 * time.Second):
+		t.Fatal("Didnt Got Request")
+	case r := <-f.AsChan():
+		if r.Output != e.UUID() {
+			t.Error("Wrong Export UUID", r.Output, e.UUID())
+		}
+
+		var res []byte
+		r.Decode(&res)
+		if !bytes.Equal(res, params) {
+			t.Error("Wrong Params", r.Parameter(), params)
+		}
+	}
+}
+
+func TestCallLargeData(t *testing.T) {
+	i, err := thingiverseio.NewInputFromConfig(testDescriptor, testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer i.Remove()
+	e, err := thingiverseio.NewOutputFromConfig(testDescriptor, testConfig())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer e.Remove()
+	c, _ := e.Requests().AsChan()
+
+	f1 := i.ConnectedObservable().Stream().First()
+	f2 := e.ConnectedObservable().Stream().First()
+
+	e.Run()
+	i.Run()
+
+	if !f1.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	if !f2.WaitUntilTimeout(1 * time.Second) {
+		t.Fatal("Peer did not connect")
+	}
+	params := make([]byte, 1024 * 10000)
+	rand.Read(params)
+	f, _ := i.Call("SayHello", params)
+
+	select {
+	case <-time.After(60 * time.Second):
 		t.Fatal("Didnt Got Request")
 	case r := <-c:
 		if r.Input != i.UUID() {
