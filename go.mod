@@ -10,7 +10,7 @@ require (
 	github.com/joernweissenborn/eventual2go v0.1.0
 	github.com/pebbe/zmq4 v1.2.9
 	github.com/spf13/viper v1.0.0
-	github.com/ugorji/go v0.0.0-20170918222552-54210f4e076c
+	github.com/ugorji/go/codec v1.2.11
 )
 
 require (
